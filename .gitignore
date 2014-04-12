@@ -3,6 +3,11 @@
 *.lo
 *.o
 *.obj
+*.suo
+*.user
+*.filters
+*.sdf
+*.opensdf
 
 # Compiled Dynamic libraries
 *.so
@@ -19,3 +24,6 @@
 *.exe
 *.out
 *.app
+
+Bin/
+OBJ/
