@@ -4,7 +4,8 @@
 #pragma comment(lib, "d3d11.lib")
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include "Pipeline\DeferredPipeline.h"
+
+#include "Scene\Scene.h"
 
 class App
 {
@@ -16,14 +17,7 @@ class App
 		void Release();
 
 	private:
-		void BeginScene();
-		void EndScene();
-		void Render(float dt);
 		bool Init3D_DeviceAndContext();
-		bool Init3D_SwapChain();
-		bool Init3D_DepthStencil();
-		bool Init3D_RTV();
-		bool Init3D_Viewport();
 		bool Init3D_Pipeline();
 		bool InitWindow();
 	
@@ -36,12 +30,10 @@ class App
 
 		ID3D11Device* d3dDevice;
 		ID3D11DeviceContext* d3dDeviceContext;
-		IDXGISwapChain* d3dSwapchain;
-		ID3D11DepthStencilView* depthStencilView;
-		ID3D11ShaderResourceView* depthStencilUAV;
-		D3D11_VIEWPORT viewPort;
-		ID3D11RenderTargetView* backBufferRTV;
-		ID3D11UnorderedAccessView* backBufferUAV;
+		
+
+		Scene *subsurface;
+		Scene *volumeLight;
 };
 
 #endif // !BACHELOR_APP_H

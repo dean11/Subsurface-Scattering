@@ -34,19 +34,25 @@ namespace Pipeline
 	public:
 		Shader();
 		virtual~Shader();
-		bool CreateShader(const wchar_t filename[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+		bool CreateShader(const char filename[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+		bool LoadCompiledShader(const char filename[], ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		ShaderData GetShader();
 		void Release();
 		void Apply();
 
+		char* GetByteCode();
+		size_t GetByteCodeSize();
+		void RemoveByteCode();
+
 	private:
 		static ID3D11DeviceContext* deviceContext;
 		static ID3D11Device* device;
-		std::wstring path;
+		std::string path;
 		ShaderType type;
 		ShaderData shaderData;
 		int size;
 		int shaderID;
+		char* byteCode;
 
 	};
 

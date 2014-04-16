@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -31,32 +31,39 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shaders\sss.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    <FxCompile Include="Shaders\ShaderData.header.hlsl" />
+    <FxCompile Include="Shaders\sss.compute.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
-    <ClInclude Include="clock.h" />
-    <ClInclude Include="DefaultRenderer.h" />
-    <ClInclude Include="GraphicDefinitions.h" />
-    <ClInclude Include="MeshManager.h" />
-    <ClInclude Include="Pipeline\DeferredPipeline.h" />
-    <ClInclude Include="Scene.h" />
+    <ClInclude Include="Pipeline\Pass\FinalPass.h" />
+    <ClInclude Include="Pipeline\Pass\ShaderPass.h" />
+    <ClInclude Include="Scene\SubsurfaceScatteringScene.h" />
+    <ClInclude Include="Utilities\clock.h" />
+    <ClInclude Include="Scene\Model.h" />
+    <ClInclude Include="Pipeline\Pass\GeometryPass.h" />
+    <ClInclude Include="Pipeline\PipelineManager.h" />
+    <ClInclude Include="Scene\Scene.h" />
     <ClInclude Include="Pipeline\Shader.h" />
-    <ClInclude Include="WindowShell.h" />
+    <ClInclude Include="Utilities\Util.h" />
+    <ClInclude Include="Utilities\WindowShell.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
-    <ClCompile Include="clock.cpp" />
+    <ClCompile Include="Pipeline\Pass\Final.cpp" />
+    <ClCompile Include="Scene\SubsurfaceScatteringScene.cpp" />
+    <ClCompile Include="Utilities\clock.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="MeshManager.cpp" />
-    <ClCompile Include="Pipeline\DeferredPipeline.cpp" />
+    <ClCompile Include="Scene\Model.cpp" />
+    <ClCompile Include="Pipeline\Pass\GeometryPass.cpp" />
+    <ClCompile Include="Pipeline\PipelineManager.cpp" />
     <ClCompile Include="Pipeline\Shader.cpp" />
-    <ClCompile Include="WindowShell.cpp" />
+    <ClCompile Include="Utilities\WindowShell.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{58160821-AE5A-4C43-BA7E-101414687B21}</ProjectGuid>
@@ -66,26 +73,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -146,7 +153,7 @@
     </Link>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>
-      <ObjectFileOutput>$(SolutionDir)Bin\Shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput>$(SolutionDir)..\Bin\Shaders\%(Filename).cso</ObjectFileOutput>
       <ShaderType>Effect</ShaderType>
     </FxCompile>
   </ItemDefinitionGroup>
@@ -162,7 +169,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <FxCompile>
-      <ObjectFileOutput>$(SolutionDir)Bin\Shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput>$(SolutionDir)..\Bin\Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -181,7 +188,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <FxCompile>
-      <ObjectFileOutput>$(SolutionDir)Bin\Shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput>$(SolutionDir)..\Bin\Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -200,7 +207,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <FxCompile>
-      <ObjectFileOutput>$(SolutionDir)Bin\Shaders\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput>$(SolutionDir)..\Bin\Shaders\%(Filename).cso</ObjectFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

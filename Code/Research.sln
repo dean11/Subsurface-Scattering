@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GLPathTracing", "GLPathTracing\GLPathTracing.vcxproj", "{58160821-AE5A-4C43-BA7E-101414687B21}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SubsurfaceScattering", "SubsurfaceScattering\SubsurfaceScattering.vcxproj", "{58160821-AE5A-4C43-BA7E-101414687B21}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

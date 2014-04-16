@@ -1,6 +1,9 @@
 #include "Shader.h"
-
+#include "..\Utilities\Util.h"
 #include <d3dcompiler.h>
+
+#include <iostream>
+#include <fstream>
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -23,13 +26,16 @@ Shader::~Shader()
 {
 }
 
-bool Shader::CreateShader(const wchar_t filename[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+bool Shader::CreateShader(const char filename[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
 	if(!this->device)			this->device = device;
 	if(!this->deviceContext)	this->deviceContext = deviceContext;
 
 	ID3DBlob* s = 0, *err = 0;
-	if(FAILED (D3DCompileFromFile(filename, 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
+	wchar_t buff[255];
+	_wgetcwd(buff, 255);
+	HRESULT hr = S_OK;
+	if(FAILED ( hr = D3DCompileFromFile(Util::StringToWstring(filename, std::wstring()).c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
 	{
 		if(err) 
 		{
@@ -46,9 +52,7 @@ bool Shader::CreateShader(const wchar_t filename[], char* target, UINT flag, con
 	}
 
 	memset(&this->shaderData, 0, sizeof(Shader::ShaderData));
-	HRESULT hr = S_OK;
-
-	void * blob = s->GetBufferPointer();
+	
 	switch (type)
 	{
 	case Pipeline::ShaderType_VS:
@@ -89,6 +93,58 @@ bool Shader::CreateShader(const wchar_t filename[], char* target, UINT flag, con
 
 	return true;
 }
+bool Shader::LoadCompiledShader(const char filename[], ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+{
+	this->type = type;
+	this->device = device;
+	this->deviceContext = deviceContext;
+	this->path = filename;
+
+	std::ifstream fstr;
+	HRESULT hr = S_OK;
+	fstr.open(filename, std::ifstream::in | std::ifstream::binary);
+
+	if (fstr.good())
+	{
+		fstr.seekg(0, std::ios::end);
+		size_t size = size_t(fstr.tellg());
+		this->byteCode = new char[size];
+		fstr.seekg(0, std::ios::beg);
+		fstr.read(&this->byteCode[0], size);
+		fstr.close();
+
+		switch (this->type)
+		{
+		case Pipeline::ShaderType_VS:
+			hr = this->device->CreateVertexShader(&this->byteCode[0], size, 0, &this->shaderData.vertexShader);
+			break;
+		case Pipeline::ShaderType_PS:
+			hr = this->device->CreatePixelShader(this->byteCode, size, 0, &this->shaderData.pixelShader);
+			delete[] this->byteCode;
+			break;
+		case Pipeline::ShaderType_CS:
+			hr = this->device->CreateComputeShader(this->byteCode, size, 0, &this->shaderData.computeShader);
+			delete[] this->byteCode;
+			break;
+		case Pipeline::ShaderType_HS:
+			hr = this->device->CreateHullShader(this->byteCode, size, 0, &this->shaderData.hullShader);
+			delete[] this->byteCode;
+			break;
+		case Pipeline::ShaderType_GS:
+			hr = this->device->CreateGeometryShader(this->byteCode, size, 0, &this->shaderData.geometryShader);
+			delete[] this->byteCode;
+			break;
+		case Pipeline::ShaderType_DS:
+			hr = this->device->CreateDomainShader(this->byteCode, size, 0, &this->shaderData.domainShader);
+			delete[] this->byteCode;
+			break;
+		}
+
+		this->size = size;
+		this->shaderID = globaShaderID++;
+	}
+	return true;
+}
 Shader::ShaderData Shader::GetShader()
 {
 	return this->shaderData;
@@ -107,11 +163,13 @@ void Shader::Release()
 		if(this->shaderData.data) this->shaderData.computeShader->Release();
 		break;
 	case Pipeline::ShaderType_HS:
+		if (this->shaderData.data) this->shaderData.hullShader->Release();
 		break;
 	case Pipeline::ShaderType_GS:
 		if(this->shaderData.data) this->shaderData.geometryShader->Release();
 		break;
 	case Pipeline::ShaderType_DS:
+		if (this->shaderData.data) this->shaderData.domainShader->Release();
 		break;
 	}
 }
@@ -140,3 +198,18 @@ void Shader::Apply()
 		break;
 	}
 }
+
+char* Shader::GetByteCode()
+{
+	return this->byteCode;
+}
+size_t Shader::GetByteCodeSize()
+{
+	return this->size;
+}
+void Shader::RemoveByteCode()
+{
+	delete [] this->byteCode;
+	this->byteCode = 0;
+}
+
