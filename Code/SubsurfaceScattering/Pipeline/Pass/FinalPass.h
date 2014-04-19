@@ -4,7 +4,6 @@
 #include "..\Shader.h"
 #include "ShaderPass.h"
 
-
 namespace Pipeline
 {
 	class FinalPass :public ShaderPass
@@ -18,10 +17,12 @@ namespace Pipeline
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile) override;
 
 	private:
-		ID3D11Buffer* quadBuffer;
+		
+		ID3D11Buffer* quadVBuffer;
+		ID3D11Buffer* quadIBuffer;
 		Shader vertex;
 		Shader pixel;
-
+		
 	};
 }
 

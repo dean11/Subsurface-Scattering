@@ -1,9 +1,12 @@
 #include "PipelineManager.h"
-
-using namespace Pipeline;
-
+#include "RenderState\BlendState.h"
+#include "RenderState\DepthStencilState.h"
+#include "RenderState\RasterizerState.h"
+#include "RenderState\SamplerState.h"
 #include <d3dcompiler.h>
 #include "..\Utilities\WindowShell.h"
+
+using namespace Pipeline;
 
 static PipelineManager* pipelineManagerInstance = 0;
 
@@ -16,6 +19,11 @@ PipelineManager& PipelineManager::Instance()
 }
 void PipelineManager::Release()
 {
+	ShaderStates::BlendStates::Release();
+	ShaderStates::DepthStencilState::Release();
+	ShaderStates::RasterizerState::Release();
+	ShaderStates::SamplerState::Release();
+	
 	this->geometryPass.Release();
 	this->d3dSwapchain->Release();
 	this->renderTarget->Release();
@@ -33,6 +41,9 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	if (!this->CreateRTV())					return false;
 
 	this->geometryPass.Initiate(device, deviceContext, width, height, false);
+	this->finalPass.Initiate(device, deviceContext, width, height, false);
+
+	CreateViewport(width, height);
 
 	return true;
 }
@@ -43,12 +54,33 @@ void PipelineManager::ApplyGeometryPass(bool clearPrevious)
 	{
 
 	}
-
+	this->deviceContext->RSSetViewports(1, &this->viewPort);
 	this->geometryPass.Apply();
 }
 
 void PipelineManager::Present()
 {
+	ID3D11RenderTargetView* rtv[] =
+	{
+		this->renderTarget,
+		0,
+		0,
+		0,
+	};
+
+	this->deviceContext->OMSetRenderTargets(4, rtv, 0);
+	ID3D11SamplerState *smp[] = { ShaderStates::SamplerState::GetLinear() };
+	this->deviceContext->PSSetSamplers(0, 1, smp);
+	
+	ID3D11ShaderResourceView* srv[] =
+	{
+		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR),
+		0,
+		0,
+		0,
+	};
+	this->deviceContext->PSSetShaderResources(0, 4, srv);
+
 	this->finalPass.Apply();
 
 	this->d3dSwapchain->Present(0, 0);
@@ -72,7 +104,7 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 	desc.OutputWindow = WindowShell::GetHWND();
 	desc.BufferCount = 1;
 	desc.Windowed = true;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	desc.Flags = 0;
 	desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -80,8 +112,8 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 	desc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
 	desc.BufferDesc.RefreshRate.Denominator = 1;
 	desc.BufferDesc.RefreshRate.Numerator = 60;
-	desc.BufferDesc.Height = (UINT)width;
-	desc.BufferDesc.Width = (UINT)height;
+	desc.BufferDesc.Height = (UINT)height;
+	desc.BufferDesc.Width = (UINT)width;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 
@@ -149,5 +181,14 @@ bool PipelineManager::CreateRTV()
 	backBuffer->Release();
 
 	return true;
+}
+void PipelineManager::CreateViewport(int width, int height)
+{
+	this->viewPort.TopLeftX = 0;
+	this->viewPort.TopLeftY = 0;
+	this->viewPort.Width = (FLOAT)width;
+	this->viewPort.Height = (FLOAT)height;
+	this->viewPort.MinDepth = 0.0f;
+	this->viewPort.MaxDepth = 1.0f;
 }
 

@@ -10,7 +10,7 @@ class Scene
 {
 public:
 	virtual void Frame(float delta) = 0;
-	virtual void Initiate(ID3D11Device* device, ID3D11DeviceContext *dc) = 0;
+	virtual bool Initiate(ID3D11Device* device, ID3D11DeviceContext *dc) = 0;
 
 protected:
 	std::vector<Model> models;

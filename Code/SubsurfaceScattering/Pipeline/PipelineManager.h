@@ -3,6 +3,7 @@
 
 #include <d3d11.h>
 #include <vector>
+#include <DirectXMath.h>
 
 #include "Shader.h"
 #include "Pass\GeometryPass.h"
@@ -30,7 +31,9 @@ namespace Pipeline
 		virtual~PipelineManager();
 		bool PipelineManager::CreateSwapChain(int width, int height);
 		bool PipelineManager::CreateRTV();
+		void CreateViewport(int width, int height);
 
+		D3D11_VIEWPORT viewPort;
 		ID3D11Device* device;
 		ID3D11DeviceContext* deviceContext;
 		IDXGISwapChain* d3dSwapchain;

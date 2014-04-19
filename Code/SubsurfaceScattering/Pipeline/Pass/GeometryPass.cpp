@@ -1,4 +1,8 @@
 #include "GeometryPass.h"
+#include "..\InputLayoutState.h"
+#include "..\RenderState\DepthStencilState.h"
+#include "..\RenderState\RasterizerState.h"
+
 
 ID3D11Device *ShaderPass::device = 0;
 ID3D11DeviceContext *ShaderPass::deviceContext = 0;
@@ -21,7 +25,6 @@ void GeometryPass::Release()
 	this->pixel.Release();
 	this->depthStencilView->Release();
 	this->depthStencilUAV->Release();
-	this->inputLayout->Release();
 }
 bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile)
 {
@@ -37,20 +40,23 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	
 	if (foreShaderCompile)
 	{
-		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\basic.vertex.hlsl", "vs_5_0", flag, 0, ShaderType_VS, device, deviceContext))
+		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\geometry.vertex.hlsl", "vs_5_0", flag, 0, ShaderType_VS, device, deviceContext))
 			return false;
 
-		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\basic.pixel.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
+		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\geometry.pixel.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
 			return false;
 	}
 	else
 	{
-		if (!this->vertex.LoadCompiledShader("Shaders\\basic.vertex.cso", ShaderType_VS, device, deviceContext))
+		if (!this->vertex.LoadCompiledShader("Shaders\\geometry.vertex.cso", ShaderType_VS, device, deviceContext))
 			return false;
 
-		if (!this->pixel.LoadCompiledShader("Shaders\\basic.pixel.cso", ShaderType_PS, device, deviceContext))
+		if (!this->pixel.LoadCompiledShader("Shaders\\geometry.pixel.cso", ShaderType_PS, device, deviceContext))
 			return false;
 	}
+
+	InputLayoutManager::MicrosoftFailedWithDirectX(device, this->vertex.GetByteCode(), this->vertex.GetByteCodeSize());
+	this->vertex.RemoveByteCode();
 
 	ID3D11Texture2D* tex1;
 	ID3D11Texture2D* tex2;
@@ -115,23 +121,24 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	if (!this->CreateDepthStencil(width, height))
 		return false;
 
-	if (CreateInputLayout())
-		return false;
-
-	CreateViewport(width, height);
-
 	return true;
+}
+ID3D11ShaderResourceView* GeometryPass::GetShaderResource(GBuffer_RTV_Layout srv)
+{
+	return this->GBufferSRV[srv];
+}
+ID3D11RenderTargetView* GeometryPass::GetRenderTarget(GBuffer_RTV_Layout rtv)
+{
+	return this->GBufferRTV[rtv];
 }
 void GeometryPass::Apply()
 {
-	this->deviceContext->RSSetViewports(1, &this->viewPort);
-
 	this->deviceContext->ClearDepthStencilView(this->depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	this->deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->deviceContext->IASetInputLayout(this->inputLayout);
-
+	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
 	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, &this->GBufferRTV[0], this->depthStencilView);
+	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
 
 	this->vertex.Apply();
 	this->pixel.Apply();
@@ -147,25 +154,6 @@ GeometryPass::~GeometryPass()
 
 }
 
-bool GeometryPass::CreateInputLayout()
-{
-	D3D11_INPUT_ELEMENT_DESC desc[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	HRESULT hr = S_OK;
-	if (FAILED(hr = this->device->CreateInputLayout(desc, 5, this->vertex.GetByteCode(), this->vertex.GetByteCodeSize(), &this->inputLayout)))
-		return false;
-
-	this->vertex.RemoveByteCode();
-
-	return true;
-}
 bool GeometryPass::CreateDepthStencil(int width, int height)
 {
 	D3D11_TEXTURE2D_DESC desc;
@@ -212,12 +200,4 @@ bool GeometryPass::CreateDepthStencil(int width, int height)
 	depthstencil->Release();
 	return true;
 }
-void GeometryPass::CreateViewport(int width, int height)
-{
-	this->viewPort.TopLeftX = 0;
-	this->viewPort.TopLeftY = 0;
-	this->viewPort.Width = (FLOAT)width;
-	this->viewPort.Height = (FLOAT)height;
-	this->viewPort.MinDepth = 0.0f;
-	this->viewPort.MaxDepth = 1.0f;
-}
+
