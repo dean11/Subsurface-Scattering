@@ -113,7 +113,7 @@ void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, c
 	if (SUCCEEDED(this->deviceContext->Map(this->objectMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
 	{
 		ObjectMatrixData* data = (ObjectMatrixData*)res.pData;
-		data->world = world;
+		DirectX::XMStoreFloat4x4(&data->world, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&world)));
 		data->worldInversTranspose = worldInversTranspose;
 		this->deviceContext->Unmap(this->objectMatrixBuffer, 0);
 	}
@@ -130,8 +130,8 @@ void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, con
 	if (SUCCEEDED(this->deviceContext->Map(this->sceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
 	{
 		SceneMatrixData* data = (SceneMatrixData*)res.pData;
-		data->projection = projection;
-		data->view = view;
+		DirectX::XMStoreFloat4x4(&data->projection, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&projection)));
+		DirectX::XMStoreFloat4x4(&data->view, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&view)));
 		this->deviceContext->Unmap(this->sceneMatrixBuffer, 0);
 	}
 }

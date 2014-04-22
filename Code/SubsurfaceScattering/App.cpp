@@ -7,10 +7,14 @@
 #include "Scene\SubsurfaceScatteringScene.h"
 #include <sys\stat.h>
 #include <d3d11_2.h>
+#include <windowsx.h>
 
 #define SUBSURFACESCATTERING
 Scene *currentScene = 0;
-
+App * app = 0;
+int oldX = 0;
+int oldY = 0;
+bool LBUTTONDOWN = false;
 
 App::App()
 	:	isInitiated(false)
@@ -19,7 +23,8 @@ App::App()
 	,	d3dDevice(0)
 	,	d3dDeviceContext(0)
 {
-	
+	app = this;
+	memset(&this->moveKeys, 0, sizeof(Keyboard));
 }
 App::~App()
 {}
@@ -29,6 +34,12 @@ bool App::Initiate()
 	if(!this->Init3D_DeviceAndContext())	return false;
 	if(!this->Init3D_Pipeline())			return false;
 
+
+	this->camera.SetPosition(0.0f, 0.0f, -10.0f);
+	this->camera.SetProjectionMatrix(((DirectX::XM_PI / 180.0f) * 45.0f), ((float)this->winDimension.x / (float)this->winDimension.x), 0.1f, 100000.0f);
+	this->camera.Render();
+
+
 	//Initiate your scene..
 #ifdef SUBSURFACESCATTERING
 	SubsurfaceScatteringScene::SSSInitDesc desc;
@@ -36,6 +47,7 @@ bool App::Initiate()
 	desc.width = 800;
 	currentScene = new SubsurfaceScatteringScene(desc);
 	currentScene->Initiate(this->d3dDevice, this->d3dDeviceContext);
+	((SubsurfaceScatteringScene*)currentScene)->SetCamera(&this->camera);
 #elif defined VOLUMELIGHT
 	currentScene = new VolumetricLightingScene();
 	currentScene->Initiate();
@@ -53,6 +65,17 @@ void App::Run()
 	{
 		float dt = (float)clock.getElapsedSeconds();
 		clock.reset();
+
+		this->camera.Render();
+		
+		if (this->moveKeys.W)
+			app->camera.RelativeForward(1.0f);
+		if (this->moveKeys.S)
+			app->camera.RelativeForward(-1.0f);
+		if (this->moveKeys.A)
+			app->camera.RelativeRight(-1.0f);
+		if (this->moveKeys.D)
+			app->camera.RelativeRight(1.0f);
 
 		currentScene->Frame(dt);
 	}
@@ -132,28 +155,86 @@ bool App::Init3D_Pipeline()
 LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 {
 	PAINTSTRUCT ps;
-		HDC hdc;
+	HDC hdc;
 
-		switch (m) 
+	switch (m) 
+	{
+		case WM_PAINT:
+			hdc = BeginPaint(h, &ps);
+			EndPaint(h, &ps);
+		break;
+
+		case WM_DESTROY:
+			PostQuitMessage(0);
+		break;
+
+		case WM_KEYUP:
 		{
-			case WM_PAINT:
-				hdc = BeginPaint(h, &ps);
-				EndPaint(h, &ps);
-			break;
-
-			case WM_DESTROY:
-				PostQuitMessage(0);
-			break;
-
-			case WM_KEYDOWN:
-				switch(w)
-				{
-					case VK_ESCAPE:
-						PostQuitMessage(0);
+			switch (w)
+			{
+			case 0x53: //S
+				app->moveKeys.S = false;
+				break;
+			case 0x57: //W
+				app->moveKeys.W = false;
+				break;
+			case 0x41: //A
+				app->moveKeys.A = false;
+				break;
+			case 0x44: //D
+				app->moveKeys.D = false;
+				break;
+			}
+		} break;
+		case WM_KEYDOWN:
+			switch(w)
+			{
+				case VK_ESCAPE:
+					PostQuitMessage(0);
+				break;
+				case 0x53: //S
+					app->moveKeys.S = true;
 					break;
-				}
+				case 0x57: //W
+					app->moveKeys.W = true;
+					break;
+				case 0x41: //A
+					app->moveKeys.A = true;
+					break;
+				case 0x44: //D
+					app->moveKeys.D = true;
+					break;
+			}
+		break;
+
+		case WM_LBUTTONDOWN:
+			LBUTTONDOWN = true;
 			break;
+		case WM_LBUTTONUP:
+			LBUTTONDOWN = false;
+			break;
+		case WM_MOUSEMOVE:
+		{
+			int xPos = GET_X_LPARAM(l);
+			int yPos = GET_Y_LPARAM(l);
+			if (LBUTTONDOWN)
+			{
+				 app->camera.RelativeYaw(((float)(xPos - oldX)) * 0.5f);
+				 app->camera.RelativePitch(((float)(yPos - oldY))* 0.5f);
+			}
+			oldX = xPos;
+			oldY = yPos;
 		}
+		break;
+		case WM_ACTIVATEAPP:
+		case WM_NCACTIVATE:
+		case WM_ACTIVATE:
+		{
+			oldX = GET_X_LPARAM(l);
+			oldY = GET_Y_LPARAM(l);
+		}
+			break;
+	}
 
 	return DefWindowProc(h, m, w, l);
 }

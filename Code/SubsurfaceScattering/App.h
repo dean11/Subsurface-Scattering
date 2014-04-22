@@ -6,6 +6,7 @@
 #include <DirectXMath.h>
 
 #include "Scene\Scene.h"
+#include "Utilities\Camera.h"
 
 class App
 {
@@ -31,9 +32,18 @@ class App
 		ID3D11Device* d3dDevice;
 		ID3D11DeviceContext* d3dDeviceContext;
 		
+		Camera camera;
 
 		Scene *subsurface;
 		Scene *volumeLight;
+
+		struct Keyboard
+		{
+			bool W;
+			bool A;
+			bool S;
+			bool D;
+		} moveKeys;
 };
 
 #endif // !BACHELOR_APP_H

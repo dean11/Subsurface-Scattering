@@ -61,6 +61,7 @@
     <ClInclude Include="Pipeline\RenderState\DepthStencilState.h" />
     <ClInclude Include="Pipeline\RenderState\RasterizerState.h" />
     <ClInclude Include="Pipeline\RenderState\SamplerState.h" />
+    <ClInclude Include="Pipeline\RenderSurface.h" />
     <ClInclude Include="Pipeline\Vertex.h" />
     <ClInclude Include="Scene\SubsurfaceScatteringScene.h" />
     <ClInclude Include="Utilities\Camera.h" />
@@ -82,6 +83,7 @@
     <ClCompile Include="Pipeline\RenderState\DepthStencilState.cpp" />
     <ClCompile Include="Pipeline\RenderState\RasterizerState.cpp" />
     <ClCompile Include="Pipeline\RenderState\SamplerState.cpp" />
+    <ClCompile Include="Pipeline\RenderSurface.cpp" />
     <ClCompile Include="Scene\SubsurfaceScatteringScene.cpp" />
     <ClCompile Include="Utilities\Camera.cpp" />
     <ClCompile Include="Utilities\clock.cpp" />

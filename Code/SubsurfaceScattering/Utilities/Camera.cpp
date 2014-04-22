@@ -69,9 +69,9 @@ void Camera::RelativeForward(float speed)
 	DirectX::XMFLOAT3 norm;
 	XMStoreFloat3(&norm, DirectX::XMVector3Normalize(XMLoadFloat3(&this->GetForward())));
 
-	this->positionX += norm.x*speed;
-	this->positionY += norm.y*speed;
-	this->positionZ += norm.z*speed;
+	this->positionX += norm.x * speed;
+	this->positionY += norm.y * speed;
+	this->positionZ += norm.z * speed;
 
 	//D3DXMatrixOrthoLH(&this->orthogonalMatrix, width, height, nearPlane, farPlane);
 }

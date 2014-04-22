@@ -14,7 +14,7 @@ void SubsurfaceScatteringScene::Frame(float delta)
 {
 	Pipeline::PipelineManager::Instance().ApplyGeometryPass(true);
 	{
-		Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam.GetViewMatrix(), this->mainCam.GetProjectionMatrix());
+		Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix());
 
 		for (size_t i = 0; i < this->models.size(); i++)
 		{
@@ -46,10 +46,11 @@ bool SubsurfaceScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceConte
 		return false;
 	this->models.push_back(sphere);
 
-	this->mainCam.SetPosition(0.0f, 0.0f, -10.0f);
-	this->mainCam.SetProjectionMatrix(((20.0f * DirectX::XM_PI) / 180.0f), (float)(this->desc.width / this->desc.height), 0.1f, 1000.0f);
-	this->mainCam.Render();
-
 	return true;
 }
+void SubsurfaceScatteringScene::SetCamera(Camera* cam)
+{
+	this->mainCam = cam;
+}
+
 
