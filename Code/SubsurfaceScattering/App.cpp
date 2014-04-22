@@ -31,7 +31,10 @@ bool App::Initiate()
 
 	//Initiate your scene..
 #ifdef SUBSURFACESCATTERING
-	currentScene = new SubsurfaceScatteringScene();
+	SubsurfaceScatteringScene::SSSInitDesc desc;
+	desc.height = 600;
+	desc.width = 800;
+	currentScene = new SubsurfaceScatteringScene(desc);
 	currentScene->Initiate(this->d3dDevice, this->d3dDeviceContext);
 #elif defined VOLUMELIGHT
 	currentScene = new VolumetricLightingScene();

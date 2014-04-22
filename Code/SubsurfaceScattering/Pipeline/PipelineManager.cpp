@@ -10,6 +10,17 @@ using namespace Pipeline;
 
 static PipelineManager* pipelineManagerInstance = 0;
 
+struct ObjectMatrixData
+{
+	DirectX::XMFLOAT4X4 world;
+	DirectX::XMFLOAT4X4 worldInversTranspose;
+};
+struct SceneMatrixData
+{
+	DirectX::XMFLOAT4X4 view;
+	DirectX::XMFLOAT4X4 projection;
+};
+
 
 PipelineManager& PipelineManager::Instance()
 {
@@ -44,6 +55,7 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	this->finalPass.Initiate(device, deviceContext, width, height, false);
 
 	CreateViewport(width, height);
+	this->CreateConstantBuffers();
 
 	return true;
 }
@@ -52,14 +64,24 @@ void PipelineManager::ApplyGeometryPass(bool clearPrevious)
 	//Clear pipeline
 	if (clearPrevious)
 	{
-
+		static ID3D11ShaderResourceView* srv[Pipeline::GBuffer_RTV_Layout_COUNT] = { 0 };
+		this->deviceContext->PSSetShaderResources(0, Pipeline::GBuffer_RTV_Layout_COUNT, srv);
 	}
-	this->deviceContext->RSSetViewports(1, &this->viewPort);
+
 	this->geometryPass.Apply();
+	this->deviceContext->RSSetViewports(1, &this->viewPort);
+
+	ID3D11Buffer* buff[] =
+	{
+		this->sceneMatrixBuffer,
+	};
+	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
 }
 
 void PipelineManager::Present()
 {
+	this->deviceContext->RSSetViewports(1, &this->viewPort);
+
 	ID3D11RenderTargetView* rtv[] =
 	{
 		this->renderTarget,
@@ -67,23 +89,51 @@ void PipelineManager::Present()
 		0,
 		0,
 	};
-
 	this->deviceContext->OMSetRenderTargets(4, rtv, 0);
-	ID3D11SamplerState *smp[] = { ShaderStates::SamplerState::GetLinear() };
-	this->deviceContext->PSSetSamplers(0, 1, smp);
 	
 	ID3D11ShaderResourceView* srv[] =
 	{
+		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL),
 		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR),
 		0,
 		0,
-		0,
 	};
-	this->deviceContext->PSSetShaderResources(0, 4, srv);
+	this->deviceContext->PSSetShaderResources(0, Pipeline::GBuffer_RTV_Layout_COUNT, srv);
 
 	this->finalPass.Apply();
 
 	this->d3dSwapchain->Present(0, 0);
+
+	ID3D11ShaderResourceView* srvClear[4] = { 0 };
+	this->deviceContext->PSSetShaderResources(0, 4, srv);
+}
+void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose)
+{
+	D3D11_MAPPED_SUBRESOURCE res;
+	if (SUCCEEDED(this->deviceContext->Map(this->objectMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
+	{
+		ObjectMatrixData* data = (ObjectMatrixData*)res.pData;
+		data->world = world;
+		data->worldInversTranspose = worldInversTranspose;
+		this->deviceContext->Unmap(this->objectMatrixBuffer, 0);
+	}
+
+	ID3D11Buffer* buff[] =
+	{
+		this->objectMatrixBuffer,
+	};
+	this->deviceContext->VSSetConstantBuffers(0, 1, buff);
+}
+void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
+{
+	D3D11_MAPPED_SUBRESOURCE res;
+	if (SUCCEEDED(this->deviceContext->Map(this->sceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
+	{
+		SceneMatrixData* data = (SceneMatrixData*)res.pData;
+		data->projection = projection;
+		data->view = view;
+		this->deviceContext->Unmap(this->sceneMatrixBuffer, 0);
+	}
 }
 
 PipelineManager::PipelineManager()
@@ -191,4 +241,22 @@ void PipelineManager::CreateViewport(int width, int height)
 	this->viewPort.MinDepth = 0.0f;
 	this->viewPort.MaxDepth = 1.0f;
 }
+bool PipelineManager::CreateConstantBuffers()
+{
+	D3D11_BUFFER_DESC obj;
+	obj.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	obj.ByteWidth = sizeof(ObjectMatrixData);
+	obj.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	obj.MiscFlags = 0;
+	obj.StructureByteStride = sizeof(ObjectMatrixData);
+	obj.Usage = D3D11_USAGE_DYNAMIC;
+	if (FAILED(this->device->CreateBuffer(&obj, 0, &this->objectMatrixBuffer)))
+		return false;
 
+	obj.ByteWidth = sizeof(SceneMatrixData);
+	obj.StructureByteStride = sizeof(SceneMatrixData);
+	if (FAILED(this->device->CreateBuffer(&obj, 0, &this->sceneMatrixBuffer)))
+		return false;
+
+	return true;
+}

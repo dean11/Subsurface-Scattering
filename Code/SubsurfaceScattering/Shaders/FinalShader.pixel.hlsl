@@ -11,5 +11,6 @@ float4 main(vOutFSQ inData) : SV_TARGET
 	//float4 lighting = gMRTLight.Sample(gLinearSampler, pin.uv);
 	//float3 diffuse = lighting.xyz * color;
 
+	//return float4(1.0, 0.1, 0.5, 1.0f);
 	return float4(color, 1.0f);
 }

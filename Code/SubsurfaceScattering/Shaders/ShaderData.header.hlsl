@@ -22,9 +22,21 @@ struct pixIn
 	float2 uv			: TEXCOORD0;
 };
 
-struct pixOut
+struct geomPixOut
 {
 	float4 normal		: SV_TARGET0;	//xyz = normal, w = ?
 	float4 diff			: SV_TARGET1;	//xyz = diffuse, w = ?
-	float4 tranclucent	: SV_TARGET2;	//xyz = translucent, w = ?
+};
+
+
+cbuffer perObject	:register(b0)
+{
+	float4x4 world;
+	float4x4 worlInvTrans;
+};
+
+cbuffer cMatrixBuffer :register(b1)
+{
+	float4x4 view;
+	float4x4 projection;
 };

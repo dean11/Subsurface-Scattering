@@ -36,10 +36,29 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 	if (FAILED(hr = device->CreateBuffer(&desc, &data, &this->mesh.vertexBuffer)))
 		return false;
 
+	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
+
 	return true;
 }
 Model::Mesh& Model::GetMesh()
 {
 	return this->mesh;
 }
+DirectX::XMFLOAT4X4 Model::GetWorld()
+{
+	return this->world;
+}
+DirectX::XMFLOAT4X4 Model::GetWorld() const
+{
+	return this->world;
+}
+DirectX::XMFLOAT4X4 Model::GetWorldInversTranspose()
+{
+	return this->world;
+}
+DirectX::XMFLOAT4X4 Model::GetWorldInversTranspose() const
+{
+	return this->world;
+}
+
 

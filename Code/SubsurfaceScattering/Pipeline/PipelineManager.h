@@ -26,18 +26,25 @@ namespace Pipeline
 
 		void Present();
 
+		void SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose);
+		void SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection);
+
 	private:
 		PipelineManager();
 		virtual~PipelineManager();
 		bool PipelineManager::CreateSwapChain(int width, int height);
 		bool PipelineManager::CreateRTV();
 		void CreateViewport(int width, int height);
+		bool CreateConstantBuffers();
 
 		D3D11_VIEWPORT viewPort;
 		ID3D11Device* device;
 		ID3D11DeviceContext* deviceContext;
 		IDXGISwapChain* d3dSwapchain;
 		ID3D11RenderTargetView* renderTarget;
+
+		ID3D11Buffer *objectMatrixBuffer;
+		ID3D11Buffer *sceneMatrixBuffer;
 
 		FinalPass finalPass;
 		GeometryPass geometryPass;

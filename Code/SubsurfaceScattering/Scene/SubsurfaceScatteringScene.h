@@ -2,11 +2,18 @@
 #define BATCHELOR_SUBSURFACESCATTERINGSCENE_H
 
 #include "Scene.h"
+#include "..\Utilities\Camera.h"
 
 class SubsurfaceScatteringScene :public Scene
 {
 public:
-	SubsurfaceScatteringScene();
+	struct SSSInitDesc
+	{
+		int width;
+		int height;
+	};
+public:
+	SubsurfaceScatteringScene(SSSInitDesc& desc);
 	virtual~SubsurfaceScatteringScene();
 
 	void Frame(float delta) override;
@@ -15,7 +22,9 @@ public:
 private:
 	ID3D11Device *device;
 	ID3D11DeviceContext *deviceContext;
+	Camera mainCam;
 
+	SSSInitDesc desc;
 };
 
 #endif // !BATCHELOR_SUBSURFACESCATTERINGSCENE_H

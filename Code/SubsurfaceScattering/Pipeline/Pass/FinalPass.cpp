@@ -1,6 +1,7 @@
 #include "FinalPass.h"
 #include "..\RenderState\DepthStencilState.h"
 #include "..\RenderState\RasterizerState.h"
+#include "..\RenderState\SamplerState.h"
 #include "..\InputLayoutState.h"
 #include "..\Vertex.h"
 
@@ -27,22 +28,28 @@ void FinalPass::Apply()
 {
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
-	//this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetDisabledDepth(this->device), 0);
-	//this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs(this->device));
-
-	this->vertex.Apply();
-	this->pixel.Apply();
+	this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetDisabledDepth(), 0);
+	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
+	ID3D11SamplerState *smp[] = { ShaderStates::SamplerState::GetLinear() };
+	this->deviceContext->PSSetSamplers(0, 1, smp);
 
 	UINT elemSize = sizeof(Vertex);
 	UINT off = 0;
 	this->deviceContext->IASetIndexBuffer(this->quadIBuffer, DXGI_FORMAT_R32_UINT, 0);
 	this->deviceContext->IASetVertexBuffers(0, 1, &this->quadVBuffer, &elemSize, &off);
 
+	this->vertex.Apply();
+	this->pixel.Apply();
+
 	this->deviceContext->DrawIndexed(6, 0, 0);
 }
 bool FinalPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile)
 {
 	HRESULT hr = S_OK;
+
+	ShaderStates::DepthStencilState::GetDisabledDepth(device);
+	ShaderStates::RasterizerState::GetNoCullNoMs(device);
+	ShaderStates::SamplerState::GetLinear(device);
 
 	if (foreShaderCompile)
 	{

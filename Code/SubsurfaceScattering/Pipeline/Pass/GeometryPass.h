@@ -14,7 +14,6 @@ namespace Pipeline
 	{
 		GBuffer_RTV_Layout_NORMAL		= 0,
 		GBuffer_RTV_Layout_COLOR		= 1,
-		GBuffer_RTV_Layout_POSITION		= 2,
 		GBuffer_RTV_Layout_COUNT
 	};
 

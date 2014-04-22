@@ -2,6 +2,7 @@
 #include "..\InputLayoutState.h"
 #include "..\RenderState\DepthStencilState.h"
 #include "..\RenderState\RasterizerState.h"
+#include "..\RenderState\SamplerState.h"
 
 
 ID3D11Device *ShaderPass::device = 0;
@@ -60,14 +61,14 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 
 	ID3D11Texture2D* tex1;
 	ID3D11Texture2D* tex2;
-	ID3D11Texture2D* tex3;
 
 	D3D11_TEXTURE2D_DESC texDesc;
 	texDesc.Width = (UINT)width;
 	texDesc.Height = (UINT)height;
 	texDesc.MipLevels = 1;
 	texDesc.ArraySize = 1;
-	texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	//texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	texDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -79,8 +80,6 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 		return false;
 	if (FAILED(device->CreateTexture2D(&texDesc, 0, &tex2)))
 		return false;
-	if (FAILED(device->CreateTexture2D(&texDesc, 0, &tex3)))
-		return false;
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
 	{
@@ -91,9 +90,6 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 			return false;
 
 		if( FAILED( device->CreateRenderTargetView(tex2, &rtvDesc, &this->GBufferRTV[GBuffer_RTV_Layout_NORMAL])))
-			return false;
-
-		if( FAILED( device->CreateRenderTargetView(tex3, &rtvDesc, &this->GBufferRTV[GBuffer_RTV_Layout_POSITION])))
 			return false;
 	}
 
@@ -109,17 +105,17 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 
 		if( FAILED (device->CreateShaderResourceView(tex2, &srvDesc, &this->GBufferSRV[GBuffer_RTV_Layout_NORMAL]) ) )
 			return false;
-
-		if( FAILED (device->CreateShaderResourceView(tex3, &srvDesc, &this->GBufferSRV[GBuffer_RTV_Layout_POSITION]) ) )
-			return false;
 	}
 
 	tex1->Release();
 	tex2->Release();
-	tex3->Release();
 
 	if (!this->CreateDepthStencil(width, height))
 		return false;
+
+	ShaderStates::DepthStencilState::GetDisabledDepth(device);
+	ShaderStates::RasterizerState::GetNoCullNoMs(device);
+	ShaderStates::SamplerState::GetLinear(device);
 
 	return true;
 }
@@ -137,8 +133,11 @@ void GeometryPass::Apply()
 
 	this->deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
-	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, &this->GBufferRTV[0], this->depthStencilView);
-	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
+	this->deviceContext->OMSetRenderTargets(2, this->GBufferRTV, this->depthStencilView);
+
+	this->deviceContext->RSSetState(0);
+	this->deviceContext->OMSetDepthStencilState(0, 0);
+	this->deviceContext->RSSetState(0);
 
 	this->vertex.Apply();
 	this->pixel.Apply();

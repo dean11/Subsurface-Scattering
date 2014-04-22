@@ -63,6 +63,7 @@
     <ClInclude Include="Pipeline\RenderState\SamplerState.h" />
     <ClInclude Include="Pipeline\Vertex.h" />
     <ClInclude Include="Scene\SubsurfaceScatteringScene.h" />
+    <ClInclude Include="Utilities\Camera.h" />
     <ClInclude Include="Utilities\clock.h" />
     <ClInclude Include="Scene\Model.h" />
     <ClInclude Include="Pipeline\Pass\GeometryPass.h" />
@@ -82,6 +83,7 @@
     <ClCompile Include="Pipeline\RenderState\RasterizerState.cpp" />
     <ClCompile Include="Pipeline\RenderState\SamplerState.cpp" />
     <ClCompile Include="Scene\SubsurfaceScatteringScene.cpp" />
+    <ClCompile Include="Utilities\Camera.cpp" />
     <ClCompile Include="Utilities\clock.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Scene\Model.cpp" />

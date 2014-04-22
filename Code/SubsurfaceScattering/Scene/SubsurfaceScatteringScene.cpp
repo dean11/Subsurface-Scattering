@@ -1,8 +1,8 @@
 #include "SubsurfaceScatteringScene.h"
 
-SubsurfaceScatteringScene::SubsurfaceScatteringScene()
+SubsurfaceScatteringScene::SubsurfaceScatteringScene(SSSInitDesc& desc)
 {
-
+	this->desc = desc;
 }
 SubsurfaceScatteringScene::~SubsurfaceScatteringScene()
 {
@@ -14,29 +14,14 @@ void SubsurfaceScatteringScene::Frame(float delta)
 {
 	Pipeline::PipelineManager::Instance().ApplyGeometryPass(true);
 	{
-		ID3D11Buffer* vBuff[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT - 1] = { 0 };
-		UINT vStride[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT - 1] = { 0 };
+		Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam.GetViewMatrix(), this->mainCam.GetProjectionMatrix());
 
-		int counter = 0;
-		int tot = 0;
 		for (size_t i = 0; i < this->models.size(); i++)
 		{
-			vBuff[counter] = this->models[i].GetMesh().vertexBuffer;
-			vStride[counter] = this->models[i].GetMesh().vertexStride;
-
-			counter++;
-			tot += this->models[i].GetMesh().vertexCount;
 			UINT off = 0;
-			if (counter == D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT - 1 || i + 1 >= this->models.size())
-			{
-				this->deviceContext->IASetVertexBuffers(0, counter, vBuff, vStride, &off);
-				this->deviceContext->Draw(tot, 0);
-	
-				counter = 0;
-				tot = 0;
-			}
-			
-			
+			this->deviceContext->IASetVertexBuffers(0, 1, &this->models[i].GetMesh().vertexBuffer, &this->models[i].GetMesh().vertexStride, &off);
+			Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->models[i].GetWorld(), this->models[i].GetWorldInversTranspose());
+			this->deviceContext->Draw(this->models[i].GetMesh().vertexCount, 0);
 		}
 	}
 	
@@ -60,6 +45,10 @@ bool SubsurfaceScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceConte
 	if (!sphere.CreateModel("Models\\sphere.obj", device))
 		return false;
 	this->models.push_back(sphere);
+
+	this->mainCam.SetPosition(0.0f, 0.0f, -10.0f);
+	this->mainCam.SetProjectionMatrix(((20.0f * DirectX::XM_PI) / 180.0f), (float)(this->desc.width / this->desc.height), 0.1f, 1000.0f);
+	this->mainCam.Render();
 
 	return true;
 }
