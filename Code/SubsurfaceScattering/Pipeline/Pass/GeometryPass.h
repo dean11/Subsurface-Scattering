@@ -6,6 +6,7 @@
 
 #include "..\Shader.h"
 #include "ShaderPass.h"
+#include "..\RenderSurface.h"
 
 namespace Pipeline
 {
@@ -30,15 +31,20 @@ namespace Pipeline
 		ID3D11RenderTargetView* GetRenderTarget(GBuffer_RTV_Layout rtv);
 
 	private:
-		bool CreateDepthStencil(int width, int height);
+		//bool CreateDepthStencil(int width, int height);
+		bool CreateDepthStencilAndRenderTargets(int width, int height);
 
 		Shader vertex;
 		Shader pixel;
-		ID3D11RenderTargetView* GBufferRTV[GBuffer_RTV_Layout_COUNT];
-		ID3D11ShaderResourceView* GBufferSRV[GBuffer_RTV_Layout_COUNT];
 
-		ID3D11DepthStencilView* depthStencilView;
-		ID3D11ShaderResourceView* depthStencilUAV;
+		//ID3D11RenderTargetView* GBufferRTV[GBuffer_RTV_Layout_COUNT];
+		//ID3D11ShaderResourceView* GBufferSRV[GBuffer_RTV_Layout_COUNT];
+
+		//ID3D11DepthStencilView* depthStencilView;
+		//ID3D11ShaderResourceView* depthStencilUAV;
+
+		RenderSurface GBufferRTVs[GBuffer_RTV_Layout_COUNT];
+		RenderSurface depthStencil;
 	};
 
 }
