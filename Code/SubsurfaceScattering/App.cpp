@@ -219,8 +219,8 @@ LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 			int yPos = GET_Y_LPARAM(l);
 			if (LBUTTONDOWN)
 			{
-				 app->camera.RelativeYaw(((float)(xPos - oldX)) * 0.5f);
-				 app->camera.RelativePitch(((float)(yPos - oldY))* 0.5f);
+				 app->camera.RelativeYaw(((float)(xPos - oldX)) * 0.1f);
+				 app->camera.RelativePitch(((float)(yPos - oldY))* 0.1f);
 			}
 			oldX = xPos;
 			oldY = yPos;
