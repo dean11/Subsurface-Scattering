@@ -3,7 +3,7 @@
 
 Model::Model()
 {
-
+	this->mesh.diffuse = NULL;
 }
 Model::~Model()
 {
@@ -36,8 +36,12 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 	if (FAILED(hr = device->CreateBuffer(&desc, &data, &this->mesh.vertexBuffer)))
 		return false;
 
-	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
+	std::wstring mPath = L"Models\\" + Util::StringToWstring(m[0].map_Kd, std::wstring());
+	if (FAILED(DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
+		return false;
 
+	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
+	
 	return true;
 }
 Model::Mesh& Model::GetMesh()

@@ -2,6 +2,12 @@
 #define BACHELOR_APP_H
 
 #pragma comment(lib, "d3d11.lib")
+#if defined(_DEBUG) || defined(DEBUG)
+#pragma comment(lib, "DirectXTK_debug.lib")
+#else
+#pragma comment(lib, "DirectXTK_release.lib")
+#endif
+
 #include <d3d11.h>
 #include <DirectXMath.h>
 

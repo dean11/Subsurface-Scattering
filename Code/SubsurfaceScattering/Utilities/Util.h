@@ -5,7 +5,7 @@
 
 namespace Util
 {
-	::std::wstring & StringToWstring(const ::std::string &str, ::std::wstring &wstr)
+	static ::std::wstring & StringToWstring(const ::std::string &str, ::std::wstring &wstr)
 	{
 		const char *orig = str.c_str();
 
@@ -19,7 +19,7 @@ namespace Util
 		//wcscat_s(wcstring, L" (wchar_t *)");
 		return wstr;
 	}
-	::std::string & WStringToString(const ::std::wstring &wstr, ::std::string &str)
+	static ::std::string & WStringToString(const ::std::wstring &wstr, ::std::string &str)
 	{
 		const wchar_t* orig = wstr.c_str();
 		// Convert to a char*

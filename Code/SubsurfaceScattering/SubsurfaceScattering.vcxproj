@@ -44,6 +44,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderData.header.hlsl" />
+    <FxCompile Include="Shaders\Skymap.pixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shaders\sss.compute.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -63,6 +69,8 @@
     <ClInclude Include="Pipeline\RenderState\SamplerState.h" />
     <ClInclude Include="Pipeline\RenderSurface.h" />
     <ClInclude Include="Pipeline\Vertex.h" />
+    <ClInclude Include="Scene\LightScatteringScene.h" />
+    <ClInclude Include="Scene\SphereMap.h" />
     <ClInclude Include="Scene\SubsurfaceScatteringScene.h" />
     <ClInclude Include="Utilities\Camera.h" />
     <ClInclude Include="Utilities\clock.h" />
@@ -84,6 +92,8 @@
     <ClCompile Include="Pipeline\RenderState\RasterizerState.cpp" />
     <ClCompile Include="Pipeline\RenderState\SamplerState.cpp" />
     <ClCompile Include="Pipeline\RenderSurface.cpp" />
+    <ClCompile Include="Scene\LightScatteringScene.cpp" />
+    <ClCompile Include="Scene\SphereMap.cpp" />
     <ClCompile Include="Scene\SubsurfaceScatteringScene.cpp" />
     <ClCompile Include="Utilities\Camera.cpp" />
     <ClCompile Include="Utilities\clock.cpp" />
@@ -145,29 +155,29 @@
     <OutDir>$(SolutionDir)..\Bin\</OutDir>
     <IntDir>$(SolutionDir)..\OBJ\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformShortName)_$(Configuration)</TargetName>
-    <IncludePath>C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win32;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\External\include\;C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win32;$(LibraryPath);$(SolutionDir)..\External\lib\</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)..\Bin\</OutDir>
     <IntDir>$(SolutionDir)..\OBJ\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformShortName)_$(Configuration)</TargetName>
-    <IncludePath>C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win32;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\External\include\;C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win32;$(LibraryPath);$(SolutionDir)..\External\lib\</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\Bin\</OutDir>
     <IntDir>$(SolutionDir)..\OBJ\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformShortName)_$(Configuration)</TargetName>
-    <IncludePath>C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\External\include\;C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win64;$(LibraryPath);$(SolutionDir)..\External\lib\</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\Bin\</OutDir>
     <IntDir>$(SolutionDir)..\OBJ\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_$(PlatformShortName)_$(Configuration)</TargetName>
-    <IncludePath>C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\External\include\;C:\Program Files %28x86%29\Visual Leak Detector\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\Visual Leak Detector\lib\Win64;$(LibraryPath);$(SolutionDir)..\External\lib\</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

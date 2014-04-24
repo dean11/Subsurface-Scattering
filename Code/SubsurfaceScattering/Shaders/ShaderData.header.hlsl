@@ -40,3 +40,8 @@ cbuffer cMatrixBuffer :register(b1)
 	float4x4 view;
 	float4x4 projection;
 };
+
+Texture2D Diffuse : register(t0);
+TextureCube CubeMap : register(t2);
+
+SamplerState LinearSampler : register(s0);
