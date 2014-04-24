@@ -21,7 +21,7 @@ private:
 	ID3D11DeviceContext* dc;
 	Pipeline::Shader pix;
 	UINT off = 0;
-
+	DirectX::XMFLOAT4X4 world4x4;
 };
 
 #endif

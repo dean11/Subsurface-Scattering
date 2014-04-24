@@ -74,13 +74,13 @@ void App::Run()
 		this->camera.Render();
 		
 		if (this->moveKeys.W)
-			app->camera.RelativeForward(1.0f);
+			app->camera.RelativeForward(0.5f);
 		if (this->moveKeys.S)
-			app->camera.RelativeForward(-1.0f);
+			app->camera.RelativeForward(-0.5f);
 		if (this->moveKeys.A)
-			app->camera.RelativeRight(-1.0f);
+			app->camera.RelativeRight(-0.5f);
 		if (this->moveKeys.D)
-			app->camera.RelativeRight(1.0f);
+			app->camera.RelativeRight(0.5f);
 
 		currentScene->Frame(dt);
 	}

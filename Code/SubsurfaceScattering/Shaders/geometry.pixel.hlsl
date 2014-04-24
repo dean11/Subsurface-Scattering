@@ -10,5 +10,7 @@ geomPixOut main(pixIn inData)
 	data.normal = float4(inData.normal, 1.0f);
 	data.diff = Diffuse.Sample(LinearSampler, inData.uv);
 
+	BasicDirectionalLight(data.diff.xyz, inData.normal, data.diff);
+
 	return data;
 }

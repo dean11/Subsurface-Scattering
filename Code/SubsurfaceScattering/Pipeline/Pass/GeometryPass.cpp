@@ -140,9 +140,8 @@ void GeometryPass::Apply()
 	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
 	this->deviceContext->OMSetRenderTargets(2, this->GBufferRTV, this->depthStencilView);
 
-	this->deviceContext->RSSetState(0);
+	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
 	this->deviceContext->OMSetDepthStencilState(0, 0);
-	this->deviceContext->RSSetState(0);
 
 	this->vertex.Apply();
 	this->pixel.Apply();

@@ -45,10 +45,10 @@ bool LightScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceContext* d
 		return false;
 	this->models.push_back(bth);
 
-	Model sphere;
+	/*Model sphere;
 	if (!sphere.CreateModel("Models\\sphere.obj", device))
 		return false;
-	this->models.push_back(sphere);
+	this->models.push_back(sphere);*/
 
 	this->sphereMap.CreateSkyBox(device, dc);
 
