@@ -3,6 +3,7 @@
 #include "RenderState\DepthStencilState.h"
 #include "RenderState\RasterizerState.h"
 #include "RenderState\SamplerState.h"
+#include "InputLayoutState.h"
 #include <d3dcompiler.h>
 #include "..\Utilities\WindowShell.h"
 
@@ -34,14 +35,18 @@ void PipelineManager::Release()
 	ShaderStates::DepthStencilState::Release();
 	ShaderStates::RasterizerState::Release();
 	ShaderStates::SamplerState::Release();
+	InputLayoutManager::Release();
 	
 	this->geometryPass.Release();
-	this->d3dSwapchain->Release();
-	this->renderTarget->Release();
+	this->finalPass.Release();
+
+	if (this->d3dSwapchain)			this->d3dSwapchain->Release();			this->d3dSwapchain = 0;
+	if (this->renderTarget)			this->renderTarget->Release();			this->renderTarget = 0;
+	if (this->objectMatrixBuffer)	this->objectMatrixBuffer->Release();	this->objectMatrixBuffer = 0;
+	if (this->sceneMatrixBuffer)	this->sceneMatrixBuffer->Release();		this->sceneMatrixBuffer = 0;
 
 	delete pipelineManagerInstance;
 	pipelineManagerInstance = 0;
-
 }
 bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height)
 {
@@ -50,10 +55,10 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 
 	if (!this->CreateSwapChain(width, height))			return false;
 	if (!this->CreateRTV())					return false;
-
+	
 	this->geometryPass.Initiate(device, deviceContext, width, height, false);
 	this->finalPass.Initiate(device, deviceContext, width, height, false);
-
+	
 	CreateViewport(width, height);
 	this->CreateConstantBuffers();
 

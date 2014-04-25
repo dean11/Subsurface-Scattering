@@ -6,7 +6,10 @@ SubsurfaceScatteringScene::SubsurfaceScatteringScene(SSSInitDesc& desc)
 }
 SubsurfaceScatteringScene::~SubsurfaceScatteringScene()
 {
-
+	for (size_t i = 0; i < this->models.size(); i++)
+	{
+		this->models[i].Release();
+	}
 }
 
 

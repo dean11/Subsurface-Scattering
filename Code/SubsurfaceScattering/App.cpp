@@ -77,7 +77,7 @@ void App::Run()
 		if (this->moveKeys.D)
 			app->camera.RelativeRight(1.0f);
 
-		currentScene->Frame(dt);
+		if (currentScene) currentScene->Frame(dt);
 	}
 }
 void App::Release()
