@@ -3,6 +3,8 @@
 
 #include <DirectXMath.h>
 #include <d3d11_2.h>
+#include <D3DTK\DDSTextureLoader.h>
+#include "..\Utilities\Util.h"
 
 class Model
 {
@@ -12,6 +14,7 @@ public:
 		unsigned int vertexCount;
 		unsigned int vertexStride;
 		ID3D11Buffer* vertexBuffer;
+		ID3D11ShaderResourceView* diffuse;
 	};
 	
 public:

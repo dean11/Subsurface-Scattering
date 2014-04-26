@@ -150,8 +150,6 @@ PipelineManager::~PipelineManager()
 
 }
 
-
-
 bool PipelineManager::CreateSwapChain(int width, int height)
 {
 	//generate static Swapchain Desc

@@ -5,13 +5,15 @@
 #include "Pipeline\PipelineManager.h"
 #include "Utilities\WindowShell.h"
 #include "Scene\SubsurfaceScatteringScene.h"
+#include "Scene\LightScatteringScene.h"
 #include <sys\stat.h>
 #include <d3d11_2.h>
 #include <windowsx.h>
 
-#define SUBSURFACESCATTERING
+//#define SUBSURFACESCATTERING
+#define LIGHTSCATTERING
 Scene *currentScene = 0;
-App * app = 0;
+App* app = 0;
 int oldX = 0;
 int oldY = 0;
 bool LBUTTONDOWN = false;
@@ -34,7 +36,6 @@ bool App::Initiate()
 	if(!this->Init3D_DeviceAndContext())	return false;
 	if(!this->Init3D_Pipeline())			return false;
 
-
 	this->camera.SetPosition(0.0f, 0.0f, -10.0f);
 	this->camera.SetProjectionMatrix(((DirectX::XM_PI / 180.0f) * 45.0f), ((float)this->winDimension.x / (float)this->winDimension.x), 0.1f, 100000.0f);
 	this->camera.Render();
@@ -43,14 +44,18 @@ bool App::Initiate()
 	//Initiate your scene..
 #ifdef SUBSURFACESCATTERING
 	SubsurfaceScatteringScene::SSSInitDesc desc;
-	desc.height = 600;
-	desc.width = 800;
+	desc.height = this->winDimension.y;
+	desc.width = this->winDimension.x;
 	currentScene = new SubsurfaceScatteringScene(desc);
 	currentScene->Initiate(this->d3dDevice, this->d3dDeviceContext);
 	((SubsurfaceScatteringScene*)currentScene)->SetCamera(&this->camera);
-#elif defined VOLUMELIGHT
-	currentScene = new VolumetricLightingScene();
-	currentScene->Initiate();
+#elif defined LIGHTSCATTERING
+	LightScatteringScene::LSSInitDesc desc;
+	desc.height = this->winDimension.y;
+	desc.width = this->winDimension.x;
+	currentScene = new LightScatteringScene(desc);
+	currentScene->Initiate(this->d3dDevice, this->d3dDeviceContext);
+	((LightScatteringScene*)currentScene)->SetMainCamera(&this->camera);
 #endif
 
 	return (this->isInitiated = true);
@@ -60,7 +65,7 @@ void App::Run()
 	this->isRunning = true;
 	Utility::WinTimer clock;
 	clock.reset();
-
+	
 	while (WindowShell::Frame() && this->isRunning)
 	{
 		float dt = (float)clock.getElapsedSeconds();
@@ -69,13 +74,13 @@ void App::Run()
 		this->camera.Render();
 		
 		if (this->moveKeys.W)
-			app->camera.RelativeForward(1.0f);
+			app->camera.RelativeForward(0.5f);
 		if (this->moveKeys.S)
-			app->camera.RelativeForward(-1.0f);
+			app->camera.RelativeForward(-0.5f);
 		if (this->moveKeys.A)
-			app->camera.RelativeRight(-1.0f);
+			app->camera.RelativeRight(-0.5f);
 		if (this->moveKeys.D)
-			app->camera.RelativeRight(1.0f);
+			app->camera.RelativeRight(0.5f);
 
 		if (currentScene) currentScene->Frame(dt);
 	}
@@ -97,7 +102,7 @@ void App::Release()
 bool App::InitWindow()
 {
 	WindowShell::WINDOW_INIT_DESC desc;
-	desc.windowName = L"Subsurface Scattering in screen-space";
+	desc.windowName = L"I draw";
 	desc.windowSize.x = this->winDimension.x;
 	desc.windowSize.y = this->winDimension.y;
 	desc.windowProcCallback = App::WindowCallback;

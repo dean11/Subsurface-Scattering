@@ -86,9 +86,8 @@ void GeometryPass::Apply()
 	};
 	this->deviceContext->OMSetRenderTargets(2, rtv, this->depthStencil);
 
-	this->deviceContext->RSSetState(0);
+	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
 	this->deviceContext->OMSetDepthStencilState(0, 0);
-	this->deviceContext->RSSetState(0);
 
 	this->vertex.Apply();
 	this->pixel.Apply();

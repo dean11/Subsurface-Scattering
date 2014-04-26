@@ -1,7 +1,7 @@
 #include "ShaderData.header.hlsl"
 
-Texture2D gSRVColor				:register(t0);
-Texture2D gSRVLight				:register(t1);
+Texture2D gSRVNormal			:register(t0);
+Texture2D gSRVColor				:register(t1);
 
 SamplerState gLinearSampler		:register(s0);
 

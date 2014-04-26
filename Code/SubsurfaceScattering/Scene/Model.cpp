@@ -3,7 +3,7 @@
 
 Model::Model()
 {
-
+	memset(&this->mesh, 0, sizeof(Model::Mesh));
 }
 Model::~Model()
 {
@@ -18,7 +18,8 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 	ObjGeometryImporter importer;
 	std::vector<ObjGeometryImporter::Material> m;
 	std::vector<float> v;
-	importer.LoadGeometry(path, v, this->mesh.vertexCount, this->mesh.vertexStride, m);
+	if (!importer.LoadGeometry(path, v, this->mesh.vertexCount, this->mesh.vertexStride, m))
+		return false;
 	
 	D3D11_BUFFER_DESC desc;
 	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -36,8 +37,12 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 	if (FAILED(hr = device->CreateBuffer(&desc, &data, &this->mesh.vertexBuffer)))
 		return false;
 	
-	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
+	std::wstring mPath = L"Models\\" + Util::StringToWstring(m[0].map_Kd, std::wstring());
+	if (FAILED(DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
+		return false;
 
+	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
+	
 	return true;
 }
 Model::Mesh& Model::GetMesh()
