@@ -23,9 +23,14 @@ void SubsurfaceScatteringScene::Frame(float delta)
 		{
 			UINT off = 0;
 			this->deviceContext->IASetVertexBuffers(0, 1, &this->models[i].GetMesh().vertexBuffer, &this->models[i].GetMesh().vertexStride, &off);
+			this->deviceContext->PSSetShaderResources(0, 1, &this->models[i].GetMesh().diffuse);
 			Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->models[i].GetWorld(), this->models[i].GetWorldInversTranspose());
 			this->deviceContext->Draw(this->models[i].GetMesh().vertexCount, 0);
 		}
+
+		this->ground.Render(this->deviceContext);
+
+		this->sphereMap.Render(delta, this->mainCam->GetPosition());
 	}
 	
 	//Pipeline::PipelineManager::Instance().ApplyLightPass(true);
@@ -44,10 +49,9 @@ bool SubsurfaceScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceConte
 		return false;
 	this->models.push_back(bth);
 
-	Model sphere;
-	if (!sphere.CreateModel("Models\\sphere.obj", device))
-		return false;
-	this->models.push_back(sphere);
+	this->sphereMap.CreateSkyBox(device, dc);
+
+	this->ground.CreatePlane(device, DirectX::XMFLOAT3(0.0, -100.0f, 0.0f), L"Models\\gray.dds", 1000.0f, 1000.0f, 1.0f);
 
 	return true;
 }

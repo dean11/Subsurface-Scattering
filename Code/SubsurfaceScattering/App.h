@@ -49,6 +49,12 @@ class App
 			bool A;
 			bool S;
 			bool D;
+			bool CTRL;
+			bool SPACE;
+			bool UP;
+			bool DOWN;
+			bool LEFT;
+			bool RIGHT;
 		} moveKeys;
 };
 

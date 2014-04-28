@@ -39,7 +39,6 @@ bool SphereMap::CreateSkyBox(ID3D11Device* device, ID3D11DeviceContext* dc)
 
 void SphereMap::Render(float delta, DirectX::XMFLOAT3 camPos)
 {
-
 	this->dc->PSSetShaderResources(2, 1, &this->sphereMap.GetMesh().diffuse);
 	this->dc->IASetVertexBuffers(0, 1, &this->sphereMap.GetMesh().vertexBuffer, &this->sphereMap.GetMesh().vertexStride, &off);
 	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world4x4, this->world4x4);

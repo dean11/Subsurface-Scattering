@@ -10,8 +10,8 @@
 #include <d3d11_2.h>
 #include <windowsx.h>
 
-//#define SUBSURFACESCATTERING
-#define LIGHTSCATTERING
+#define SUBSURFACESCATTERING
+//#define LIGHTSCATTERING
 Scene *currentScene = 0;
 App* app = 0;
 int oldX = 0;
@@ -74,13 +74,28 @@ void App::Run()
 		this->camera.Render();
 		
 		if (this->moveKeys.W)
-			app->camera.RelativeForward(0.5f);
+			this->camera.RelativeForward(0.5f);
 		if (this->moveKeys.S)
-			app->camera.RelativeForward(-0.5f);
+			this->camera.RelativeForward(-0.5f);
 		if (this->moveKeys.A)
-			app->camera.RelativeRight(-0.5f);
+			this->camera.RelativeRight(-0.5f);
 		if (this->moveKeys.D)
-			app->camera.RelativeRight(0.5f);
+			this->camera.RelativeRight(0.5f);
+
+		if(this->moveKeys.LEFT)
+			app->camera.RelativeYaw(-0.5f);
+		if (app->moveKeys.RIGHT)
+			app->camera.RelativeYaw(0.5f);
+		if (app->moveKeys.UP)
+			app->camera.RelativePitch(-0.5f);
+		if (app->moveKeys.DOWN)
+			app->camera.RelativePitch(0.5f);
+		
+		if (app->moveKeys.CTRL)
+			app->camera.RelativeUp(-0.5f);
+		if (app->moveKeys.SPACE)
+			app->camera.RelativeUp(0.5f);
+			
 
 		if (currentScene) currentScene->Frame(dt);
 	}
@@ -122,18 +137,18 @@ bool App::Init3D_DeviceAndContext()
 	#endif
 
 	D3D_FEATURE_LEVEL featureLevelsToTry[] = 
-	{D3D_FEATURE_LEVEL_11_0,};
+	{ D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1 };
 	D3D_FEATURE_LEVEL initiatedFeatureLevel;
-
-	if( FAILED( ::D3D11CreateDevice(	NULL, // default adapter
-										driverType,
-										NULL, // no software device
-										createDeviceFlags,
-										featureLevelsToTry, 1,
-										D3D11_SDK_VERSION,
-										&this->d3dDevice,
-										&initiatedFeatureLevel,
-										&this->d3dDeviceContext ) ) )
+	HRESULT hr = S_OK;
+	if( FAILED( hr = ::D3D11CreateDevice(	NULL, // default adapter
+											driverType,
+											NULL, // no software device
+											createDeviceFlags,
+											featureLevelsToTry, 2,
+											D3D11_SDK_VERSION,
+											&this->d3dDevice,
+											&initiatedFeatureLevel,
+											&this->d3dDeviceContext ) ) )
 	{ // if failed
 		if( this->d3dDeviceContext ) 
 		{ 
@@ -189,6 +204,24 @@ LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 			case 0x44: //D
 				app->moveKeys.D = false;
 				break;
+			case VK_LEFT:
+				app->moveKeys.LEFT = false;
+				break;
+			case VK_RIGHT:
+				app->moveKeys.RIGHT = false;
+				break;
+			case VK_UP:
+				app->moveKeys.UP = false;
+				break;
+			case VK_DOWN:
+				app->moveKeys.DOWN = false;
+				break;
+			case VK_CONTROL:
+				app->moveKeys.CTRL = false;
+				break;
+			case VK_SPACE:
+				app->moveKeys.SPACE = false;
+				break;
 			}
 		} break;
 		case WM_KEYDOWN:
@@ -208,6 +241,28 @@ LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 					break;
 				case 0x44: //D
 					app->moveKeys.D = true;
+					break;
+				case VK_LEFT:
+					app->moveKeys.LEFT = true;
+					app->camera.RelativeYaw(-2.0f);
+					break;
+				case VK_RIGHT:
+					app->moveKeys.RIGHT = true;
+					app->camera.RelativeYaw(2.0f);
+					break;
+				case VK_UP:
+					app->moveKeys.UP = true;
+					app->camera.RelativePitch(-2.0f);
+					break;
+				case VK_DOWN:
+					app->moveKeys.DOWN = true;
+					app->camera.RelativePitch(2.0f);
+					break;
+				case VK_CONTROL:
+					app->moveKeys.CTRL = true;
+					break;
+				case VK_SPACE:
+					app->moveKeys.SPACE = true;
 					break;
 			}
 		break;

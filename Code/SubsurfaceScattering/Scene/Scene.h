@@ -4,6 +4,7 @@
 #include <d2d1.h>
 #include <vector>
 #include "Model.h"
+#include "SphereMap.h"
 #include "..\Pipeline\PipelineManager.h"
 
 class Scene
@@ -14,6 +15,7 @@ public:
 
 protected:
 	std::vector<Model> models;
+	SphereMap sphereMap;
 };
 
 #endif // !BACHELOR_SCENE_H

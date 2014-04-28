@@ -21,8 +21,8 @@ public:
 	Model();
 	virtual~Model();
 
-	void Release();
-	bool CreateModel(const char path[], ID3D11Device* device);
+	virtual void Release();
+	virtual bool CreateModel(const char path[], ID3D11Device* device);
 
 	Mesh& GetMesh();
 	DirectX::XMFLOAT4X4 GetWorld();
@@ -31,7 +31,7 @@ public:
 	DirectX::XMFLOAT4X4 GetWorldInversTranspose();			//NOT IMPLEMENTED
 	DirectX::XMFLOAT4X4 GetWorldInversTranspose() const;	//NOT IMPLEMENTED
 
-private:
+protected:
 	Mesh mesh;
 	DirectX::XMFLOAT4X4 world;
 };

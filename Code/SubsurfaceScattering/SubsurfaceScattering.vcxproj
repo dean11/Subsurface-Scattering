@@ -70,6 +70,7 @@
     <ClInclude Include="Pipeline\RenderSurface.h" />
     <ClInclude Include="Pipeline\Vertex.h" />
     <ClInclude Include="Scene\LightScatteringScene.h" />
+    <ClInclude Include="Scene\Plane.h" />
     <ClInclude Include="Scene\SphereMap.h" />
     <ClInclude Include="Scene\SubsurfaceScatteringScene.h" />
     <ClInclude Include="Utilities\Camera.h" />
@@ -93,6 +94,7 @@
     <ClCompile Include="Pipeline\RenderState\SamplerState.cpp" />
     <ClCompile Include="Pipeline\RenderSurface.cpp" />
     <ClCompile Include="Scene\LightScatteringScene.cpp" />
+    <ClCompile Include="Scene\Plane.cpp" />
     <ClCompile Include="Scene\SphereMap.cpp" />
     <ClCompile Include="Scene\SubsurfaceScatteringScene.cpp" />
     <ClCompile Include="Utilities\Camera.cpp" />

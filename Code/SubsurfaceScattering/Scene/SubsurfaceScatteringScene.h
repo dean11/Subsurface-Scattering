@@ -3,6 +3,8 @@
 
 #include "Scene.h"
 #include "..\Utilities\Camera.h"
+#include "SphereMap.h"
+#include "Plane.h"
 
 class SubsurfaceScatteringScene :public Scene
 {
@@ -23,7 +25,7 @@ private:
 	ID3D11Device *device;
 	ID3D11DeviceContext *deviceContext;
 	Camera *mainCam;
-
+	Plane ground;
 	SSSInitDesc desc;
 };
 

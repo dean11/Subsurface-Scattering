@@ -26,7 +26,7 @@ private:
 	ID3D11DeviceContext* dc;
 	Camera* mainCam, *shadowMap;
 	LSSInitDesc desc;
-	SphereMap sphereMap;
+	//SphereMap sphereMap; - Moved this to base class instead!
 };
 
 #endif
