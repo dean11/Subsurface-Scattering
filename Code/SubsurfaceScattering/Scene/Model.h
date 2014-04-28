@@ -31,6 +31,8 @@ public:
 	DirectX::XMFLOAT4X4 GetWorldInversTranspose();			//NOT IMPLEMENTED
 	DirectX::XMFLOAT4X4 GetWorldInversTranspose() const;	//NOT IMPLEMENTED
 
+	void SetWorld(DirectX::XMFLOAT4X4 world);
+	//void SetWorldInversTranspose(DirectX::XMFLOAT4X4 worldInvTrans); SÄTTA DENNA I SAMBAND MED NY WORLD?
 private:
 	Mesh mesh;
 	DirectX::XMFLOAT4X4 world;

@@ -39,6 +39,7 @@ void PipelineManager::Release()
 	
 	this->geometryPass.Release();
 	this->finalPass.Release();
+	this->lightPass.Release();
 
 	if (this->d3dSwapchain)			this->d3dSwapchain->Release();			this->d3dSwapchain = 0;
 	if (this->renderTarget)			this->renderTarget->Release();			this->renderTarget = 0;
@@ -57,6 +58,7 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	if (!this->CreateRTV())					return false;
 	
 	this->geometryPass.Initiate(device, deviceContext, width, height, false);
+	this->lightPass.Initiate(device, deviceContext, width, height, false);
 	this->finalPass.Initiate(device, deviceContext, width, height, false);
 	
 	CreateViewport(width, height);
@@ -81,6 +83,14 @@ void PipelineManager::ApplyGeometryPass(bool clearPrevious)
 		this->sceneMatrixBuffer,
 	};
 	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
+}
+
+void PipelineManager::ApplyLightPass(const LightData& data)
+{
+	this->lightPass.Apply();
+	this->lightPass.RenderPointLight(data.pointData, data.pointCount);
+	this->lightPass.RenderDirectionalLight(data.dirData, data.dirCount);
+	this->lightPass.RenderSpotLight(data.spotData, data.spotCount);
 }
 
 void PipelineManager::Present()

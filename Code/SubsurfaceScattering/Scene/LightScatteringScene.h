@@ -4,6 +4,7 @@
 #include "Scene.h"
 #include "..\Utilities\Camera.h"
 #include "SphereMap.h"
+//#include "PointLight.h"
 
 class LightScatteringScene : public Scene
 {
@@ -24,9 +25,11 @@ public:
 private:
 	ID3D11Device* device;
 	ID3D11DeviceContext* dc;
-	Camera* mainCam, *shadowMap;
+	Camera* mainCam;
 	LSSInitDesc desc;
 	SphereMap sphereMap;
+	BasicLightData::PointLight data;
+	//PointLight pointLight;
 };
 
 #endif

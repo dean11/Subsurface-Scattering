@@ -8,11 +8,22 @@
 #include "Shader.h"
 #include "Pass\GeometryPass.h"
 #include "Pass\FinalPass.h"
+#include "Pass\LightPass.h"
 
 namespace Pipeline
 {
 	class PipelineManager
 	{
+	public:
+		struct LightData
+		{
+			const BasicLightData::PointLight* pointData;
+			int pointCount;
+			const BasicLightData::Spotlight* spotData;
+			int spotCount;
+			const BasicLightData::Directional* dirData;
+			int dirCount;
+		};
 	public:
 		static PipelineManager& Instance();
 
@@ -21,7 +32,7 @@ namespace Pipeline
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height);
 
 		void ApplyGeometryPass(bool clearPrevious);
-		void ApplyLightPass(bool clearPrevious){}
+		void ApplyLightPass(const LightData& data);
 		void ApplySSSPass(bool clearPrevious){}
 
 		void Present();
@@ -48,6 +59,7 @@ namespace Pipeline
 
 		FinalPass finalPass;
 		GeometryPass geometryPass;
+		LightPass lightPass;
 	};
 
 }

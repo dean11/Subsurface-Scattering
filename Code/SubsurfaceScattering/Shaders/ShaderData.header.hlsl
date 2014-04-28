@@ -28,6 +28,12 @@ struct geomPixOut
 	float4 diff			: SV_TARGET1;	//xyz = diffuse, w = ?
 };
 
+struct PointLight
+{
+	float4 diffuse;
+	float4 positionRange;
+	float4 attenuation;
+};
 
 cbuffer perObject	:register(b0)
 {
@@ -41,8 +47,11 @@ cbuffer cMatrixBuffer :register(b1)
 	float4x4 projection;
 };
 
+
 Texture2D Diffuse : register(t0);
 TextureCube CubeMap : register(t2);
+
+StructuredBuffer<PointLight> pointLights : register(t3);
 
 SamplerState LinearSampler : register(s0);
 

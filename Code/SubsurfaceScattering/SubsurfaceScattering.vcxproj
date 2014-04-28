@@ -43,6 +43,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="Shaders\PointLightShader.compute.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderData.header.hlsl" />
     <FxCompile Include="Shaders\Skymap.pixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -60,6 +70,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Importing\ObjGeometryImporter.h" />
+    <ClInclude Include="Pipeline\Pass\LightPass.h" />
     <ClInclude Include="Pipeline\Pass\FinalPass.h" />
     <ClInclude Include="Pipeline\InputLayoutState.h" />
     <ClInclude Include="Pipeline\Pass\ShaderPass.h" />
@@ -69,6 +80,7 @@
     <ClInclude Include="Pipeline\RenderState\SamplerState.h" />
     <ClInclude Include="Pipeline\RenderSurface.h" />
     <ClInclude Include="Pipeline\Vertex.h" />
+    <ClInclude Include="Utilities\BasicLightData.h" />
     <ClInclude Include="Scene\LightScatteringScene.h" />
     <ClInclude Include="Scene\SphereMap.h" />
     <ClInclude Include="Scene\SubsurfaceScatteringScene.h" />
@@ -86,6 +98,7 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Importing\ObjGeometryImporter.cpp" />
     <ClCompile Include="Pipeline\InputLayoutState.cpp" />
+    <ClCompile Include="Pipeline\Pass\LightPass.cpp" />
     <ClCompile Include="Pipeline\Pass\FinalPass.cpp" />
     <ClCompile Include="Pipeline\RenderState\BlendState.cpp" />
     <ClCompile Include="Pipeline\RenderState\DepthStencilState.cpp" />
@@ -103,6 +116,9 @@
     <ClCompile Include="Pipeline\PipelineManager.cpp" />
     <ClCompile Include="Pipeline\Shader.cpp" />
     <ClCompile Include="Utilities\WindowShell.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\LightPass.header.hlsli" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{58160821-AE5A-4C43-BA7E-101414687B21}</ProjectGuid>
@@ -209,6 +225,7 @@
     </Link>
     <FxCompile>
       <ObjectFileOutput>$(SolutionDir)..\Bin\Shaders\%(Filename).cso</ObjectFileOutput>
+      <ShaderModel>5.0</ShaderModel>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -228,6 +245,7 @@
     </Link>
     <FxCompile>
       <ObjectFileOutput>$(SolutionDir)..\Bin\Shaders\%(Filename).cso</ObjectFileOutput>
+      <ShaderModel>5.0</ShaderModel>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -247,6 +265,7 @@
     </Link>
     <FxCompile>
       <ObjectFileOutput>$(SolutionDir)..\Bin\Shaders\%(Filename).cso</ObjectFileOutput>
+      <ShaderModel>5.0</ShaderModel>
     </FxCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -96,7 +96,9 @@ void GeometryPass::Apply()
 GeometryPass::GeometryPass()
 {}
 GeometryPass::~GeometryPass()
-{}
+{
+	Release();
+}
 
 bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 {
