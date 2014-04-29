@@ -15,7 +15,7 @@ LightScatteringScene::~LightScatteringScene()
 
 void LightScatteringScene::Frame(float delta)
 {
-	Pipeline::PipelineManager::Instance().ApplyGeometryPass(true);
+	Pipeline::PipelineManager::Instance().ApplyGeometryPass();
 	{
 		Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix());
 
@@ -35,6 +35,7 @@ void LightScatteringScene::Frame(float delta)
 	lData.pointData = &this->data;
 	lData.pointCount = 1;
 	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
+
 
 	Pipeline::PipelineManager::Instance().Present();
 }

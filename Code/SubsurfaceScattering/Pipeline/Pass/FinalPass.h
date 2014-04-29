@@ -2,16 +2,29 @@
 #define BATCHELOR_FINALPASS_H
 
 #include "..\Shader.h"
+#include "ShaderPass.h"
 
 namespace Pipeline
 {
-	class FinalPass
+	class FinalPass :public ShaderPass
 	{
+	public:
+		enum SrvMap
+		{
+			SrvMap_Diffuse = 0, //:register(0)
+			SrvMap_Normal = 1, //:register(1)
+			SrvMap_Light = 2, //:register(2)
+
+			SrvMap_COUNT
+		};
+
 	public:
 		FinalPass();
 		virtual~FinalPass();
 
-		void Release();
+		void Release() override;
+		void Clear() override;
+
 		void Apply();
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile);
 

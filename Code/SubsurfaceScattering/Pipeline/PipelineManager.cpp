@@ -66,14 +66,11 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 
 	return true;
 }
-void PipelineManager::ApplyGeometryPass(bool clearPrevious)
+
+void PipelineManager::ApplyGeometryPass()
 {
-	//Clear pipeline
-	if (clearPrevious)
-	{
-		static ID3D11ShaderResourceView* srv[Pipeline::GBuffer_RTV_Layout_COUNT] = { 0 };
-		this->deviceContext->PSSetShaderResources(0, Pipeline::GBuffer_RTV_Layout_COUNT, srv);
-	}
+	if (this->prevPass) this->prevPass->Clear();
+	
 
 	this->geometryPass.Apply();
 	this->deviceContext->RSSetViewports(1, &this->viewPort);
@@ -83,45 +80,46 @@ void PipelineManager::ApplyGeometryPass(bool clearPrevious)
 		this->sceneMatrixBuffer,
 	};
 	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
+	this->prevPass = &this->geometryPass;
 }
 
 void PipelineManager::ApplyLightPass(const LightData& data)
 {
+	if (this->prevPass) this->prevPass->Clear();
+
 	this->lightPass.Apply(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL));
 	this->lightPass.RenderPointLight(data.pointData, data.pointCount);
 	this->lightPass.RenderDirectionalLight(data.dirData, data.dirCount);
 	this->lightPass.RenderSpotLight(data.spotData, data.spotCount);
+
+	this->prevPass = &this->lightPass;
 }
 
 void PipelineManager::Present()
 {
+	if (this->prevPass) this->prevPass->Clear();
+
 	this->deviceContext->RSSetViewports(1, &this->viewPort);
 
-	ID3D11RenderTargetView* rtv[] =
-	{
-		this->renderTarget,
-		0,
-		0,
-		0,
-	};
-	this->deviceContext->OMSetRenderTargets(4, rtv, 0);
+	ID3D11RenderTargetView* rtv[] = { this->renderTarget };
+	this->deviceContext->OMSetRenderTargets(1, rtv, 0);
 	
 	ID3D11ShaderResourceView* srv[] =
 	{
 		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL),
 		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR),
-		0,
+		this->lightPass.GetLightMapSRV(),
 		0,
 	};
-	this->deviceContext->PSSetShaderResources(0, Pipeline::GBuffer_RTV_Layout_COUNT, srv);
 
+	this->deviceContext->PSSetShaderResources(0, 3, srv);
 	this->finalPass.Apply();
 
 	this->d3dSwapchain->Present(0, 0);
 
-	ID3D11ShaderResourceView* srvClear[4] = { 0 };
-	this->deviceContext->PSSetShaderResources(0, 4, srv);
+	this->prevPass = &this->finalPass;
 }
+
 void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose)
 {
 	D3D11_MAPPED_SUBRESOURCE res;
@@ -153,7 +151,7 @@ void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, con
 
 PipelineManager::PipelineManager()
 {
-	
+	this->prevPass = 0;
 }
 PipelineManager::~PipelineManager()
 {

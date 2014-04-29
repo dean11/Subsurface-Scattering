@@ -16,54 +16,42 @@ bool Plane::CreatePlane(ID3D11Device* device, DirectX::XMFLOAT3 position, const 
 {
 	float hw = width * 0.5f;
 	float hd = depth * 0.5f;
-	Vertex vert[6] =
+	VertexPNT vert[6] =
 	{
 		{ //[0]
 			DirectX::XMFLOAT3(-hw, +0.0f, hd),		//COORD
 			DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f),			//Normal
 			DirectX::XMFLOAT2(+0.0f, +0.5f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
 		},
 		{ //[1]
 			DirectX::XMFLOAT3(+hw, +0.0f, hd),		//COORD
 			DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f),			//Normal
 			DirectX::XMFLOAT2(+0.5f, +0.0f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
 		},
 		{ //[2]
 			DirectX::XMFLOAT3(-hw, 0.0f, -hd),		//COORD
 			DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f),			//Normal
 			DirectX::XMFLOAT2(+0.0f, +0.5f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
 		},
 		{ //[3]
 			DirectX::XMFLOAT3(+hw, 0.0f, +hd),		//COORD
 			DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f),			//Normal
 			DirectX::XMFLOAT2(+0.5f, +0.0f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
 		},
 		{ //[4]
 			DirectX::XMFLOAT3(+hw, 0.0f, -hd),		//COORD
 			DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f),			//Normal
 			DirectX::XMFLOAT2(+0.5f, +0.5f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
 		},
 		{ //[5]
 			DirectX::XMFLOAT3(-hw, 0.0f, -hd),		//COORD
 			DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f),			//Normal
 			DirectX::XMFLOAT2(+0.0f, +06.5f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
 		}
 	};
 
 	this->mesh.vertexCount = 6;
-	this->mesh.vertexStride = sizeof(Vertex);
+	this->mesh.vertexStride = sizeof(VertexPNT);
 	this->mesh.diffuse = 0;
 	this->mesh.vertexBuffer = 0;
 

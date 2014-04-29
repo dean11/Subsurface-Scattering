@@ -73,7 +73,7 @@ void GeometryPass::Apply()
 		this->deviceContext->ClearRenderTargetView(this->GBufferRTVs[i], c);
 
 	this->deviceContext->ClearDepthStencilView(this->depthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
+	
 	this->deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
 	ID3D11RenderTargetView* rtv[] =
@@ -83,6 +83,8 @@ void GeometryPass::Apply()
 	};
 	this->deviceContext->OMSetRenderTargets(2, rtv, this->depthStencil);
 
+	ID3D11SamplerState* smp[] = { ShaderStates::SamplerState::GetLinear() };
+	this->deviceContext->PSSetSamplers(0, 1, smp);
 	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
 	this->deviceContext->OMSetDepthStencilState(0, 0);
 
@@ -93,9 +95,7 @@ void GeometryPass::Apply()
 GeometryPass::GeometryPass()
 {}
 GeometryPass::~GeometryPass()
-{
-	Release();
-}
+{}
 
 bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 {
@@ -186,4 +186,8 @@ bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 	return true;
 }
 
-
+void GeometryPass::Clear()
+{
+	static ID3D11RenderTargetView* rtv[GBuffer_RTV_Layout_COUNT] = { 0 };
+	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, rtv, 0);
+}

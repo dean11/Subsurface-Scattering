@@ -6,6 +6,7 @@
 
 #include "..\Shader.h"
 #include "..\RenderSurface.h"
+#include "ShaderPass.h"
 
 namespace Pipeline
 {
@@ -17,13 +18,15 @@ namespace Pipeline
 		GBuffer_RTV_Layout_COUNT
 	};
 
-	class GeometryPass
+	class GeometryPass :public ShaderPass
 	{
 	public:
 		GeometryPass();
 		virtual~GeometryPass();
 
-		void Release();
+		void Release() override;
+		void Clear() override;
+
 		void Apply();
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile);
 		ID3D11ShaderResourceView* GetShaderResource(GBuffer_RTV_Layout srv);

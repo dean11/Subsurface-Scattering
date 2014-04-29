@@ -29,12 +29,15 @@ void LightPass::Apply(ID3D11ShaderResourceView* diffuseMap, ID3D11ShaderResource
 {
 	ID3D11ShaderResourceView* srvMap[] = {diffuseMap, normalMap};
 	this->deviceContext->CSSetShaderResources(0, 2, srvMap);
+	this->deviceContext->CSSetUnorderedAccessViews(0, 1, &this->lightMapUAV, 0);
 }
 
 bool LightPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile)
 {
 	this->device = device;
 	this->deviceContext = deviceContext;
+	this->width = (unsigned int)width;
+	this->height = (unsigned int)height;
 
 	UINT flag = 0;
 #if defined(DEBUG) || defined(_DEBUG)
@@ -46,21 +49,21 @@ bool LightPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	if (forceShaderCompile)
 	{
 
-		if (!this->pointLight.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\PointLightShader.compute.hlsl", "ps_5_0", flag, 0, ShaderType_CS, device, deviceContext))
+		if (!this->pointLight.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\LightPassPoint.compute.hlsl", "ps_5_0", flag, 0, ShaderType_CS, device, deviceContext))
 			return false;
-		/*if (!this->spotLight.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\PointLightShader.compute.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
+		/*if (!this->spotLight.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\LightPassPoint.compute.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
 			return false;
-		if (!this->dirLight.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\PointLightShader.compute.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
+		if (!this->dirLight.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\LightPassPoint.compute.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
 			return false;*/
 	}
 	else
 	{
 
-		if (!this->pointLight.LoadCompiledShader("Shaders\\PointLightShader.compute.cso", ShaderType_CS, device, deviceContext))
+		if (!this->pointLight.LoadCompiledShader("Shaders\\LightPassPoint.compute.cso", ShaderType_CS, device, deviceContext))
 			return false;
-		/*if (!this->spotLight.LoadCompiledShader("Shaders\\PointLightShader.compute.cso", ShaderType_PS, device, deviceContext))
+		/*if (!this->spotLight.LoadCompiledShader("Shaders\\LightPassPoint.compute.cso", ShaderType_PS, device, deviceContext))
 			return false;
-		if (!this->dirLight.LoadCompiledShader("Shaders\\PointLightShader.compute.cso", ShaderType_PS, device, deviceContext))
+		if (!this->dirLight.LoadCompiledShader("Shaders\\LightPassPoint.compute.cso", ShaderType_PS, device, deviceContext))
 			return false;*/
 	}
 
@@ -84,10 +87,10 @@ void LightPass::RenderPointLight(const BasicLightData::PointLight* data, int cou
 		this->deviceContext->Unmap(this->lightBuffer, 0);
 		
 		//Set the buffer
-		this->deviceContext->CSSetShaderResources(0, 1, &this->lightBufferSRV);
+		this->deviceContext->CSSetShaderResources(2, 1, &this->lightBufferSRV);
 
 		this->pointLight.Apply();
-		this->deviceContext->Dispatch(32, 32, 1);
+		this->deviceContext->Dispatch((unsigned int)((this->width + 31) / 32), (unsigned int)((this->height + 31) / 32), 1);
 	}
 }
 
@@ -103,10 +106,24 @@ void LightPass::RenderDirectionalLight(const BasicLightData::Directional* data, 
 	//TBD
 }
 
+ID3D11ShaderResourceView* LightPass::GetLightMapSRV()
+{
+	return this->lightMapSRV;
+}
+
+void LightPass::Clear()
+{
+	ID3D11ShaderResourceView* nullSRV[] = { 0, 0, 0, 0, 0 };
+	this->deviceContext->CSSetShaderResources(0, 5, nullSRV);
+	ID3D11UnorderedAccessView* nullUAV[] = { 0 };
+	this->deviceContext->CSSetUnorderedAccessViews(0, 1, nullUAV, 0);
+}
+
 
 // Private functions ############################
 bool LightPass::CreateSRVAndBuffer(int width, int height)
 {
+	HRESULT hr = S_OK;
 	D3D11_BUFFER_DESC bDesc;
 	bDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	bDesc.ByteWidth = sizeof(BasicLightData::Spotlight) * 512;
@@ -123,7 +140,33 @@ bool LightPass::CreateSRVAndBuffer(int width, int height)
 	sbsrv.Buffer.ElementOffset = 0;
 	sbsrv.Buffer.ElementWidth = sizeof(BasicLightData::Spotlight);
 	if (FAILED(this->device->CreateShaderResourceView(this->lightBuffer, &sbsrv, &this->lightBufferSRV)))
-		return false;
-	
+		return false;	
+
+#pragma region SRV
+	{
+		D3D11_TEXTURE2D_DESC texDesc;
+		texDesc.MipLevels = 1;
+		texDesc.ArraySize = 1;
+		texDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		texDesc.Usage = D3D11_USAGE_DEFAULT;
+		texDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		texDesc.CPUAccessFlags = 0;
+		texDesc.MiscFlags = 0;
+		texDesc.Height = (UINT)height;
+		texDesc.Width = (UINT)width;
+		texDesc.SampleDesc.Count = 1;
+		texDesc.SampleDesc.Quality = 0;
+
+		ID3D11Texture2D* t2D;
+		hr = this->device->CreateTexture2D(&texDesc, 0, &t2D);
+		if (FAILED(hr)) return false;
+
+		hr = this->device->CreateUnorderedAccessView(t2D, 0, &this->lightMapUAV);
+		if (FAILED(hr)) return false;
+
+		hr = this->device->CreateShaderResourceView(t2D, 0, &this->lightMapSRV);
+		if (FAILED(hr)) return false;
+	}
+#pragma endregion
 	return true;
 }

@@ -27,13 +27,14 @@ void FinalPass::Release()
 void FinalPass::Apply()
 {
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
+	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VT());
 	this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetDisabledDepth(), 0);
 	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
+
 	ID3D11SamplerState *smp[] = { ShaderStates::SamplerState::GetLinear() };
 	this->deviceContext->PSSetSamplers(0, 1, smp);
 
-	UINT elemSize = sizeof(Vertex);
+	UINT elemSize = sizeof(VertexPT);
 	UINT off = 0;
 	this->deviceContext->IASetIndexBuffer(this->quadIBuffer, DXGI_FORMAT_R32_UINT, 0);
 	this->deviceContext->IASetVertexBuffers(0, 1, &this->quadVBuffer, &elemSize, &off);
@@ -61,60 +62,63 @@ bool FinalPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 			flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 		#endif
 
-		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\FinalShader.vertex.hlsl", "vs_5_0", flag, 0, ShaderType_VS, device, deviceContext))
+		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\FinalPass.vertex.hlsl", "vs_5_0", flag, 0, ShaderType_VS, device, deviceContext))
 			return false;
 
-		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\FinalShader.pixel.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
+		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\FinalPass.pixel.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
 			return false;
 	}
 	else
 	{
-		if (!this->vertex.LoadCompiledShader("Shaders\\FinalShader.vertex.cso", ShaderType_VS, device, deviceContext))
+		if (!this->vertex.LoadCompiledShader("Shaders\\FinalPass.vertex.cso", ShaderType_VS, device, deviceContext))
 			return false;
 
-		if (!this->pixel.LoadCompiledShader("Shaders\\FinalShader.pixel.cso", ShaderType_PS, device, deviceContext))
+		if (!this->pixel.LoadCompiledShader("Shaders\\FinalPass.pixel.cso", ShaderType_PS, device, deviceContext))
 			return false;
 	}
-
-	D3D11_BUFFER_DESC desc;
-	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	desc.ByteWidth = sizeof(Vertex) * 4;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-	desc.StructureByteStride = (sizeof(Vertex));
-	desc.Usage = D3D11_USAGE_IMMUTABLE;
 	
-	Vertex vert[4] =
+	InputLayoutManager::MicrosoftFailedWithDirectX(device, this->vertex.GetByteCode(), this->vertex.GetByteCodeSize());
+
+	//Vertex vert[4] =
+	VertexPT vert[4] =
 	{
 		{ //[0]
 			DirectX::XMFLOAT3(-1.0f, +1.0f, 0.0f),		//COORD
-			DirectX::XMFLOAT3(),			//PADD
+			//DirectX::XMFLOAT3(),			//PADD
 			DirectX::XMFLOAT2(+0.0f, +0.0f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
 		},
 		{ //[1]
 			DirectX::XMFLOAT3(+1.0f, +1.0f, 0.0f),		//COORD
-			DirectX::XMFLOAT3(),			//PADD
+			//DirectX::XMFLOAT3(),			//PADD
 			DirectX::XMFLOAT2(+1.0f, +0.0f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
 		},
 		{ //[2]
 			DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f),		//COORD
-			DirectX::XMFLOAT3(),			//PADD
+			//DirectX::XMFLOAT3(),			//PADD
 			DirectX::XMFLOAT2(+0.0f, +1.0f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
 		},
 		{ //[3]
 			DirectX::XMFLOAT3(+1.0f, -1.0f, 0.0f),		//COORD
-			DirectX::XMFLOAT3(),			//PADD
+			//DirectX::XMFLOAT3(),			//PADD
 			DirectX::XMFLOAT2(+1.0f, +1.0f),				//UV
-			DirectX::XMFLOAT3(),
-			DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
+			//DirectX::XMFLOAT3(),
 		}
 	};
+
+	D3D11_BUFFER_DESC desc;
+	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	desc.ByteWidth = sizeof(vert);
+	desc.CPUAccessFlags = 0;
+	desc.MiscFlags = 0;
+	desc.StructureByteStride = (sizeof(vert[0]));
+	desc.Usage = D3D11_USAGE_IMMUTABLE;
 
 	D3D11_SUBRESOURCE_DATA data;
 	data.pSysMem = vert;
@@ -137,6 +141,10 @@ bool FinalPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 
 	return true;
 }
-
+void FinalPass::Clear()
+{
+	ID3D11ShaderResourceView* srvClear[SrvMap_COUNT] = { 0 };
+	this->deviceContext->PSSetShaderResources(0, SrvMap_COUNT, srvClear);
+}
 
 

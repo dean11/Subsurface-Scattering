@@ -3,7 +3,20 @@
 
 #include <DirectXMath.h>
 
-struct Vertex
+struct VertexPT
+{
+	DirectX::XMFLOAT3 pos;
+	DirectX::XMFLOAT2 uv;
+};
+
+struct VertexPNT
+{
+	DirectX::XMFLOAT3 pos;
+	DirectX::XMFLOAT3 norm;
+	DirectX::XMFLOAT2 uv;
+};
+
+struct VertexPNTTB
 {
 	DirectX::XMFLOAT3 pos;
 	DirectX::XMFLOAT3 norm;

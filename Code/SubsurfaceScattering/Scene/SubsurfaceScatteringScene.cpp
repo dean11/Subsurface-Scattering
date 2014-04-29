@@ -15,7 +15,7 @@ SubsurfaceScatteringScene::~SubsurfaceScatteringScene()
 
 void SubsurfaceScatteringScene::Frame(float delta)
 {
-	Pipeline::PipelineManager::Instance().ApplyGeometryPass(true);
+	Pipeline::PipelineManager::Instance().ApplyGeometryPass();
 	{
 		Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix());
 
@@ -29,7 +29,6 @@ void SubsurfaceScatteringScene::Frame(float delta)
 		}
 
 		this->ground.Render(this->deviceContext);
-
 		this->sphereMap.Render(delta, this->mainCam->GetPosition());
 	}
 	
@@ -73,8 +72,8 @@ void SubsurfaceScatteringScene::CreateLights()
 
 	for (size_t i = 0; i < 255; i++)
 	{
-		pLight.attenuation = DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
-		pLight.lightColour = DirectX::XMFLOAT4(0.7f, 1.0f, 0.4f, 0.0f);
+		pLight.attenuation = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 0.0f);
+		pLight.lightColour = DirectX::XMFLOAT4(1.0f , 1.0f, 0.0f, 0.0f);
 		pLight.positionRange = DirectX::XMFLOAT4((float)i - ((float)255 / (float)2), 10.0f, 10.0f, 20.0f);
 		this->pointLights.push_back(pLight);
 	}

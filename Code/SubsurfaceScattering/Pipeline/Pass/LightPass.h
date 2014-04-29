@@ -6,6 +6,7 @@
 #include "..\Shader.h"
 #include "..\RenderSurface.h"
 #include "..\..\Utilities\BasicLightData.h"
+#include "ShaderPass.h"
 
 namespace Pipeline
 {
@@ -18,27 +19,34 @@ namespace Pipeline
 	//	BPL_RTV_Layout_COUNT
 	//};
 
-	class LightPass
+	class LightPass :public ShaderPass
 	{
 	public:
 		LightPass();
 		virtual~LightPass();
 
-		void Release();
+		void Release() override;
+		void Clear() override;
+
 		void Apply( ID3D11ShaderResourceView* diffuseMap, ID3D11ShaderResourceView* normalMap );
 
 		void RenderPointLight(const BasicLightData::PointLight* data, int count);
 		void RenderSpotLight(const BasicLightData::Spotlight* data, int count);
 		void RenderDirectionalLight(const BasicLightData::Directional* data, int count);
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile);
+		ID3D11ShaderResourceView* GetLightMapSRV();
 
 	private:
 		bool CreateSRVAndBuffer(int width, int height);
 
+		unsigned int width;
+		unsigned int height;
+
 		Shader pointLight;
 		Shader spotLight;
 		Shader dirLight;
-
+		
+		ID3D11UnorderedAccessView* lightMapUAV;
 		ID3D11ShaderResourceView* lightMapSRV;
 
 		ID3D11ShaderResourceView* lightBufferSRV;

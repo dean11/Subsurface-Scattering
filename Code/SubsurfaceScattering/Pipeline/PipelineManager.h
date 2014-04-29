@@ -5,6 +5,7 @@
 #include <vector>
 #include <DirectXMath.h>
 
+#include "Pass\ShaderPass.h"
 #include "Shader.h"
 #include "Pass\GeometryPass.h"
 #include "Pass\FinalPass.h"
@@ -31,9 +32,9 @@ namespace Pipeline
 		void Release();
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height);
 
-		void ApplyGeometryPass(bool clearPrevious);
+		void ApplyGeometryPass();
 		void ApplyLightPass(const LightData& data);
-		void ApplySSSPass(bool clearPrevious){}
+		void ApplySSSPass(){}
 
 		void Present();
 
@@ -60,6 +61,8 @@ namespace Pipeline
 		FinalPass finalPass;
 		GeometryPass geometryPass;
 		LightPass lightPass;
+
+		ShaderPass* prevPass;
 	};
 
 }
