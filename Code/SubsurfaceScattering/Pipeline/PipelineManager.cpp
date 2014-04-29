@@ -91,6 +91,7 @@ void PipelineManager::ApplyLightPass(const LightData& data)
 	this->lightPass.RenderPointLight(data.pointData, data.pointCount);
 	this->lightPass.RenderDirectionalLight(data.dirData, data.dirCount);
 	this->lightPass.RenderSpotLight(data.spotData, data.spotCount);
+	this->lightPass.Clear();
 }
 
 void PipelineManager::Present()
@@ -110,11 +111,10 @@ void PipelineManager::Present()
 	{
 		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL),
 		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR),
-		0,
+		this->lightPass.GetLightMapSRV(),
 		0,
 	};
-	this->deviceContext->PSSetShaderResources(0, Pipeline::GBuffer_RTV_Layout_COUNT, srv);
-
+	this->deviceContext->PSSetShaderResources(0, 3, srv);
 	this->finalPass.Apply();
 
 	this->d3dSwapchain->Present(0, 0);

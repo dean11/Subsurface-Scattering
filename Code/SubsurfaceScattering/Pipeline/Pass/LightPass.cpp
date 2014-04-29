@@ -16,7 +16,7 @@ LightPass::LightPass()
 
 LightPass::~LightPass()
 {
-	Release();
+	//Release();
 }
 
 void LightPass::Release()
@@ -77,8 +77,10 @@ void LightPass::RenderPointLight(const BasicLightData::PointLight* data, int cou
 
 	memcpy(mappedData.pData, data, sizeof(BasicLightData::PointLight)*count);
 	this->deviceContext->Unmap(this->lightBuffer, 0);
+	this->deviceContext->CSSetUnorderedAccessViews(0, 1, &this->lightMapUAV, 0);
 	this->pointLight.Apply();
 	this->deviceContext->Dispatch(32, 32, 1);
+	this->Clear();
 }
 
 void LightPass::RenderSpotLight(const BasicLightData::Spotlight* data, int count)
@@ -91,10 +93,22 @@ void LightPass::RenderDirectionalLight(const BasicLightData::Directional* data, 
 	//TBD
 }
 
+ID3D11ShaderResourceView* LightPass::GetLightMapSRV()
+{
+	return this->lightMapSRV;
+}
+
+void LightPass::Clear()
+{
+	ID3D11UnorderedAccessView* nullUAV = NULL;
+	this->deviceContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, 0);
+}
+
 
 //Private functions############################
 bool LightPass::CreateSRVAndBuffer(int width, int height)
 {
+	HRESULT hr = S_OK;
 	RenderSurface::TEXTURESURFACE_DESC surfaceDesc;
 	surfaceDesc.width = width;
 	surfaceDesc.height = height;
@@ -153,7 +167,43 @@ bool LightPass::CreateSRVAndBuffer(int width, int height)
 		bDesc.StructureByteStride = sizeof(BasicLightData::Spotlight);
 		bDesc.Usage = D3D11_USAGE_DYNAMIC;
 
-		if (FAILED(this->device->CreateBuffer(&bDesc, 0, &this->lightBuffer))) return false;
+		hr = this->device->CreateBuffer(&bDesc, 0, &this->lightBuffer);
+		if (FAILED(hr)) return false;
+	}
+#pragma endregion
+
+#pragma region SRV
+	{
+		D3D11_TEXTURE2D_DESC texDesc;
+		texDesc.MipLevels = 1;
+		texDesc.ArraySize = 1;
+		texDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		texDesc.Usage = D3D11_USAGE_DEFAULT;
+		texDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		texDesc.CPUAccessFlags = 0;
+		texDesc.MiscFlags = 0;
+		texDesc.Height = (UINT)height;
+		texDesc.Width = (UINT)width;
+		texDesc.SampleDesc.Count = 1;
+		texDesc.SampleDesc.Quality = 0;
+
+		ID3D11Texture2D* t2D;
+		hr = this->device->CreateTexture2D(&texDesc, 0, &t2D);
+		if (FAILED(hr)) return false;
+
+		/*D3D11_SHADER_RESOURCE_VIEW_DESC rDesc;
+		rDesc.Texture2D.MipLevels = 1;
+		rDesc.Texture2D.MostDetailedMip = 0;
+		rDesc.Format = DXGI_FORMAT_UNKNOWN;
+		rDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+		rDesc.Buffer.FirstElement = 0;
+		rDesc.Buffer.NumElements = 512;*/
+
+		hr = this->device->CreateUnorderedAccessView(t2D, 0, &this->lightMapUAV);
+		if (FAILED(hr)) return false;
+
+		hr = this->device->CreateShaderResourceView(t2D, 0, &this->lightMapSRV);
+		if (FAILED(hr)) return false;
 	}
 #pragma endregion
 	return true;

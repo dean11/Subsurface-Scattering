@@ -29,8 +29,8 @@ cbuffer cMatrixBuffer :register(b1)
 };
 
 
-Texture2D Diffuse : register(t0);
-TextureCube CubeMap : register(t1);
+Texture2D DiffuseMap : register(t0);
+Texture2D NormalMap : register(t1);
 
 StructuredBuffer<PointLight> pointLights : register(t2);
 StructuredBuffer<SpotLight> spotLights : register(t3);

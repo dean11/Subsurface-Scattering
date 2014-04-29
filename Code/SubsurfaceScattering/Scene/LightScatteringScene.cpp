@@ -36,6 +36,7 @@ void LightScatteringScene::Frame(float delta)
 	lData.pointCount = 1;
 	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
 
+
 	Pipeline::PipelineManager::Instance().Present();
 }
 
