@@ -32,10 +32,11 @@ void SubsurfaceScatteringScene::Frame(float delta)
 		this->sphereMap.Render(delta, this->mainCam->GetPosition());
 	}
 	
-	Pipeline::PipelineManager::LightData lData;
-	memset(&lData, 0, sizeof(Pipeline::PipelineManager::LightData));
+	Pipeline::LightPass::LightData lData;
+	memset(&lData, 0, sizeof(Pipeline::LightPass::LightData));
 	lData.pointData = &this->pointLights[0];
 	lData.pointCount = (int)this->pointLights.size();
+	lData.invProj = this->mainCam->GetInverseProjectionMatrix();
 
 	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
 

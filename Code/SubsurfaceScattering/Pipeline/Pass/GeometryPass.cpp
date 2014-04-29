@@ -60,7 +60,16 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 }
 ID3D11ShaderResourceView* GeometryPass::GetShaderResource(GBuffer_RTV_Layout srv)
 {
-	return this->GBufferRTVs[srv].GetRenderTargetSRV();
+	switch (srv)
+	{
+	case Pipeline::GBuffer_RTV_Layout_NORMAL:
+	case Pipeline::GBuffer_RTV_Layout_COLOR:
+		return this->GBufferRTVs[srv].GetRenderTargetSRV();
+
+	case Pipeline::GBuffer_RTV_Layout_DepthStencil:
+		return this->depthStencil.GetDepthStencilSRV();
+	}
+	return 0;
 }
 ID3D11RenderTargetView* GeometryPass::GetRenderTarget(GBuffer_RTV_Layout rtv)
 {

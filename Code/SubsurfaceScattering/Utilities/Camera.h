@@ -60,6 +60,7 @@ class Camera
 		DirectX::XMFLOAT4X4	GetViewMatrix() const;
 		DirectX::XMFLOAT4X4	GetInverseViewMatrix() const;
 		DirectX::XMFLOAT4X4	GetProjectionMatrix() const;
+		DirectX::XMFLOAT4X4 GetInverseProjectionMatrix() const;
 		DirectX::XMFLOAT4X4	GetOrthogonalMatrix() const;
 		DirectX::XMFLOAT4X4	GetViewProjection() const;
 		DirectX::XMFLOAT3	GetForward() const;

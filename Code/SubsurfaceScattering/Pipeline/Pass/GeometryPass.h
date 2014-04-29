@@ -15,7 +15,9 @@ namespace Pipeline
 	{
 		GBuffer_RTV_Layout_NORMAL		= 0,
 		GBuffer_RTV_Layout_COLOR		= 1,
-		GBuffer_RTV_Layout_COUNT
+		GBuffer_RTV_Layout_COUNT,
+
+		GBuffer_RTV_Layout_DepthStencil,
 	};
 
 	class GeometryPass :public ShaderPass
@@ -30,6 +32,7 @@ namespace Pipeline
 		void Apply();
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile);
 		ID3D11ShaderResourceView* GetShaderResource(GBuffer_RTV_Layout srv);
+		
 		ID3D11RenderTargetView* GetRenderTarget(GBuffer_RTV_Layout rtv);
 
 	private:

@@ -282,6 +282,12 @@ DirectX::XMFLOAT4X4 Camera::GetProjectionMatrix() const
 {
 	return this->projectionMatrix;
 }
+DirectX::XMFLOAT4X4 Camera::GetInverseProjectionMatrix() const
+{
+	DirectX::XMFLOAT4X4 m;
+	DirectX::XMStoreFloat4x4(&m, DirectX::XMMatrixInverse(0, DirectX::XMLoadFloat4x4(&this->projectionMatrix)));
+	return m;
+}
 DirectX::XMFLOAT4X4	Camera::GetOrthogonalMatrix() const
 {
 	return this->orthogonalMatrix;

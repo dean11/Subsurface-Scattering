@@ -31,7 +31,7 @@ void LightScatteringScene::Frame(float delta)
 		this->dc->PSSetShaderResources(0, 4, buff);
 		this->sphereMap.Render(delta, this->mainCam->GetPosition());
 	}
-	Pipeline::PipelineManager::LightData lData;
+	Pipeline::LightPass::LightData lData;
 	lData.pointData = &this->data;
 	lData.pointCount = 1;
 	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);

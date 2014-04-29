@@ -83,15 +83,12 @@ void PipelineManager::ApplyGeometryPass()
 	this->prevPass = &this->geometryPass;
 }
 
-void PipelineManager::ApplyLightPass(const LightData& data)
+void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 {
 	if (this->prevPass) this->prevPass->Clear();
 
-	this->lightPass.Apply(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL));
-	this->lightPass.RenderPointLight(data.pointData, data.pointCount);
-	this->lightPass.RenderDirectionalLight(data.dirData, data.dirCount);
-	this->lightPass.RenderSpotLight(data.spotData, data.spotCount);
-
+	this->lightPass.Apply(data, this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL));
+	
 	this->prevPass = &this->lightPass;
 }
 
