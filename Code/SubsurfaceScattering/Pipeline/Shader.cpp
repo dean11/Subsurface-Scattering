@@ -154,24 +154,25 @@ void Shader::Release()
 	switch (type)
 	{
 	case Pipeline::ShaderType_VS:
-		if(this->shaderData.data) this->shaderData.vertexShader->Release();
+		if (this->shaderData.data) this->shaderData.vertexShader->Release(); this->shaderData.data = 0;
 		break;
 	case Pipeline::ShaderType_PS:
-		if(this->shaderData.data) this->shaderData.pixelShader->Release();
+		if (this->shaderData.data) this->shaderData.pixelShader->Release(); this->shaderData.data = 0;
 		break;
 	case Pipeline::ShaderType_CS:
-		if(this->shaderData.data) this->shaderData.computeShader->Release();
+		if (this->shaderData.data) this->shaderData.computeShader->Release(); this->shaderData.data = 0;
 		break;
 	case Pipeline::ShaderType_HS:
-		if (this->shaderData.data) this->shaderData.hullShader->Release();
+		if (this->shaderData.data) this->shaderData.hullShader->Release();	this->shaderData.data = 0;
 		break;
 	case Pipeline::ShaderType_GS:
-		if(this->shaderData.data) this->shaderData.geometryShader->Release();
+		if (this->shaderData.data) this->shaderData.geometryShader->Release();	this->shaderData.data = 0;
 		break;
 	case Pipeline::ShaderType_DS:
-		if (this->shaderData.data) this->shaderData.domainShader->Release();
+		if (this->shaderData.data) this->shaderData.domainShader->Release();	this->shaderData.data = 0;
 		break;
 	}
+
 }
 void Shader::Apply()
 {

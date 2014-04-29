@@ -46,6 +46,8 @@ void FinalPass::Apply()
 bool FinalPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile)
 {
 	HRESULT hr = S_OK;
+	this->device = device;
+	this->deviceContext = deviceContext;
 
 	ShaderStates::DepthStencilState::GetDisabledDepth(device);
 	ShaderStates::RasterizerState::GetNoCullNoMs(device);

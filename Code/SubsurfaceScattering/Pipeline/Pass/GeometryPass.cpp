@@ -5,9 +5,6 @@
 #include "..\RenderState\SamplerState.h"
 
 
-ID3D11Device *ShaderPass::device = 0;
-ID3D11DeviceContext *ShaderPass::deviceContext = 0;
-
 using namespace Pipeline;
 
 #include <d3dcompiler.h>
@@ -96,7 +93,9 @@ void GeometryPass::Apply()
 GeometryPass::GeometryPass()
 {}
 GeometryPass::~GeometryPass()
-{}
+{
+	Release();
+}
 
 bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 {

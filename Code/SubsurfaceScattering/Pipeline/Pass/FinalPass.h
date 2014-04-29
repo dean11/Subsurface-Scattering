@@ -2,19 +2,18 @@
 #define BATCHELOR_FINALPASS_H
 
 #include "..\Shader.h"
-#include "ShaderPass.h"
 
 namespace Pipeline
 {
-	class FinalPass :public ShaderPass
+	class FinalPass
 	{
 	public:
 		FinalPass();
 		virtual~FinalPass();
 
-		void Release() override;
-		void Apply() override;
-		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile) override;
+		void Release();
+		void Apply();
+		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile);
 
 	private:
 		
@@ -22,7 +21,8 @@ namespace Pipeline
 		ID3D11Buffer* quadIBuffer;
 		Shader vertex;
 		Shader pixel;
-		
+		ID3D11Device* device;
+		ID3D11DeviceContext* deviceContext;
 	};
 }
 

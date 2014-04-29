@@ -39,7 +39,7 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 	
 	std::wstring mPath = L"Models\\" + Util::StringToWstring(m[0].map_Kd, std::wstring());
 	if (FAILED(DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
-		return false;
+		this->mesh.diffuse = NULL;	//No texture found for the model
 
 	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
 	
@@ -65,5 +65,12 @@ DirectX::XMFLOAT4X4 Model::GetWorldInversTranspose() const
 {
 	return this->world;
 }
+
+void Model::SetWorld(DirectX::XMFLOAT4X4 world)
+{
+	this->world = world;
+}
+
+
 
 

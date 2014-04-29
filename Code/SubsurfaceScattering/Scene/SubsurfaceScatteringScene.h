@@ -21,12 +21,16 @@ public:
 	void Frame(float delta) override;
 	bool Initiate(ID3D11Device* device, ID3D11DeviceContext *dc) override;
 	void SetCamera(Camera* cam);
+
 private:
 	ID3D11Device *device;
 	ID3D11DeviceContext *deviceContext;
 	Camera *mainCam;
 	Plane ground;
 	SSSInitDesc desc;
+	std::vector<BasicLightData::PointLight> pointLights;
+
+	void CreateLights();
 };
 
 #endif // !BATCHELOR_SUBSURFACESCATTERINGSCENE_H

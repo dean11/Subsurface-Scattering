@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "..\Shader.h"
-#include "ShaderPass.h"
 #include "..\RenderSurface.h"
 
 namespace Pipeline
@@ -18,15 +17,15 @@ namespace Pipeline
 		GBuffer_RTV_Layout_COUNT
 	};
 
-	class GeometryPass :public ShaderPass
+	class GeometryPass
 	{
 	public:
 		GeometryPass();
 		virtual~GeometryPass();
 
-		void Release() override;
-		void Apply() override;
-		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile) override;
+		void Release();
+		void Apply();
+		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile);
 		ID3D11ShaderResourceView* GetShaderResource(GBuffer_RTV_Layout srv);
 		ID3D11RenderTargetView* GetRenderTarget(GBuffer_RTV_Layout rtv);
 
@@ -38,6 +37,8 @@ namespace Pipeline
 
 		RenderSurface GBufferRTVs[GBuffer_RTV_Layout_COUNT];
 		RenderSurface depthStencil;
+		ID3D11Device* device;
+		ID3D11DeviceContext* deviceContext;
 	};
 
 }

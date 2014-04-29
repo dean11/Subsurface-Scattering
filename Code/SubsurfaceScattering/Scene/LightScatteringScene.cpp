@@ -1,9 +1,11 @@
 #include "LightScatteringScene.h"
+#include "..\Utilities\BasicLightData.h"
 
 LightScatteringScene::LightScatteringScene(LSSInitDesc& desc)
 {
 	this->desc = desc;
 	this->sphereMap = SphereMap();
+	//this->pointLight = PointLight();
 }
 
 LightScatteringScene::~LightScatteringScene()
@@ -29,8 +31,10 @@ void LightScatteringScene::Frame(float delta)
 		this->dc->PSSetShaderResources(0, 4, buff);
 		this->sphereMap.Render(delta, this->mainCam->GetPosition());
 	}
-
-	//Pipeline::PipelineManager::Instance().ApplyLightPass(true);
+	Pipeline::PipelineManager::LightData lData;
+	lData.pointData = &this->data;
+	lData.pointCount = 1;
+	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
 
 	Pipeline::PipelineManager::Instance().Present();
 }
@@ -50,7 +54,16 @@ bool LightScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceContext* d
 		return false;
 	this->models.push_back(sphere);*/
 
-	this->sphereMap.CreateSkyBox(device, dc);
+	if (!this->sphereMap.CreateSkyBox(device, dc)) return false;
+
+	//BasicLightData::PointLight data;
+	data.attenuation			= DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
+	data.lightColour			= DirectX::XMFLOAT4(0.7f, 1.0f, 0.4f, 0.0f);
+	//data.lightColour.ambient	= DirectX::XMFLOAT4(0.2f, 0.2f, 0.2, 0.0f);
+	//data.lightColour.diffuse	= DirectX::XMFLOAT4(0.7f, 1.0f, 0.4, 0.0f);
+	//data.lightColour.specular	= DirectX::XMFLOAT4(0.2f, 0.4f, 0.3, 0.0f);
+	data.positionRange			= DirectX::XMFLOAT4(0.0f, 10.0f, 10.0f, 20.0f);
+	//if (!this->pointLight.CreatePointLight("Models\\sphereTriLow.obj", data, device)) return false;
 
 	return true;
 }
