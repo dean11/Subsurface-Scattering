@@ -75,7 +75,7 @@ void SubsurfaceScatteringScene::Frame(float delta)
 			UINT off = 0;
 			this->deviceContext->IASetVertexBuffers(0, 1, &this->models[i].GetMesh().vertexBuffer, &this->models[i].GetMesh().vertexStride, &off);
 			this->deviceContext->PSSetShaderResources(0, 1, &this->models[i].GetMesh().diffuse);
-			Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(m/*this->models[i].GetWorld()*/, this->models[i].GetWorldInversTranspose());
+			Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->models[i].GetWorld(), this->models[i].GetWorldInversTranspose());
 			this->deviceContext->Draw(this->models[i].GetMesh().vertexCount, 0);
 		}
 
@@ -165,17 +165,6 @@ void SubsurfaceScatteringScene::CreateLights()
 	//	this->spotLight.push_back(sl);
 	//}
 
-<<<<<<< HEAD
-	for (size_t i = 0; i < 1; i++)
-	{
-		pLight.attenuation = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 0.0f);
-		pLight.lightColour = DirectX::XMFLOAT4(1.0f , 1.0f, 0.0f, 0.0f);
-		pLight.positionRange = DirectX::XMFLOAT4(0.0f, 0.0f, -50.0f, 20.0f);
-		//pLight.positionRange = DirectX::XMFLOAT4((float)i - ((float)255 / (float)2), 10.0f, 10.0f, 20.0f);
-		this->pointLights.push_back(pLight);
-	}
-=======
->>>>>>> 1dff155c5f61c13ed99df508c39256fef11d8e68
 }
 
 void SubsurfaceScatteringScene::RenderDepthMap()
@@ -192,11 +181,11 @@ void SubsurfaceScatteringScene::RenderDepthMap()
 	{
 		UINT off = 0;
 		this->deviceContext->IASetVertexBuffers(0, 1, &this->models[i].GetMesh().vertexBuffer, &this->models[i].GetMesh().vertexStride, &off);
-		Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(m, this->models[i].GetWorldInversTranspose());
+		Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->models[i].GetWorld(), this->models[i].GetWorldInversTranspose());
 		this->deviceContext->Draw(this->models[i].GetMesh().vertexCount, 0);
 	}
 	
 	this->ground.RenderForDepthMap(this->deviceContext);
-	this->sphereMap.RenderForDepthMap();
+	//this->sphereMap.RenderForDepthMap();
 	
 }

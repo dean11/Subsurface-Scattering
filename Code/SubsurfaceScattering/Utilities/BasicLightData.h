@@ -15,15 +15,12 @@ public:
 
 	struct Directional
 	{
-<<<<<<< HEAD
-		DirectX::XMFLOAT4 lightColour;
-		DirectX::XMFLOAT4 direction;		//w is just used for padding atm
-	
-=======
+
 		DirectX::XMFLOAT3 color;
 		DirectX::XMFLOAT3 direction;
-		float pad[2 + 4 + 4];
->>>>>>> 1dff155c5f61c13ed99df508c39256fef11d8e68
+		DirectX::XMFLOAT3 position;
+		float pad[3 + 4];
+
 	};
 
 	struct PointLight
