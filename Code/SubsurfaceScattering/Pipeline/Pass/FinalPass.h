@@ -14,6 +14,8 @@ namespace Pipeline
 			SrvMap_Diffuse = 0, //:register(0)
 			SrvMap_Normal = 1, //:register(1)
 			SrvMap_Light = 2, //:register(2)
+			SrvMap_depthSingle = 3, //:register(3)
+			SrvMap_depthCube = 4, //:register(4)
 
 			SrvMap_COUNT
 		};

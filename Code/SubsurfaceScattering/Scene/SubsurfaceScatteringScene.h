@@ -31,6 +31,7 @@ private:
 	std::vector<BasicLightData::PointLight> pointLights;
 
 	void CreateLights();
+	void RenderDepthMap();
 };
 
 #endif // !BATCHELOR_SUBSURFACESCATTERINGSCENE_H

@@ -18,6 +18,7 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
 	for (int i = 0; i < nrOfPointLights; i++)
 	{
 		lightCol += PointLightCalc(pointLights[i], pos,  DTid.xy);
+
 	}
 	[loop]
 	for (i = 0; i < nrOfSpotLights; i++)

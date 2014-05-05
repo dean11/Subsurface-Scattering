@@ -136,6 +136,22 @@ void Camera::SetRotationZ(float z)
 {
 	this->rotationZ = z;
 }
+void Camera::SetLookAt(DirectX::XMFLOAT3 lookAt)
+{
+	this->lookAt = lookAt;
+}
+void Camera::SetUp(DirectX::XMFLOAT3 up)
+{
+	this->viewMatrix._12 = up.x;
+	this->viewMatrix._22 = up.y;
+	this->viewMatrix._32 = up.z;
+}
+void Camera::SetRight(DirectX::XMFLOAT3 right)
+{
+	this->viewMatrix._11 = right.x;
+	this->viewMatrix._21 = right.y;
+	this->viewMatrix._31 = right.z;
+}
 void Camera::RelativePitch(float degrees)
 {
 	this->rotationX += degrees;
@@ -180,15 +196,17 @@ void Camera::Render()
 	DirectX::XMFLOAT3 up, position, xAxis, yAxis, zAxis;
 	float yaw, pitch, roll;
 	
-	//Point "up"
-	up.x = 0.0f;
-	up.y = 1.0f;
-	up.z = 0.0f;
+	
 
 	//Set position
 	position.x = this->positionX;
 	position.y = this->positionY;
 	position.z = this->positionZ;
+
+	//Point "up"
+	up.x = 0.0f;
+	up.y = 1.0f;
+	up.z = 0.0f;
 
 	//Point to 1 z(default)
 	this->lookAt.x = 0.0f;
@@ -197,8 +215,8 @@ void Camera::Render()
 
 	//Set rotations
 	pitch = this->rotationX*0.0174532925f;
-	yaw   = this->rotationY*0.0174532925f;
-	roll  = this->rotationZ*0.0174532925f;
+	yaw = this->rotationY*0.0174532925f;
+	roll = this->rotationZ*0.0174532925f;
 
 
 	//Create rotation matrix
@@ -211,6 +229,8 @@ void Camera::Render()
 	//D3DXVec3TransformCoord(&up, &up, &rotationMatrix);
 	XMStoreFloat3(&this->lookAt, XMVector3TransformCoord(XMLoadFloat3(&this->lookAt), rotationMatrix));
 	XMStoreFloat3(&up, XMVector3TransformCoord(XMLoadFloat3(&up), rotationMatrix));
+	
+	
 
 	//Create the view matrix from the three updated vectors
 	XMStoreFloat3(&zAxis, XMVector3Normalize(XMLoadFloat3(&this->lookAt)));
@@ -220,10 +240,13 @@ void Camera::Render()
 	XMStoreFloat3(&yAxis, XMVector3Cross(XMLoadFloat3(&zAxis), XMLoadFloat3(&xAxis)));
 	//D3DXVec3Cross(&yAxis, &zAxis, &xAxis);
 
+
 	//Translate the rotated camera position to the location of the viewer.
 	this->lookAt.x += position.x;
 	this->lookAt.y += position.y;
 	this->lookAt.z += position.z;
+
+	
 	float tmp = 0;
 	this->viewMatrix._11 = xAxis.x;
 	this->viewMatrix._21 = xAxis.y;

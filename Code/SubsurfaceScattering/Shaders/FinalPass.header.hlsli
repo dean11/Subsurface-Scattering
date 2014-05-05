@@ -12,3 +12,5 @@ struct vOutFSQ
 Texture2D gSRVNormal			:register(t0);
 Texture2D gSRVColor				:register(t1);
 Texture2D gLightMap				:register(t2);
+Texture2D gDepthMap				:register(t3);
+TextureCube gDepthCube			:register(t4);
