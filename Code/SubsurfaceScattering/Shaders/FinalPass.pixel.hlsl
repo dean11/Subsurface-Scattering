@@ -19,13 +19,13 @@ float4 main(vOutFSQ inData) : SV_TARGET
 		return float4(1, 0, 0, 1);
 		else
 		return float4(0, 1, 0, 1);*/
-	depth = (depth * 10) - 9.75;
+		depth = (depth * 10) - 9.75;
 	float4 value;
 	value.x = max(0, depth.x);
 	value.y = max(0, depth.y);
 	value.z = max(0, depth.z);
 	value.w = max(0, depth.w);
-	return value;
+	return depth;
 	//return color;// saturate(color) * saturate(light);
 	//return saturate(light);
 }

@@ -17,6 +17,7 @@ public:
 	{
 		DirectX::XMFLOAT4 lightColour;
 		DirectX::XMFLOAT4 direction;		//w is just used for padding atm
+	
 	};
 
 	struct PointLight

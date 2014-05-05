@@ -36,7 +36,7 @@ bool App::Initiate()
 	if(!this->Init3D_DeviceAndContext())	return false;
 	if(!this->Init3D_Pipeline())			return false;
 
-	this->camera.SetPosition(0.0f, 0.0f, -5.0f);
+	this->camera.SetPosition(0.0f, 0.0f, -50.0f);
 	this->camera.SetProjectionMatrix(((DirectX::XM_PI / 180.0f) * 45.0f), ((float)this->winDimension.x / (float)this->winDimension.x), 0.1f, 10000.0f);
 	this->camera.Render();
 
