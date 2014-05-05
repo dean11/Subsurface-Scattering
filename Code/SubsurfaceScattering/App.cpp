@@ -9,6 +9,8 @@
 #include <sys\stat.h>
 #include <d3d11_2.h>
 #include <windowsx.h>
+#include "Input.h"
+#include <D3DTK\SpriteFont.h>
 
 #define SUBSURFACESCATTERING
 //#define LIGHTSCATTERING
@@ -21,12 +23,11 @@ bool LBUTTONDOWN = false;
 App::App()
 	:	isInitiated(false)
 	,	isRunning (false)
-	,	winDimension(800, 600)
+	,	winDimension(1280, 720)
 	,	d3dDevice(0)
 	,	d3dDeviceContext(0)
 {
 	app = this;
-	memset(&this->moveKeys, 0, sizeof(Keyboard));
 }
 App::~App()
 {}
@@ -39,7 +40,6 @@ bool App::Initiate()
 	this->camera.SetPosition(0.0f, 0.0f, -50.0f);
 	this->camera.SetProjectionMatrix(((DirectX::XM_PI / 180.0f) * 45.0f), ((float)this->winDimension.x / (float)this->winDimension.x), 0.1f, 10000.0f);
 	this->camera.Render();
-
 
 	//Initiate your scene..
 #ifdef SUBSURFACESCATTERING
@@ -73,30 +73,20 @@ void App::Run()
 
 		this->camera.Render();
 		
-		if (this->moveKeys.W)
-			this->camera.RelativeForward(0.5f);
-		if (this->moveKeys.S)
-			this->camera.RelativeForward(-0.5f);
-		if (this->moveKeys.A)
-			this->camera.RelativeRight(-0.5f);
-		if (this->moveKeys.D)
-			this->camera.RelativeRight(0.5f);
+		if (Input::IsKeyDown(VK_W))		this->camera.RelativeForward(0.5f);
+		if (Input::IsKeyDown(VK_S))		this->camera.RelativeForward(-0.5f);
+		if (Input::IsKeyDown(VK_A))		this->camera.RelativeRight(-0.5f);
+		if (Input::IsKeyDown(VK_D))		this->camera.RelativeRight(0.5f);
 
-		if(this->moveKeys.LEFT)
-			app->camera.RelativeYaw(-0.5f);
-		if (app->moveKeys.RIGHT)
-			app->camera.RelativeYaw(0.5f);
-		if (app->moveKeys.UP)
-			app->camera.RelativePitch(-0.5f);
-		if (app->moveKeys.DOWN)
-			app->camera.RelativePitch(0.5f);
+		//if (Input::IsKeyDown(VK_LEFT))		app->camera.RelativeYaw(-0.5f);
+		//if (Input::IsKeyDown(VK_RIGHT))		app->camera.RelativeYaw(0.5f);
+		//if (Input::IsKeyDown(VK_UP))		app->camera.RelativePitch(-0.5f);
+		//if (Input::IsKeyDown(VK_DOWN))		app->camera.RelativePitch(0.5f);
 		
-		if (app->moveKeys.CTRL)
-			app->camera.RelativeUp(-0.5f);
-		if (app->moveKeys.SPACE)
-			app->camera.RelativeUp(0.5f);
+		if (Input::IsKeyDown(VK_CONTROL))	app->camera.RelativeUp(-0.5f);
+		if (Input::IsKeyDown(VK_SPACE))		app->camera.RelativeUp(0.5f);
 			
-
+		
 		if (currentScene) currentScene->Frame(dt);
 	}
 }
@@ -190,81 +180,12 @@ LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 
 		case WM_KEYUP:
 		{
-			switch (w)
-			{
-			case 0x53: //S
-				app->moveKeys.S = false;
-				break;
-			case 0x57: //W
-				app->moveKeys.W = false;
-				break;
-			case 0x41: //A
-				app->moveKeys.A = false;
-				break;
-			case 0x44: //D
-				app->moveKeys.D = false;
-				break;
-			case VK_LEFT:
-				app->moveKeys.LEFT = false;
-				break;
-			case VK_RIGHT:
-				app->moveKeys.RIGHT = false;
-				break;
-			case VK_UP:
-				app->moveKeys.UP = false;
-				break;
-			case VK_DOWN:
-				app->moveKeys.DOWN = false;
-				break;
-			case VK_CONTROL:
-				app->moveKeys.CTRL = false;
-				break;
-			case VK_SPACE:
-				app->moveKeys.SPACE = false;
-				break;
-			}
+			Input::SetKeyState(w, false);
 		} break;
 		case WM_KEYDOWN:
-			switch(w)
-			{
-				case VK_ESCAPE:
-					PostQuitMessage(0);
-				break;
-				case 0x53: //S
-					app->moveKeys.S = true;
-					break;
-				case 0x57: //W
-					app->moveKeys.W = true;
-					break;
-				case 0x41: //A
-					app->moveKeys.A = true;
-					break;
-				case 0x44: //D
-					app->moveKeys.D = true;
-					break;
-				case VK_LEFT:
-					app->moveKeys.LEFT = true;
-					app->camera.RelativeYaw(-2.0f);
-					break;
-				case VK_RIGHT:
-					app->moveKeys.RIGHT = true;
-					app->camera.RelativeYaw(2.0f);
-					break;
-				case VK_UP:
-					app->moveKeys.UP = true;
-					app->camera.RelativePitch(-2.0f);
-					break;
-				case VK_DOWN:
-					app->moveKeys.DOWN = true;
-					app->camera.RelativePitch(2.0f);
-					break;
-				case VK_CONTROL:
-					app->moveKeys.CTRL = true;
-					break;
-				case VK_SPACE:
-					app->moveKeys.SPACE = true;
-					break;
-			}
+
+			if (w == VK_ESCAPE)		PostQuitMessage(0);
+			else					Input::SetKeyState(w, true);
 		break;
 
 		case WM_LBUTTONDOWN:

@@ -29,7 +29,7 @@ void FinalPass::Apply()
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VT());
 	this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetDisabledDepth(), 0);
-	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
+	//this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
 
 	ID3D11SamplerState *smp[] = { ShaderStates::SamplerState::GetLinear() };
 	this->deviceContext->PSSetSamplers(0, 1, smp);
@@ -49,7 +49,7 @@ bool FinalPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	HRESULT hr = S_OK;
 	this->device = device;
 	this->deviceContext = deviceContext;
-
+	
 	ShaderStates::DepthStencilState::GetDisabledDepth(device);
 	ShaderStates::RasterizerState::GetNoCullNoMs(device);
 	ShaderStates::SamplerState::GetLinear(device);

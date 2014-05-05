@@ -1,5 +1,6 @@
 #include "SubsurfaceScatteringScene.h"
 #include "..\Utilities\DepthCamera.h"
+#include "..\Input.h"
 
 SubsurfaceScatteringScene::SubsurfaceScatteringScene(SSSInitDesc& desc)
 {
@@ -79,14 +80,27 @@ void SubsurfaceScatteringScene::Frame(float delta)
 		}
 
 		this->ground.Render(this->deviceContext);
-		this->sphereMap.Render(delta, this->mainCam->GetPosition());
+		//this->sphereMap.Render(delta, this->mainCam->GetPosition());
 	}
 	
 	Pipeline::LightPass::LightData lData;
 	memset(&lData, 0, sizeof(Pipeline::LightPass::LightData));
-	lData.pointData = &this->pointLights[0];
+
+	if (this->pointLights.size())
+		lData.pointData = &this->pointLights[0];
 	lData.pointCount = (int)this->pointLights.size();
+
+	if (this->spotLight.size())
+		lData.spotData = &this->spotLight[0];
+	lData.spotCount = this->spotLight.size();
+
+	if (this->directionalLight.size())
+		lData.dirData = &this->directionalLight[0];
+	lData.dirCount = (int)this->directionalLight.size();
+
 	lData.invProj = this->mainCam->GetInverseProjectionMatrix();
+	lData.view = this->mainCam->GetViewMatrix();
+	lData.ambientLight = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
 
@@ -100,8 +114,10 @@ bool SubsurfaceScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceConte
 	this->deviceContext = dc;
 
 	Model bth;
-	if (!bth.CreateModel("Models\\bth.obj", device))
+	if (!bth.CreateModel("Models\\bth.righthanded.obj", device))
+	//if (!bth.CreateModel("Models\\bth.lefthanded.obj", device))
 		return false;
+
 	this->models.push_back(bth);
 
 	this->sphereMap.CreateSkyBox(device, dc);
@@ -119,8 +135,37 @@ void SubsurfaceScatteringScene::SetCamera(Camera* cam)
 
 void SubsurfaceScatteringScene::CreateLights()
 {
-	BasicLightData::PointLight pLight;
+	//BasicLightData::PointLight pLight;
+	//size_t totPoint = 5;
+	//for (size_t i = 0; i < totPoint; i++)
+	//{
+	//	float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+	//	float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+	//	float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+	//	pLight.lightColour = DirectX::XMFLOAT3(r, g, b);
+	//	pLight.positionRange = DirectX::XMFLOAT4((-((float)totPoint / 2.0f) * 5) + (float)i * 5, -90.0f, -10.0f, 190.0f);
+	//	this->pointLights.push_back(pLight);
+	//}
+	//
+	BasicLightData::Directional dl;
+	dl.color = DirectX::XMFLOAT3(0.8f, 0.8f, 0.8f);
+	dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
+	this->directionalLight.push_back(dl);
+	
+	//size_t totSpot = 1;
+	//BasicLightData::Spotlight sl;
+	//for (size_t i = 0; i < totSpot; i++)
+	//{
+	//	sl.coneAngle = 20.0f;
+	//	sl.color = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+	//	sl.position = DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f);
+	//	sl.range = 1000.0f;
+	//	sl.unitDir = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
+	//	sl.attenuation = DirectX::XMFLOAT3(0.4f, 0.02f, 0.0f);
+	//	this->spotLight.push_back(sl);
+	//}
 
+<<<<<<< HEAD
 	for (size_t i = 0; i < 1; i++)
 	{
 		pLight.attenuation = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 0.0f);
@@ -129,6 +174,8 @@ void SubsurfaceScatteringScene::CreateLights()
 		//pLight.positionRange = DirectX::XMFLOAT4((float)i - ((float)255 / (float)2), 10.0f, 10.0f, 20.0f);
 		this->pointLights.push_back(pLight);
 	}
+=======
+>>>>>>> 1dff155c5f61c13ed99df508c39256fef11d8e68
 }
 
 void SubsurfaceScatteringScene::RenderDepthMap()

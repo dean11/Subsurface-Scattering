@@ -32,6 +32,8 @@ namespace Pipeline
 			int dirCount;
 
 			DirectX::XMFLOAT4X4 invProj;
+			DirectX::XMFLOAT4X4 view;
+			DirectX::XMFLOAT3 ambientLight;
 		};
 
 	public:
@@ -41,15 +43,15 @@ namespace Pipeline
 		void Release() override;
 		void Clear() override;
 
-		void Apply(const LightData& lights, ID3D11ShaderResourceView* depthMap, ID3D11ShaderResourceView* normalMap);
+		void Apply(const LightData& lights, ID3D11ShaderResourceView* depthMap, ID3D11ShaderResourceView* normalMap, ID3D11ShaderResourceView* positionMap);
 
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile);
 		ID3D11ShaderResourceView* GetLightMapSRV();
 
 	private:
-		void RenderPointLight(const BasicLightData::PointLight* data, int count);
-		void RenderSpotLight(const BasicLightData::Spotlight* data, int count);
-		void RenderDirectionalLight(const BasicLightData::Directional* data, int count);
+		void RenderPointLight(BasicLightData::PointLight *dest, const BasicLightData::PointLight* data, int count, const DirectX::XMFLOAT4X4& view);
+		void RenderSpotLight(BasicLightData::Spotlight *dest, const BasicLightData::Spotlight* data, int count, const DirectX::XMFLOAT4X4& view);
+		void RenderDirectionalLight(BasicLightData::Directional *dest, const BasicLightData::Directional* data, int count, const DirectX::XMFLOAT4X4& view);
 
 		bool CreateSRVAndBuffer(int width, int height);
 
@@ -64,7 +66,14 @@ namespace Pipeline
 		ID3D11ShaderResourceView* pointLightBufferSRV;
 		ID3D11ShaderResourceView* spotLightBufferSRV;
 		ID3D11ShaderResourceView* dirLightBufferSRV;
+
 		ID3D11Buffer* lightBuffer;
+		int firstPointLight;
+		int firstDirLight;
+		int firstSpotLight;
+		int maxPointLight;
+		int maxDirLight;
+		int maxSpotLight;
 
 		ID3D11Buffer* constLightBuffer;
 

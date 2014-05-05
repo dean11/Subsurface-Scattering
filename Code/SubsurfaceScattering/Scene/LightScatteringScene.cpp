@@ -58,8 +58,7 @@ bool LightScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceContext* d
 	if (!this->sphereMap.CreateSkyBox(device, dc)) return false;
 
 	//BasicLightData::PointLight data;
-	data.attenuation			= DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
-	data.lightColour			= DirectX::XMFLOAT4(0.7f, 1.0f, 0.4f, 0.0f);
+	data.lightColour			= DirectX::XMFLOAT3(0.7f, 1.0f, 0.4f);
 	//data.lightColour.ambient	= DirectX::XMFLOAT4(0.2f, 0.2f, 0.2, 0.0f);
 	//data.lightColour.diffuse	= DirectX::XMFLOAT4(0.7f, 1.0f, 0.4, 0.0f);
 	//data.lightColour.specular	= DirectX::XMFLOAT4(0.2f, 0.4f, 0.3, 0.0f);

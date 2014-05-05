@@ -3,11 +3,13 @@
 #include "..\RenderState\DepthStencilState.h"
 #include "..\RenderState\RasterizerState.h"
 #include "..\RenderState\SamplerState.h"
+#include <D3DTK\SimpleMath.h>
 
 
 struct ConstLightBuffer
 {
 	DirectX::XMFLOAT4X4 invProj;
+	DirectX::XMFLOAT4 ambientLight;
 	int pointLightCount;
 	int spotLightCount;
 	int dirLightCount;
@@ -20,7 +22,16 @@ using namespace Pipeline;
 
 LightPass::LightPass()
 {
+	this->maxPointLight = 50;
+	this->maxDirLight = 5;
+	this->maxSpotLight = 100;
 
+	int temp = 0;
+	this->firstPointLight	= (temp += 0);
+	this->firstSpotLight	= (temp += maxPointLight);
+	this->firstDirLight		= (temp += maxSpotLight);
+	
+	
 }
 
 LightPass::~LightPass()
@@ -45,41 +56,50 @@ void LightPass::Release()
 	if (lightBuffer) lightBuffer->Release(); lightBuffer = 0;
 }
 
-void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMap, ID3D11ShaderResourceView* normalMap)
+void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMap, ID3D11ShaderResourceView* normalMap, ID3D11ShaderResourceView* positionMap)
 {
-	ID3D11ShaderResourceView* srvMap[] = { depthMap, normalMap };
-	this->deviceContext->CSSetShaderResources(0, 2, srvMap);
 	this->deviceContext->CSSetUnorderedAccessViews(0, 1, &this->lightMapUAV, 0);
 
-	this->RenderPointLight(lights.pointData, lights.pointCount);
-	this->RenderDirectionalLight(lights.dirData, lights.dirCount);
-	this->RenderSpotLight(lights.spotData, lights.spotCount);
+	D3D11_MAPPED_SUBRESOURCE mappedData;
+	if (SUCCEEDED(this->deviceContext->Map(this->lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
+	{
+		BasicLightData::PointLight* l = (BasicLightData::PointLight*)mappedData.pData;
+		this->RenderPointLight(&l[this->firstPointLight], lights.pointData, lights.pointCount, lights.view);
+		this->RenderDirectionalLight((BasicLightData::Directional*)(&l[this->firstDirLight]), lights.dirData, lights.dirCount, lights.view);
+		this->RenderSpotLight((BasicLightData::Spotlight*)(&l[this->firstSpotLight]), lights.spotData, lights.spotCount, lights.view);
 
+		this->deviceContext->Unmap(this->lightBuffer, 0);
+	}
 	this->lightShader.Apply();
 
 	//Set the buffer
-	ID3D11ShaderResourceView* srv[] =
-	{
-		this->pointLightBufferSRV,
-		this->spotLightBufferSRV,
-		this->dirLightBufferSRV
-	};
-
-	D3D11_MAPPED_SUBRESOURCE mappedData;
 	if (SUCCEEDED(this->deviceContext->Map(this->constLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
 	{
 		ConstLightBuffer* b = (ConstLightBuffer*)mappedData.pData;
 		b->dirLightCount = lights.dirCount;
 		b->pointLightCount = lights.pointCount;
 		b->spotLightCount = lights.spotCount;
-		DirectX::XMStoreFloat4x4(&b->invProj, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&lights.invProj)));
+		b->ambientLight = DirectX::XMFLOAT4(lights.ambientLight.x, lights.ambientLight.y, lights.ambientLight.z, 0.0f);
+		b->invProj = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.invProj)).Transpose();
 
 		this->deviceContext->Unmap(this->constLightBuffer, 0);
+		this->deviceContext->CSSetConstantBuffers(0, 1, &this->constLightBuffer);
 	}
+	
+	ID3D11ShaderResourceView* srv[] =
+	{
+		depthMap, 
+		normalMap, 
+		positionMap,
+		this->pointLightBufferSRV,
+		this->spotLightBufferSRV,
+		this->dirLightBufferSRV
+	};
+	UINT srvCount = 6;
+	this->deviceContext->CSSetShaderResources(0, srvCount, srv);
 
-	this->deviceContext->CSSetConstantBuffers(0, 1, &this->constLightBuffer);
-
-	this->deviceContext->CSSetShaderResources(2, 3, srv);
+	ID3D11SamplerState* samp[] = { ShaderStates::SamplerState::GetPoint() };
+	this->deviceContext->CSSetSamplers(0, 1, samp);
 
 	this->deviceContext->Dispatch((unsigned int)((this->width + 31) / 32), (unsigned int)((this->height + 31) / 32), 1);
 }
@@ -90,6 +110,8 @@ bool LightPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	this->deviceContext = deviceContext;
 	this->width = (unsigned int)width;
 	this->height = (unsigned int)height;
+
+	ShaderStates::SamplerState::GetPoint(device);
 
 	UINT flag = 0;
 #if defined(DEBUG) || defined(_DEBUG)
@@ -120,40 +142,35 @@ bool LightPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 
 }
 
-void LightPass::RenderPointLight(const BasicLightData::PointLight* data, int count)
+void LightPass::RenderPointLight(BasicLightData::PointLight* dest, const BasicLightData::PointLight* data, int count, const DirectX::XMFLOAT4X4& view)
 {
 	if (!count || !data) return;
+	int tot = min(this->maxPointLight, count);
 
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	if ( SUCCEEDED(this->deviceContext->Map(this->lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData) ) )
+	for (int i = 0; i < tot; i++)
 	{
-		memcpy(mappedData.pData, data, sizeof(BasicLightData::PointLight)*count);
-		this->deviceContext->Unmap(this->lightBuffer, 0);
+		DirectX::XMStoreFloat4(&dest[i].positionRange, DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat4(&data[i].positionRange), DirectX::XMLoadFloat4x4(&view)));
+		dest[i].positionRange.w = data[i].positionRange.w;
+
+		dest[i].positionRange	= data[i].positionRange;
+		dest[i].lightColour		= data[i].lightColour;
 	}
 }
 
-void LightPass::RenderSpotLight(const BasicLightData::Spotlight* data, int count)
+void LightPass::RenderSpotLight(BasicLightData::Spotlight* dest, const BasicLightData::Spotlight* data, int count, const DirectX::XMFLOAT4X4& view)
 {
 	if (!count || !data) return;
-	
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	if (SUCCEEDED(this->deviceContext->Map(this->lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
-	{
-		memcpy(mappedData.pData, data, sizeof(BasicLightData::Spotlight)*count);
-		this->deviceContext->Unmap(this->lightBuffer, 0);
-	}
+	int tot = min(this->maxPointLight, count);
+
+	memcpy(dest, data, sizeof(BasicLightData::Spotlight) * tot);
 }
 
-void LightPass::RenderDirectionalLight(const BasicLightData::Directional* data, int count)
+void LightPass::RenderDirectionalLight(BasicLightData::Directional* dest, const BasicLightData::Directional* data, int count, const DirectX::XMFLOAT4X4& view)
 {
 	if (!count || !data) return;
-	
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	if (SUCCEEDED(this->deviceContext->Map(this->lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
-	{
-		memcpy(mappedData.pData, data, sizeof(BasicLightData::Directional)*count);
-		this->deviceContext->Unmap(this->lightBuffer, 0);
-	}
+	int tot = min(this->maxDirLight, count);
+
+	memcpy(dest, data, sizeof(BasicLightData::Directional) * tot);
 }
 
 ID3D11ShaderResourceView* LightPass::GetLightMapSRV()
@@ -176,25 +193,31 @@ bool LightPass::CreateSRVAndBuffer(int width, int height)
 	HRESULT hr = S_OK;
 	D3D11_BUFFER_DESC bDesc;
 	bDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	bDesc.ByteWidth = sizeof(BasicLightData::Spotlight) * 512 * 3;
+	bDesc.ByteWidth = (sizeof(BasicLightData::Spotlight) * (this->maxDirLight + this->maxPointLight + this->maxSpotLight));
 	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	bDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	bDesc.StructureByteStride = sizeof(BasicLightData::Spotlight);
 	bDesc.Usage = D3D11_USAGE_DYNAMIC;
 
-	if (FAILED(this->device->CreateBuffer(&bDesc, 0, &this->lightBuffer))) return false;
+	if (FAILED(this->device->CreateBuffer(&bDesc, 0, &this->lightBuffer))) 
+		return false;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC sbsrv;
 	sbsrv.Format = DXGI_FORMAT_UNKNOWN;
 	sbsrv.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	sbsrv.Buffer.ElementOffset = 0;
-	sbsrv.Buffer.ElementWidth = sizeof(BasicLightData::Spotlight);
+
+	sbsrv.Buffer.ElementOffset = this->firstPointLight;
+	sbsrv.Buffer.ElementWidth = this->maxPointLight;
 	if (FAILED(this->device->CreateShaderResourceView(this->lightBuffer, &sbsrv, &this->pointLightBufferSRV)))
 		return false;	
-	sbsrv.Buffer.ElementOffset = 512;
+
+	sbsrv.Buffer.ElementOffset = this->firstSpotLight;
+	sbsrv.Buffer.ElementWidth = this->maxSpotLight;
 	if (FAILED(this->device->CreateShaderResourceView(this->lightBuffer, &sbsrv, &this->spotLightBufferSRV)))
 		return false;
-	sbsrv.Buffer.ElementOffset = 512 * 2;
+
+	sbsrv.Buffer.ElementOffset = this->firstDirLight;
+	sbsrv.Buffer.ElementWidth = this->maxDirLight;
 	if (FAILED(this->device->CreateShaderResourceView(this->lightBuffer, &sbsrv, &this->dirLightBufferSRV)))
 		return false;
 

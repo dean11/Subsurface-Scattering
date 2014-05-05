@@ -11,6 +11,7 @@
 #include "Pass\FinalPass.h"
 #include "Pass\LightPass.h"
 #include "Pass\DepthPass.h"
+#include <D3DTK\SpriteBatch.h>
 
 namespace Pipeline
 {
@@ -51,6 +52,7 @@ namespace Pipeline
 		bool CreateConstantBuffers();
 
 		D3D11_VIEWPORT viewPort;
+
 		ID3D11Device* device;
 		ID3D11DeviceContext* deviceContext;
 		IDXGISwapChain* d3dSwapchain;
@@ -66,6 +68,9 @@ namespace Pipeline
 		DepthPass depthPass;
 
 		ShaderPass* prevPass;
+
+		DirectX::SpriteBatch *debugSP;
+		bool debugRTV;
 	};
 
 }

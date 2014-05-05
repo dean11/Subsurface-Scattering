@@ -59,16 +59,17 @@ DirectX::XMFLOAT4X4 Model::GetWorld() const
 }
 DirectX::XMFLOAT4X4 Model::GetWorldInversTranspose()
 {
-	return this->world;
+	return this->world.Invert().Transpose();
 }
 DirectX::XMFLOAT4X4 Model::GetWorldInversTranspose() const
 {
-	return this->world;
+	return this->world.Invert().Transpose();
 }
 
 void Model::SetWorld(DirectX::XMFLOAT4X4 world)
 {
-	this->world = world;
+	this->world = DirectX::SimpleMath::Matrix(&world._11);
+
 }
 
 

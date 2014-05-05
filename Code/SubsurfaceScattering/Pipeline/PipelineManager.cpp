@@ -8,7 +8,16 @@
 #include "..\Utilities\WindowShell.h"
 
 using namespace Pipeline;
-
+struct winRectangle :public RECT
+{
+	winRectangle(LONG x, LONG y, LONG w, LONG h)
+	{
+		this->left = x;
+		this->top = y;
+		this->right = x+w;
+		this->bottom = y+h;
+	}
+};
 static PipelineManager* pipelineManagerInstance = 0;
 
 struct ObjectMatrixData
@@ -70,6 +79,8 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	this->device = device;
 	this->deviceContext = deviceContext;
 
+	this->debugSP = new DirectX::SpriteBatch(deviceContext);
+
 	if (!this->CreateSwapChain(width, height))			return false;
 	if (!this->CreateRTV())					return false;
 	
@@ -88,7 +99,6 @@ void PipelineManager::ApplyGeometryPass()
 {
 	if (this->prevPass) this->prevPass->Clear();
 	
-
 	this->geometryPass.Apply();
 	this->deviceContext->RSSetViewports(1, &this->viewPort);
 
@@ -100,7 +110,7 @@ void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 {
 	if (this->prevPass) this->prevPass->Clear();
 
-	this->lightPass.Apply(data, this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL));
+	this->lightPass.Apply(data, this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION));
 	
 	this->prevPass = &this->lightPass;
 }
@@ -168,6 +178,18 @@ void PipelineManager::Present()
 	this->deviceContext->PSSetShaderResources(0, 4, srv);
 	this->finalPass.Apply();
 
+	if (this->debugRTV)
+	{
+		this->debugSP->Begin();
+		{
+			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), winRectangle(0, 0, 200, 200));
+			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle(200, 0, 200, 200));
+			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle(400, 0, 200, 200));
+			this->debugSP->Draw(this->lightPass.GetLightMapSRV(), winRectangle(600, 0, 200, 200));
+		}
+		this->debugSP->End();
+	}
+
 	this->d3dSwapchain->Present(0, 0);
 
 	this->prevPass = &this->finalPass;
@@ -228,6 +250,7 @@ void PipelineManager::SetDepthPointLightData(const DirectX::XMFLOAT4& posRange)
 PipelineManager::PipelineManager()
 {
 	this->prevPass = 0;
+	this->debugRTV = true;
 }
 PipelineManager::~PipelineManager()
 {
@@ -238,12 +261,14 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 {
 	//generate static Swapchain Desc
 	DXGI_SWAP_CHAIN_DESC desc;
+
 	desc.OutputWindow = WindowShell::GetHWND();
 	desc.BufferCount = 1;
 	desc.Windowed = true;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	desc.Flags = 0;
+
 	desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	desc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
@@ -251,6 +276,7 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 	desc.BufferDesc.RefreshRate.Numerator = 60;
 	desc.BufferDesc.Height = (UINT)height;
 	desc.BufferDesc.Width = (UINT)width;
+
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 
@@ -295,12 +321,6 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 }
 bool PipelineManager::CreateRTV()
 {
-	D3D11_UNORDERED_ACCESS_VIEW_DESC descView;
-	ZeroMemory(&descView, sizeof(descView));
-	descView.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-	descView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	descView.Texture2D.MipSlice = 0;
-
 	ID3D11Texture2D* backBuffer;
 	if (FAILED(this->d3dSwapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer))))
 	{

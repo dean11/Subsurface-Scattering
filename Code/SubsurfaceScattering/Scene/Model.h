@@ -5,6 +5,7 @@
 #include <d3d11_2.h>
 #include <D3DTK\DDSTextureLoader.h>
 #include "..\Utilities\Util.h"
+#include <D3DTK\SimpleMath.h>
 
 class Model
 {
@@ -28,14 +29,15 @@ public:
 	DirectX::XMFLOAT4X4 GetWorld();
 	DirectX::XMFLOAT4X4 GetWorld() const;
 
-	DirectX::XMFLOAT4X4 GetWorldInversTranspose();			//NOT IMPLEMENTED
-	DirectX::XMFLOAT4X4 GetWorldInversTranspose() const;	//NOT IMPLEMENTED
+	DirectX::XMFLOAT4X4 GetWorldInversTranspose();
+	DirectX::XMFLOAT4X4 GetWorldInversTranspose() const;
 
 	void SetWorld(DirectX::XMFLOAT4X4 world);
 	//void SetWorldInversTranspose(DirectX::XMFLOAT4X4 worldInvTrans); SÄTTA DENNA I SAMBAND MED NY WORLD?
 	protected:
 	Mesh mesh;
-	DirectX::XMFLOAT4X4 world;
+	//DirectX::XMFLOAT4X4 world;
+	DirectX::SimpleMath::Matrix world;
 };
 
 #endif // !BATCHELOR_MESHMANAGER_H

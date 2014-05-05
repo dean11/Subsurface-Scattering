@@ -42,20 +42,6 @@ class App
 
 		Scene *subsurface;
 		Scene *volumeLight;
-
-		struct Keyboard
-		{
-			bool W;
-			bool A;
-			bool S;
-			bool D;
-			bool CTRL;
-			bool SPACE;
-			bool UP;
-			bool DOWN;
-			bool LEFT;
-			bool RIGHT;
-		} moveKeys;
 };
 
 #endif // !BACHELOR_APP_H

@@ -92,6 +92,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Importing\ObjGeometryImporter.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="Pipeline\Pass\DepthPass.h" />
     <ClInclude Include="Pipeline\Pass\LightPass.h" />
     <ClInclude Include="Pipeline\Pass\FinalPass.h" />

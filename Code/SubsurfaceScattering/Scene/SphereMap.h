@@ -4,6 +4,7 @@
 #include "..\Pipeline\PipelineManager.h"
 #include <D3DTK\DDSTextureLoader.h>
 #include "..\Pipeline\Shader.h"
+#include <D3DTK\SimpleMath.h>
 
 class SphereMap
 {
@@ -17,12 +18,11 @@ public:
 
 private:
 	Model sphereMap;
-	//ID3D11ShaderResourceView* cubeSRV;
 	ID3D11Device* device;
 	ID3D11DeviceContext* dc;
 	Pipeline::Shader pix;
 	UINT off = 0;
-	DirectX::XMFLOAT4X4 world4x4;
+	DirectX::SimpleMath::Matrix world4x4;
 };
 
 #endif
