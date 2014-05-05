@@ -14,6 +14,7 @@ public:
 	bool CreateSkyBox(ID3D11Device* device, ID3D11DeviceContext* dc);
 	//DirectX::XMFLOAT4X4 CenterAroundCamPos(DirectX::XMFLOAT3& camPos);
 	void Render(float delta, DirectX::XMFLOAT3 camPos);
+	void RenderForDepthMap();
 
 private:
 	Model sphereMap;

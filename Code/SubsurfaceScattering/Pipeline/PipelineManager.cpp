@@ -30,6 +30,20 @@ struct SceneMatrixData
 	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4X4 projection;
 };
+struct DepthPointLightData
+{
+	DirectX::XMFLOAT4 posRange;
+};
+
+struct DepthSpotlightData
+{
+	//TBD
+};
+
+struct DepthDirLightData
+{
+	//TBD
+};
 
 
 PipelineManager& PipelineManager::Instance()
@@ -49,11 +63,13 @@ void PipelineManager::Release()
 	this->geometryPass.Release();
 	this->finalPass.Release();
 	this->lightPass.Release();
+	this->depthPass.Release();
 
-	if (this->d3dSwapchain)			this->d3dSwapchain->Release();			this->d3dSwapchain = 0;
-	if (this->renderTarget)			this->renderTarget->Release();			this->renderTarget = 0;
-	if (this->objectMatrixBuffer)	this->objectMatrixBuffer->Release();	this->objectMatrixBuffer = 0;
-	if (this->sceneMatrixBuffer)	this->sceneMatrixBuffer->Release();		this->sceneMatrixBuffer = 0;
+	if (this->d3dSwapchain)				this->d3dSwapchain->Release();				this->d3dSwapchain = 0;
+	if (this->renderTarget)				this->renderTarget->Release();				this->renderTarget = 0;
+	if (this->objectMatrixBuffer)		this->objectMatrixBuffer->Release();		this->objectMatrixBuffer = 0;
+	if (this->sceneMatrixBuffer)		this->sceneMatrixBuffer->Release();			this->sceneMatrixBuffer = 0;
+	if (this->depthPointLightBuffer)	this->depthPointLightBuffer->Release();	this->depthPointLightBuffer = 0;
 
 	delete pipelineManagerInstance;
 	pipelineManagerInstance = 0;
@@ -71,6 +87,7 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	this->geometryPass.Initiate(device, deviceContext, width, height, false);
 	this->lightPass.Initiate(device, deviceContext, width, height, false);
 	this->finalPass.Initiate(device, deviceContext, width, height, false);
+	this->depthPass.Initiate(device, deviceContext, 512, 512, false);
 	
 	CreateViewport(width, height);
 	this->CreateConstantBuffers();
@@ -85,11 +102,7 @@ void PipelineManager::ApplyGeometryPass()
 	this->geometryPass.Apply();
 	this->deviceContext->RSSetViewports(1, &this->viewPort);
 
-	ID3D11Buffer* buff[] =
-	{
-		this->sceneMatrixBuffer,
-	};
-	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
+	
 	this->prevPass = &this->geometryPass;
 }
 
@@ -101,6 +114,48 @@ void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 	
 	this->prevPass = &this->lightPass;
 }
+
+void PipelineManager::ApplyDepthPass(DepthPass::DepthMapType depthMapType)
+{
+	if (this->prevPass) this->prevPass->Clear();
+
+	this->depthPass.Apply(depthMapType);
+
+	this->prevPass = &this->depthPass;
+}
+
+void PipelineManager::RenderDepthMap(DirectX::XMFLOAT3 pos, DirectX::XMFLOAT3 lookAt)
+{
+	this->depthPass.Render(pos, lookAt);
+}
+
+void PipelineManager::RenderDepthMap(DirectX::XMFLOAT3 pos, DepthPass::CubeFace face)
+{
+	//this->depthPass.Render(pos, face);
+}
+
+ID3D11ShaderResourceView* PipelineManager::GetDepthMapSRVSingle()
+{
+	return this->depthPass.GetDepthMapSRVSingle();
+}
+
+ID3D11ShaderResourceView* PipelineManager::GetDepthMapSRVCube()
+{
+	ID3D11ShaderResourceView* n = NULL;
+	return n;
+	//return this->depthPass.GetDepthMapSRVCube();
+}
+
+DirectX::XMFLOAT4X4 PipelineManager::GetDepthCameraView()
+{
+	return this->depthPass.GetCameraView();
+}
+
+DirectX::XMFLOAT4X4 PipelineManager::GetDepthCameraProj()
+{
+	return this->depthPass.GetCameraProj();
+}
+
 
 void PipelineManager::Present()
 {
@@ -116,9 +171,11 @@ void PipelineManager::Present()
 		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL),
 		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR),
 		this->lightPass.GetLightMapSRV(),
+		this->depthPass.GetDepthMapSRVSingle(),
+		//this->depthPass.GetDepthMapSRVCube(),
 	};
 
-	this->deviceContext->PSSetShaderResources(0, 3, srv);
+	this->deviceContext->PSSetShaderResources(0, 4, srv);
 	this->finalPass.Apply();
 
 	if (this->debugRTV)
@@ -165,6 +222,29 @@ void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, con
 		DirectX::XMStoreFloat4x4(&data->view, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&view)));
 		this->deviceContext->Unmap(this->sceneMatrixBuffer, 0);
 	}
+
+	ID3D11Buffer* buff[] =
+	{
+		this->sceneMatrixBuffer,
+	};
+	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
+}
+
+void PipelineManager::SetDepthPointLightData(const DirectX::XMFLOAT4& posRange)
+{
+	D3D11_MAPPED_SUBRESOURCE res;
+	if (SUCCEEDED(this->deviceContext->Map(this->depthPointLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
+	{
+		DepthPointLightData* data = (DepthPointLightData*)res.pData;
+		DirectX::XMStoreFloat4(&data->posRange, DirectX::XMLoadFloat4(&posRange));
+		this->deviceContext->Unmap(this->depthPointLightBuffer, 0);
+	}
+
+	ID3D11Buffer* buff[] =
+	{
+		this->depthPointLightBuffer,
+	};
+	this->deviceContext->VSSetConstantBuffers(2, 1, buff);
 }
 
 PipelineManager::PipelineManager()
@@ -283,6 +363,11 @@ bool PipelineManager::CreateConstantBuffers()
 	obj.ByteWidth = sizeof(SceneMatrixData);
 	obj.StructureByteStride = sizeof(SceneMatrixData);
 	if (FAILED(this->device->CreateBuffer(&obj, 0, &this->sceneMatrixBuffer)))
+		return false;
+
+	obj.ByteWidth = sizeof(DepthPointLightData);
+	obj.StructureByteStride = sizeof(DepthPointLightData);
+	if (FAILED(this->device->CreateBuffer(&obj, 0, &this->depthPointLightBuffer)))
 		return false;
 
 	return true;

@@ -28,6 +28,9 @@ class Camera
 		void SetPositionX(float x);
 		void SetPositionY(float y);
 		void SetPositionZ(float z);
+		void SetLookAt(DirectX::XMFLOAT3 lookAt);
+		void SetUp(DirectX::XMFLOAT3 up);
+		void SetRight(DirectX::XMFLOAT3 right);
 		void RelativeForward(float speed);
 		void RelativeRight(float speed);
 		void RelativeUp(float speed);

@@ -10,6 +10,7 @@
 #include "Pass\GeometryPass.h"
 #include "Pass\FinalPass.h"
 #include "Pass\LightPass.h"
+#include "Pass\DepthPass.h"
 #include <D3DTK\SpriteBatch.h>
 
 namespace Pipeline
@@ -25,12 +26,22 @@ namespace Pipeline
 
 		void ApplyGeometryPass();
 		void ApplyLightPass(const LightPass::LightData& data);
+		void ApplyDepthPass(DepthPass::DepthMapType depthMapType);
+		void RenderDepthMap(DirectX::XMFLOAT3 pos, DirectX::XMFLOAT3 lookAt);
+		void RenderDepthMap(DirectX::XMFLOAT3 pos, DepthPass::CubeFace face);
+		ID3D11ShaderResourceView* GetDepthMapSRVSingle();
+		ID3D11ShaderResourceView* GetDepthMapSRVCube();
+		DirectX::XMFLOAT4X4 GetDepthCameraView();
+		DirectX::XMFLOAT4X4 GetDepthCameraProj();
 		void ApplySSSPass(){}
 
 		void Present();
 
 		void SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose);
 		void SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection);
+		void SetDepthPointLightData(const DirectX::XMFLOAT4& posRange);
+
+
 
 	private:
 		PipelineManager();
@@ -49,10 +60,12 @@ namespace Pipeline
 
 		ID3D11Buffer *objectMatrixBuffer;
 		ID3D11Buffer *sceneMatrixBuffer;
+		ID3D11Buffer *depthPointLightBuffer;
 
 		FinalPass finalPass;
 		GeometryPass geometryPass;
 		LightPass lightPass;
+		DepthPass depthPass;
 
 		ShaderPass* prevPass;
 

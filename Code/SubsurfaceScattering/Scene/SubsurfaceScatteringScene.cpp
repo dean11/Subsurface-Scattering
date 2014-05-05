@@ -1,4 +1,5 @@
 #include "SubsurfaceScatteringScene.h"
+#include "..\Utilities\DepthCamera.h"
 #include "..\Input.h"
 
 SubsurfaceScatteringScene::SubsurfaceScatteringScene(SSSInitDesc& desc)
@@ -16,20 +17,57 @@ SubsurfaceScatteringScene::~SubsurfaceScatteringScene()
 
 void SubsurfaceScatteringScene::Frame(float delta)
 {
-	//if (Input::IsKeyDown(VK_LEFT)) this->spotLight[0].position.x -= 1.0f;
-	//if (Input::IsKeyDown(VK_RIGHT)) this->spotLight[0].position.x += 1.0f;
-	//if (Input::IsKeyDown(VK_UP)) this->spotLight[0].position.y += 1.0f;
-	//if (Input::IsKeyDown(VK_DOWN)) this->spotLight[0].position.y -= 1.0f;
-	//
-	//if (Input::IsKeyDown(VK_PLUS)) 
-	//	for (size_t i = 0; i < this->spotLight.size(); i++)
-	//		this->spotLight[i].coneAngle += 1.0f;
-	//if (Input::IsKeyDown(VK_MINUS)) 
-	//	for (size_t i = 0; i < this->spotLight.size(); i++)
-	//		this->spotLight[i].coneAngle -= 1.0f;
 
+	if (this->pointLights.size() > 0)
+	{
+		//Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix());
+		
+		Pipeline::PipelineManager::Instance().ApplyDepthPass(Pipeline::DepthPass::DepthMapType::CubeDepthMap);
+		DirectX::XMFLOAT3 pos;
+		for (size_t i = 0; i < this->pointLights.size(); i++)
+		{
+			Pipeline::PipelineManager::Instance().SetDepthPointLightData(this->pointLights[i].positionRange);
+			pos.x = this->pointLights[i].positionRange.x;
+			pos.y = this->pointLights[i].positionRange.y;
+			pos.z = this->pointLights[i].positionRange.z;
+
+			/*Pipeline::PipelineManager::Instance().RenderDepthMap(pos, Pipeline::DepthPass::CubeFace::PositiveX);
+			RenderDepthMap();
+
+			Pipeline::PipelineManager::Instance().RenderDepthMap(pos, Pipeline::DepthPass::CubeFace::NegativeX);
+			RenderDepthMap();
+
+			Pipeline::PipelineManager::Instance().RenderDepthMap(pos, Pipeline::DepthPass::CubeFace::PositiveY);
+			RenderDepthMap();
+
+			Pipeline::PipelineManager::Instance().RenderDepthMap(pos, Pipeline::DepthPass::CubeFace::NegativeY);
+			RenderDepthMap();
+
+			Pipeline::PipelineManager::Instance().RenderDepthMap(pos, Pipeline::DepthPass::CubeFace::PositiveZ);
+			RenderDepthMap();
+
+			Pipeline::PipelineManager::Instance().RenderDepthMap(pos, Pipeline::DepthPass::CubeFace::NegativeZ);
+			RenderDepthMap();*/
+
+			Pipeline::PipelineManager::Instance().ApplyDepthPass(Pipeline::DepthPass::DepthMapType::SingleDepthMap);
+			//SINGLE DEPTHMAP REMOVE THIS FROM HERE WHEN ALL IS WORKING
+			Pipeline::PipelineManager::Instance().RenderDepthMap(pos, DirectX::XMFLOAT3(0, -0.5, 1));
+			RenderDepthMap();
+			//########################################
+		}
+
+	}
+	
+
+	//Pipeline::PipelineManager::Instance().ApplyDepthPass(Pipeline::DepthPass::DepthMapType::SingleDepthMap);
+
+	
 	Pipeline::PipelineManager::Instance().ApplyGeometryPass();
 	{
+		DirectX::XMFLOAT4X4 m;
+		DirectX::XMFLOAT3 f(0.2f, 0.3f, 1.0f);
+		XMStoreFloat4x4(&m, DirectX::XMMatrixRotationNormal(DirectX::XMLoadFloat3(&f), 0.7f));
+
 		Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix());
 
 		for (size_t i = 0; i < this->models.size(); i++)
@@ -37,12 +75,12 @@ void SubsurfaceScatteringScene::Frame(float delta)
 			UINT off = 0;
 			this->deviceContext->IASetVertexBuffers(0, 1, &this->models[i].GetMesh().vertexBuffer, &this->models[i].GetMesh().vertexStride, &off);
 			this->deviceContext->PSSetShaderResources(0, 1, &this->models[i].GetMesh().diffuse);
-			Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->models[i].GetWorld(), this->models[i].GetWorldInversTranspose());
+			Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(m/*this->models[i].GetWorld()*/, this->models[i].GetWorldInversTranspose());
 			this->deviceContext->Draw(this->models[i].GetMesh().vertexCount, 0);
 		}
 
 		this->ground.Render(this->deviceContext);
-		this->sphereMap.Render(delta, this->mainCam->GetPosition());
+		//this->sphereMap.Render(delta, this->mainCam->GetPosition());
 	}
 	
 	Pipeline::LightPass::LightData lData;
@@ -110,7 +148,7 @@ void SubsurfaceScatteringScene::CreateLights()
 	//}
 	//
 	BasicLightData::Directional dl;
-	dl.color = DirectX::XMFLOAT3(0.3f, 0.3f, 0.3f);
+	dl.color = DirectX::XMFLOAT3(0.8f, 0.8f, 0.8f);
 	dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
 	this->directionalLight.push_back(dl);
 	
@@ -129,3 +167,25 @@ void SubsurfaceScatteringScene::CreateLights()
 
 }
 
+void SubsurfaceScatteringScene::RenderDepthMap()
+{
+	DirectX::XMFLOAT4X4 m;
+	DirectX::XMFLOAT3 f(0.2f, 0.3f, 1.0f);
+	XMStoreFloat4x4(&m, DirectX::XMMatrixRotationNormal(DirectX::XMLoadFloat3(&f),0.7f));
+
+	Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(Pipeline::PipelineManager::Instance().GetDepthCameraView(),
+																Pipeline::PipelineManager::Instance().GetDepthCameraProj());
+	//Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix());
+
+	for (size_t i = 0; i < this->models.size(); i++)
+	{
+		UINT off = 0;
+		this->deviceContext->IASetVertexBuffers(0, 1, &this->models[i].GetMesh().vertexBuffer, &this->models[i].GetMesh().vertexStride, &off);
+		Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(m, this->models[i].GetWorldInversTranspose());
+		this->deviceContext->Draw(this->models[i].GetMesh().vertexCount, 0);
+	}
+	
+	this->ground.RenderForDepthMap(this->deviceContext);
+	this->sphereMap.RenderForDepthMap();
+	
+}

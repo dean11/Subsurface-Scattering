@@ -11,6 +11,7 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
 	for (int i = 0; i < nrOfPointLights; i++)
 	{
 		lightCol += PointLightCalc(pointLights[i], posW, normal).xyz;
+
 	}
 
 	for (int d = 0; d < nrOfDirLights; d++)

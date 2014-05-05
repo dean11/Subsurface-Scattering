@@ -33,6 +33,7 @@ private:
 	std::vector<BasicLightData::Spotlight> spotLight;
 
 	void CreateLights();
+	void RenderDepthMap();
 };
 
 #endif // !BATCHELOR_SUBSURFACESCATTERINGSCENE_H

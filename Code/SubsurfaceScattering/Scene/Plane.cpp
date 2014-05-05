@@ -101,4 +101,11 @@ void Plane::Render(ID3D11DeviceContext* dc)
 
 	dc->Draw(this->mesh.vertexCount, 0);
 }
+void Plane::RenderForDepthMap(ID3D11DeviceContext* dc)
+{
+	UINT off = 0;
+	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
+	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world, this->world);
+	dc->Draw(this->mesh.vertexCount, 0);
+}
 

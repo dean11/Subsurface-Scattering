@@ -19,6 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\DepthPassCube.vertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\DepthPassSingle.vertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shaders\geometry.vertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -81,6 +93,7 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="Importing\ObjGeometryImporter.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="Pipeline\Pass\DepthPass.h" />
     <ClInclude Include="Pipeline\Pass\LightPass.h" />
     <ClInclude Include="Pipeline\Pass\FinalPass.h" />
     <ClInclude Include="Pipeline\InputLayoutState.h" />
@@ -103,6 +116,7 @@
     <ClInclude Include="Pipeline\PipelineManager.h" />
     <ClInclude Include="Scene\Scene.h" />
     <ClInclude Include="Pipeline\Shader.h" />
+    <ClInclude Include="Utilities\DepthCamera.h" />
     <ClInclude Include="Utilities\Util.h" />
     <ClInclude Include="Utilities\WindowShell.h" />
   </ItemGroup>
@@ -110,6 +124,7 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Importing\ObjGeometryImporter.cpp" />
     <ClCompile Include="Pipeline\InputLayoutState.cpp" />
+    <ClCompile Include="Pipeline\Pass\DepthPass.cpp" />
     <ClCompile Include="Pipeline\Pass\LightPass.cpp" />
     <ClCompile Include="Pipeline\Pass\FinalPass.cpp" />
     <ClCompile Include="Pipeline\RenderState\BlendState.cpp" />
@@ -128,9 +143,11 @@
     <ClCompile Include="Pipeline\Pass\GeometryPass.cpp" />
     <ClCompile Include="Pipeline\PipelineManager.cpp" />
     <ClCompile Include="Pipeline\Shader.cpp" />
+    <ClCompile Include="Utilities\DepthCamera.cpp" />
     <ClCompile Include="Utilities\WindowShell.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\DepthPass.header.hlsli" />
     <None Include="Shaders\FinalPass.header.hlsli" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

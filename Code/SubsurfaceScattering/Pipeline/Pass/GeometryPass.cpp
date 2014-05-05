@@ -83,7 +83,7 @@ ID3D11RenderTargetView* GeometryPass::GetRenderTarget(GBuffer_RTV_Layout rtv)
 }
 void GeometryPass::Apply()
 {
-	float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	float c[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	for (size_t i = 0; i < GBuffer_RTV_Layout_COUNT; i++)
 		this->deviceContext->ClearRenderTargetView(this->GBufferRTVs[i], c);
 
