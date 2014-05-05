@@ -186,6 +186,7 @@ void PipelineManager::Present()
 			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle(200, 0, 200, 200));
 			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle(400, 0, 200, 200));
 			this->debugSP->Draw(this->lightPass.GetLightMapSRV(), winRectangle(600, 0, 200, 200));
+			this->debugSP->Draw(this->depthPass.GetDepthMapSRVSingle(), winRectangle(800, 0, 200, 200));
 		}
 		this->debugSP->End();
 	}

@@ -18,19 +18,15 @@ SubsurfaceScatteringScene::~SubsurfaceScatteringScene()
 void SubsurfaceScatteringScene::Frame(float delta)
 {
 
-	if (this->pointLights.size() > 0)
+	if (this->directionalLight.size() > 0)
 	{
 		//Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix());
 		
 		Pipeline::PipelineManager::Instance().ApplyDepthPass(Pipeline::DepthPass::DepthMapType::CubeDepthMap);
-		DirectX::XMFLOAT3 pos;
-		for (size_t i = 0; i < this->pointLights.size(); i++)
+		for (size_t i = 0; i < this->directionalLight.size(); i++)
 		{
-			Pipeline::PipelineManager::Instance().SetDepthPointLightData(this->pointLights[i].positionRange);
-			pos.x = this->pointLights[i].positionRange.x;
-			pos.y = this->pointLights[i].positionRange.y;
-			pos.z = this->pointLights[i].positionRange.z;
-
+			//Pipeline::PipelineManager::Instance().SetDepthPointLightData(this->directionalLight[i].positionRange);
+			
 			/*Pipeline::PipelineManager::Instance().RenderDepthMap(pos, Pipeline::DepthPass::CubeFace::PositiveX);
 			RenderDepthMap();
 
@@ -51,16 +47,12 @@ void SubsurfaceScatteringScene::Frame(float delta)
 
 			Pipeline::PipelineManager::Instance().ApplyDepthPass(Pipeline::DepthPass::DepthMapType::SingleDepthMap);
 			//SINGLE DEPTHMAP REMOVE THIS FROM HERE WHEN ALL IS WORKING
-			Pipeline::PipelineManager::Instance().RenderDepthMap(pos, DirectX::XMFLOAT3(0, -0.5, 1));
+			Pipeline::PipelineManager::Instance().RenderDepthMap(DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), this->directionalLight[i].direction);
 			RenderDepthMap();
 			//########################################
 		}
 
 	}
-	
-
-	//Pipeline::PipelineManager::Instance().ApplyDepthPass(Pipeline::DepthPass::DepthMapType::SingleDepthMap);
-
 	
 	Pipeline::PipelineManager::Instance().ApplyGeometryPass();
 	{
@@ -115,7 +107,6 @@ bool SubsurfaceScatteringScene::Initiate(ID3D11Device* device, ID3D11DeviceConte
 
 	Model bth;
 	if (!bth.CreateModel("Models\\bth.righthanded.obj", device))
-	//if (!bth.CreateModel("Models\\bth.lefthanded.obj", device))
 		return false;
 
 	this->models.push_back(bth);
@@ -149,6 +140,7 @@ void SubsurfaceScatteringScene::CreateLights()
 	//
 	BasicLightData::Directional dl;
 	dl.color = DirectX::XMFLOAT3(0.8f, 0.8f, 0.8f);
+	//dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
 	dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
 	this->directionalLight.push_back(dl);
 	
@@ -186,6 +178,5 @@ void SubsurfaceScatteringScene::RenderDepthMap()
 	}
 	
 	this->ground.RenderForDepthMap(this->deviceContext);
-	this->sphereMap.RenderForDepthMap();
 	
 }
