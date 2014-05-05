@@ -29,6 +29,8 @@ private:
 	Plane ground;
 	SSSInitDesc desc;
 	std::vector<BasicLightData::PointLight> pointLights;
+	std::vector<BasicLightData::Directional> directionalLight;
+	std::vector<BasicLightData::Spotlight> spotLight;
 
 	void CreateLights();
 };

@@ -6,8 +6,6 @@ struct vertexIn
 	float3 posW		: POSITION0;
 	float3 normal	: NORMAL0;
 	float2 uv		: TEXCOORD0;
-	//float3 binormal	: BINORMAL0;
-	//float3 tangent	: TANGENT0;
 };
 struct vOutFSQ
 {
@@ -24,8 +22,9 @@ struct pixIn
 
 struct geomPixOut
 {
-	float4 normal		: SV_TARGET0;	//xyz = normal, w = ?
+	float4 normal		: SV_TARGET0;	//xyz = normal, w = depth
 	float4 diff			: SV_TARGET1;	//xyz = diffuse, w = ?
+	float4 position		: SV_TARGET2;	//xyz = pos, w = ?
 };
 
 struct PointLight

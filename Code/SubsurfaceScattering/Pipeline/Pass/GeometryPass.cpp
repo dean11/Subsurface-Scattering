@@ -3,6 +3,7 @@
 #include "..\RenderState\DepthStencilState.h"
 #include "..\RenderState\RasterizerState.h"
 #include "..\RenderState\SamplerState.h"
+#include "..\RenderState\BlendState.h"
 
 
 using namespace Pipeline;
@@ -52,9 +53,13 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	this->vertex.RemoveByteCode();
 
 	if (!CreateDepthStencilAndRenderTargets(width, height)) return false;
+
 	if (!ShaderStates::DepthStencilState::GetDisabledDepth(device)) return false;
+	if (!ShaderStates::DepthStencilState::GetEnabledDepth(device)) return false;
 	if (!ShaderStates::RasterizerState::GetNoCullNoMs(device)) return false;
 	if (!ShaderStates::SamplerState::GetLinear(device)) return false;
+	if (!ShaderStates::BlendStates::GetDisabledBlend(this->device)) return false;
+	if (!ShaderStates::BlendStates::GetAlphaBlend(this->device)) return false;
 
 	return true;
 }
@@ -64,6 +69,7 @@ ID3D11ShaderResourceView* GeometryPass::GetShaderResource(GBuffer_RTV_Layout srv
 	{
 	case Pipeline::GBuffer_RTV_Layout_NORMAL:
 	case Pipeline::GBuffer_RTV_Layout_COLOR:
+	case Pipeline::GBuffer_RTV_Layout_POSITION:
 		return this->GBufferRTVs[srv].GetRenderTargetSRV();
 
 	case Pipeline::GBuffer_RTV_Layout_DepthStencil:
@@ -89,13 +95,16 @@ void GeometryPass::Apply()
 	{
 		this->GBufferRTVs[GBuffer_RTV_Layout_NORMAL],
 		this->GBufferRTVs[GBuffer_RTV_Layout_COLOR],
+		this->GBufferRTVs[GBuffer_RTV_Layout_POSITION],
 	};
-	this->deviceContext->OMSetRenderTargets(2, rtv, this->depthStencil);
+	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, rtv, this->depthStencil);
 
 	ID3D11SamplerState* smp[] = { ShaderStates::SamplerState::GetLinear() };
 	this->deviceContext->PSSetSamplers(0, 1, smp);
-	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
-	this->deviceContext->OMSetDepthStencilState(0, 0);
+	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetBackCullNoMS());
+	this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetEnabledDepth(), 0);
+	float blend[4] = { 1.0f };
+	this->deviceContext->OMSetBlendState(ShaderStates::BlendStates::GetDisabledBlend(), blend, 0xffffffffu);
 
 	this->vertex.Apply();
 	this->pixel.Apply();
@@ -133,12 +142,6 @@ bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 		dsvTexDesc.MiscFlags = 0;
 		surfaceDesc.depthDesc.dsvTexDesc = &dsvTexDesc;
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC dsvSrvDesc;
-		dsvSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-		dsvSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		dsvSrvDesc.Texture2D.MipLevels = 1;
-		dsvSrvDesc.Texture2D.MostDetailedMip = 0;
-		surfaceDesc.depthDesc.dsvSrvDesc = &dsvSrvDesc;
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 		dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -146,6 +149,13 @@ bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 		dsvDesc.Flags = 0;
 		dsvDesc.Texture2D.MipSlice = 0;
 		surfaceDesc.depthDesc.dsvDesc = &dsvDesc;
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC dsvSrvDesc;
+		dsvSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		dsvSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		dsvSrvDesc.Texture2D.MipLevels = 1;
+		dsvSrvDesc.Texture2D.MostDetailedMip = 0;
+		surfaceDesc.depthDesc.dsvSrvDesc = &dsvSrvDesc;
 
 		if (!this->depthStencil.Create(surfaceDesc, this->device))
 			return false;
@@ -188,6 +198,8 @@ bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 		if (!this->GBufferRTVs[GBuffer_RTV_Layout_COLOR].Create(surfaceDesc, this->device))
 			return false;
 		if (!this->GBufferRTVs[GBuffer_RTV_Layout_NORMAL].Create(surfaceDesc, this->device))
+			return false;
+		if (!this->GBufferRTVs[GBuffer_RTV_Layout_POSITION].Create(surfaceDesc, this->device))
 			return false;
 	}
 #pragma endregion

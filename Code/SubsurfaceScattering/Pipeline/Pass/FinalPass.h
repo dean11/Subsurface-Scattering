@@ -3,6 +3,8 @@
 
 #include "..\Shader.h"
 #include "ShaderPass.h"
+#include "..\RenderSurface.h"
+
 
 namespace Pipeline
 {
@@ -11,9 +13,9 @@ namespace Pipeline
 	public:
 		enum SrvMap
 		{
-			SrvMap_Diffuse = 0, //:register(0)
-			SrvMap_Normal = 1, //:register(1)
-			SrvMap_Light = 2, //:register(2)
+			SrvMap_Diffuse = 0,		//:register(0)
+			SrvMap_Normal = 1,		//:register(1)
+			SrvMap_Light = 2,		//:register(2)
 
 			SrvMap_COUNT
 		};
