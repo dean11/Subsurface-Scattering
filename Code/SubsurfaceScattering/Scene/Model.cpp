@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "..\Importing\ObjGeometryImporter.h"
+#include "..\Pipeline\PipelineManager.h"
 
 Model::Model()
 {
@@ -7,11 +8,14 @@ Model::Model()
 }
 Model::~Model()
 {
-
+	
 }
+
 void Model::Release()
 {
-	if (this->mesh.vertexBuffer) this->mesh.vertexBuffer->Release(); this->mesh.vertexBuffer = 0;
+	Util::SAFE_RELEASE(this->mesh.diffuse);
+	Util::SAFE_RELEASE(this->mesh.thickness);
+	Util::SAFE_RELEASE(this->mesh.vertexBuffer);
 }
 bool Model::CreateModel(const char path[], ID3D11Device* device)
 {
@@ -40,10 +44,29 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 	std::wstring mPath = L"Models\\" + Util::StringToWstring(m[0].map_Kd, std::wstring());
 	if (FAILED(DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
 		this->mesh.diffuse = NULL;	//No texture found for the model
-
+	
+	if (m.size() && m[0].map_Td.size())
+	{
+		std::wstring thick = L"Models\\" + Util::StringToWstring(m[0].map_Td, std::wstring());
+		if (FAILED(DirectX::CreateDDSTextureFromFile(device, thick.c_str(), nullptr, &this->mesh.thickness)))
+			this->mesh.thickness = NULL;	//No texture found for the model
+	}
 	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
 	
 	return true;
+}
+
+void Model::DrawModel(ID3D11DeviceContext* dc)
+{
+	UINT off = 0;
+	ID3D11ShaderResourceView* srv[] = { this->mesh.diffuse, this->mesh.thickness };
+	dc->PSSetShaderResources(0, Util::NumElementsOf(srv), srv);
+
+	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
+	
+	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world, this->world.Invert().Transpose());
+
+	dc->Draw(this->mesh.vertexCount, 0);
 }
 Model::Mesh& Model::GetMesh()
 {

@@ -24,6 +24,11 @@ struct PointLight
 	float pad[1 + 4 + 4];
 };
 
+struct ShadowMap
+{
+
+};
+
 cbuffer cLightBuffer :register(b0)
 {
 	float4x4 invProj;
@@ -90,28 +95,20 @@ float4 SpotLightCalc(in SpotLight sl, in float3 vPos, in float3 vNormal)
 	
 	if (lightAmount > 0.0f)
 	{
-		//att = max(0, 1.0f - (dist / sl.range));
-		//float lAng = dot(-lightVec, sl.dir);
-		//att *= saturate((lAng - sl.coneAngle) / (sl.angles.x - sl.angles.y));
-		//finalCol += att * lightAmount *  sl.color;
-
-		//Calculate Light's Distance Falloff factor
 		finalCol = sl.color / ((sl.att[0] + (sl.att[1] * dist)) + (sl.att[2] * (dist*dist)));
-
-		//Calculate falloff from center to edge of pointlight cone
 		finalCol *= pow(max(dot(-lightVec, sl.dir), 0.0f), sl.coneAngle);
 	}
 	return float4(finalCol, 0.0f);
 }
 float4 DirLightCalc(in DirLight pl, in float3 pos, in float3 normal)
 {
-	float diffFac = dot(-pl.direction, normal);
+	float diffuseFactor = dot(-pl.direction, normal);
 	float4 diffuse = (float4)0;
 
 	[flatten]
-	if (diffFac > 0.0f)
+	if (diffuseFactor > 0.0f)
 	{
-		diffuse += saturate(float4((diffFac * pl.color), 1.0f));
+		diffuse += saturate(float4((diffuseFactor * pl.color), 1.0f));
 	}
 
 	return diffuse;

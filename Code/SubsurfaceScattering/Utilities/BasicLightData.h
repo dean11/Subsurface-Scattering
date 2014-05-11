@@ -1,6 +1,10 @@
 #ifndef BASICLIGHTDATA_H
 #define BASICLIGHTDATA_H
-#include <DirectXMath.h>
+#include <D3DTK\SimpleMath.h>
+
+#include "..\Pipeline\ShadowMap.h"
+
+using namespace DirectX;
 
 class BasicLightData
 {

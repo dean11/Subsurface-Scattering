@@ -67,7 +67,10 @@ namespace Pipeline
 		ID3D11ShaderResourceView* spotLightBufferSRV;
 		ID3D11ShaderResourceView* dirLightBufferSRV;
 
+		ID3D11Buffer* constLightBuffer;
+
 		ID3D11Buffer* lightBuffer;
+
 		int firstPointLight;
 		int firstDirLight;
 		int firstSpotLight;
@@ -75,7 +78,7 @@ namespace Pipeline
 		int maxDirLight;
 		int maxSpotLight;
 
-		ID3D11Buffer* constLightBuffer;
+		
 
 		ID3D11Device* device;
 		ID3D11DeviceContext* deviceContext;

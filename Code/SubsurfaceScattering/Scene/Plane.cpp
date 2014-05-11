@@ -5,14 +5,6 @@
 
 using namespace DirectX;
 
-Plane::Plane()
-{
-
-}
-Plane::~Plane()
-{
-
-}
 
 
 bool Plane::CreatePlane(ID3D11Device* device, DirectX::XMFLOAT3 position, const wchar_t texture[], float width, float depth, float scale)
@@ -86,26 +78,3 @@ bool Plane::CreatePlane(ID3D11Device* device, DirectX::XMFLOAT3 position, const 
 
 	return true;
 }
-bool Plane::CreateModel(const char path[], ID3D11Device* device)
-{
-	return false;
-}
-void Plane::Render(ID3D11DeviceContext* dc)
-{
-	UINT off = 0;
-	dc->PSSetShaderResources(0, 1, &this->mesh.diffuse);
-	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
-	DirectX::XMFLOAT4X4 inv;
-	DirectX::XMStoreFloat4x4(&inv, DirectX::XMMatrixInverse(0, DirectX::XMLoadFloat4x4(&this->world)));
-	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world, inv);
-
-	dc->Draw(this->mesh.vertexCount, 0);
-}
-void Plane::RenderForDepthMap(ID3D11DeviceContext* dc)
-{
-	UINT off = 0;
-	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
-	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world, this->world);
-	dc->Draw(this->mesh.vertexCount, 0);
-}
-

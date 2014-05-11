@@ -70,6 +70,7 @@ ID3D11ShaderResourceView* GeometryPass::GetShaderResource(GBuffer_RTV_Layout srv
 	case Pipeline::GBuffer_RTV_Layout_NORMAL:
 	case Pipeline::GBuffer_RTV_Layout_COLOR:
 	case Pipeline::GBuffer_RTV_Layout_POSITION:
+	case Pipeline::GBuffer_RTV_Layout_THICKNESS:
 		return this->GBufferRTVs[srv].GetRenderTargetSRV();
 
 	case Pipeline::GBuffer_RTV_Layout_DepthStencil:
@@ -91,12 +92,11 @@ void GeometryPass::Apply()
 	
 	this->deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
-	ID3D11RenderTargetView* rtv[] =
-	{
-		this->GBufferRTVs[GBuffer_RTV_Layout_NORMAL],
-		this->GBufferRTVs[GBuffer_RTV_Layout_COLOR],
-		this->GBufferRTVs[GBuffer_RTV_Layout_POSITION],
-	};
+	
+	ID3D11RenderTargetView* rtv[GBuffer_RTV_Layout_COUNT] = { 0 };
+	for (size_t i = 0; i < GBuffer_RTV_Layout_COUNT; i++)
+		rtv[i] = this->GBufferRTVs[i];
+
 	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, rtv, this->depthStencil);
 
 	ID3D11SamplerState* smp[] = { ShaderStates::SamplerState::GetLinear() };
@@ -195,12 +195,11 @@ bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 		rtvSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		surfaceDesc.colorDesc.srvDesc = &rtvSrvDesc;
 
-		if (!this->GBufferRTVs[GBuffer_RTV_Layout_COLOR].Create(surfaceDesc, this->device))
-			return false;
-		if (!this->GBufferRTVs[GBuffer_RTV_Layout_NORMAL].Create(surfaceDesc, this->device))
-			return false;
-		if (!this->GBufferRTVs[GBuffer_RTV_Layout_POSITION].Create(surfaceDesc, this->device))
-			return false;
+		for (size_t i = 0; i < GBuffer_RTV_Layout_COUNT; i++)
+		{
+			if (!this->GBufferRTVs[i].Create(surfaceDesc, this->device))
+				return false;
+		}
 	}
 #pragma endregion
 

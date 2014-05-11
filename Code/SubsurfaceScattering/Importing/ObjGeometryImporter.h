@@ -38,6 +38,7 @@ public:
 		std::string			map_Kd;
 		std::string			map_Ka;
 		std::string			map_Ks;
+		std::string			map_Td;
 		std::string			bump;
 		std::string			disp;
 		std::string			occlusion;

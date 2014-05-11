@@ -13,9 +13,13 @@ namespace Pipeline
 
 	enum GBuffer_RTV_Layout
 	{
+		// These values must be in the same order as in the shader.
 		GBuffer_RTV_Layout_NORMAL		= 0,
 		GBuffer_RTV_Layout_COLOR		= 1,
 		GBuffer_RTV_Layout_POSITION		= 2,
+		GBuffer_RTV_Layout_THICKNESS	= 3,
+
+		//Everything below this enum value is considered to have no render target. and is not part of the "geometry pipleine"
 		GBuffer_RTV_Layout_COUNT,
 
 		GBuffer_RTV_Layout_DepthStencil,

@@ -4,6 +4,7 @@
 #include "..\RenderState\SamplerState.h"
 #include "..\InputLayoutState.h"
 #include "..\Vertex.h"
+#include "..\..\Utilities\Util.h"
 
 #include <d3d11_2.h>
 #include <d3dcompiler.h>
@@ -19,132 +20,77 @@ FinalPass::~FinalPass()
 }
 void FinalPass::Release()
 {
-	this->quadIBuffer->Release();
-	this->quadVBuffer->Release();
-	this->vertex.Release();
-	this->pixel.Release();
+	Util::SAFE_RELEASE(this->backBufferUAV);
+
+	this->compute.Release();
 }
-void FinalPass::Apply()
-{
-	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VT());
-	this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetDisabledDepth(), 0);
-	//this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetNoCullNoMs());
+void FinalPass::Apply(DispatchTextureData& srvData)
+{	
+	this->Clear();
 
-	ID3D11SamplerState *smp[] = { ShaderStates::SamplerState::GetLinear() };
-	this->deviceContext->PSSetSamplers(0, 1, smp);
+	this->compute.Apply();
+	ID3D11UnorderedAccessView* uav[] = { this->backBufferUAV };
+	this->deviceContext->CSSetUnorderedAccessViews(0, Util::NumElementsOf(uav), uav, 0);
+		
+	ID3D11ShaderResourceView* srv[SrvMap_COUNT] = { 0 };
+	srv[SrvMap_Diffuse]		= srvData.DiffuseMap;
+	srv[SrvMap_Light]		= srvData.LightMap;
+	srv[SrvMap_Normal]		= srvData.NormalMap;
+	srv[SrvMap_shadowMap]	= srvData.ShadowMap;
+	srv[SrvMap_Thickness]	= srvData.ThicknessMap;
+	this->deviceContext->CSSetShaderResources(0, Util::NumElementsOf(srv), srv);
 
-	UINT elemSize = sizeof(VertexPT);
-	UINT off = 0;
-	this->deviceContext->IASetIndexBuffer(this->quadIBuffer, DXGI_FORMAT_R32_UINT, 0);
-	this->deviceContext->IASetVertexBuffers(0, 1, &this->quadVBuffer, &elemSize, &off);
+	this->isCleared = false;
+	
 
-	this->vertex.Apply();
-	this->pixel.Apply();
-
-	this->deviceContext->DrawIndexed(6, 0, 0);
+	this->deviceContext->Dispatch((unsigned int)((this->width + 31) / 32), (unsigned int)((this->height + 31) / 32), 1);
 }
-bool FinalPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile)
+
+bool FinalPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile, IDXGISwapChain* swap)
 {
 	HRESULT hr = S_OK;
-	this->device = device;
 	this->deviceContext = deviceContext;
 	
 	ShaderStates::DepthStencilState::GetDisabledDepth(device);
 	ShaderStates::RasterizerState::GetNoCullNoMs(device);
 	ShaderStates::SamplerState::GetLinear(device);
 
-	if (foreShaderCompile)
-	{
-		UINT flag = 0;
-
-		#if defined(DEBUG) || defined(_DEBUG)
-			flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-		#endif
-
-		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\FinalPass.vertex.hlsl", "vs_5_0", flag, 0, ShaderType_VS, device, deviceContext))
-			return false;
-
-		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\FinalPass.pixel.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
-			return false;
-	}
-	else
-	{
-		if (!this->vertex.LoadCompiledShader("Shaders\\FinalPass.vertex.cso", ShaderType_VS, device, deviceContext))
-			return false;
-
-		if (!this->pixel.LoadCompiledShader("Shaders\\FinalPass.pixel.cso", ShaderType_PS, device, deviceContext))
-			return false;
-	}
-	
-	InputLayoutManager::MicrosoftFailedWithDirectX(device, this->vertex.GetByteCode(), this->vertex.GetByteCodeSize());
-
-	//Vertex vert[4] =
-	VertexPT vert[4] =
-	{
-		{ //[0]
-			DirectX::XMFLOAT3(-1.0f, +1.0f, 0.0f),		//COORD
-			//DirectX::XMFLOAT3(),			//PADD
-			DirectX::XMFLOAT2(+0.0f, +0.0f),				//UV
-			//DirectX::XMFLOAT3(),
-			//DirectX::XMFLOAT3(),
-		},
-		{ //[1]
-			DirectX::XMFLOAT3(+1.0f, +1.0f, 0.0f),		//COORD
-			//DirectX::XMFLOAT3(),			//PADD
-			DirectX::XMFLOAT2(+1.0f, +0.0f),				//UV
-			//DirectX::XMFLOAT3(),
-			//DirectX::XMFLOAT3(),
-		},
-		{ //[2]
-			DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f),		//COORD
-			//DirectX::XMFLOAT3(),			//PADD
-			DirectX::XMFLOAT2(+0.0f, +1.0f),				//UV
-			//DirectX::XMFLOAT3(),
-			//DirectX::XMFLOAT3(),
-		},
-		{ //[3]
-			DirectX::XMFLOAT3(+1.0f, -1.0f, 0.0f),		//COORD
-			//DirectX::XMFLOAT3(),			//PADD
-			DirectX::XMFLOAT2(+1.0f, +1.0f),				//UV
-			//DirectX::XMFLOAT3(),
-			//DirectX::XMFLOAT3(),
-		}
-	};
-
-	D3D11_BUFFER_DESC desc;
-	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	desc.ByteWidth = sizeof(vert);
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;
-	desc.StructureByteStride = (sizeof(vert[0]));
-	desc.Usage = D3D11_USAGE_IMMUTABLE;
-
-	D3D11_SUBRESOURCE_DATA data;
-	data.pSysMem = vert;
-	data.SysMemPitch = 0;
-	data.SysMemSlicePitch = 0;
-	if (FAILED(hr = device->CreateBuffer(&desc, &data, &this->quadVBuffer)))
+	if (!this->compute.LoadCompiledShader("Shaders\\FinalPass.compute.cso", ShaderType_CS, device, deviceContext))
 		return false;
 
-	UINT i[6] =
+	ID3D11Texture2D *bb;
+	if (FAILED(swap->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&bb))))
 	{
-		0, 1, 2,
-		1, 3, 2
-	};
-	data.pSysMem = i;
-	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	desc.ByteWidth = sizeof(UINT) * 6;
-	desc.StructureByteStride = (sizeof(UINT));
-	if (FAILED(hr = device->CreateBuffer(&desc, &data, &this->quadIBuffer)))
+		printf("Failed to get BackBuffer from Swapchain");
 		return false;
+	}
 
+	if (FAILED(hr = device->CreateUnorderedAccessView(bb, 0, &this->backBufferUAV)))
+	{
+		printf("Failed to create unordered access view with back buffer!");
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC td;
+	bb->GetDesc(&td);
+	this->width = td.Width;
+	this->height = td.Height;
+
+	bb->Release();
 	return true;
 }
 void FinalPass::Clear()
 {
-	ID3D11ShaderResourceView* srvClear[SrvMap_COUNT] = { 0 };
-	this->deviceContext->PSSetShaderResources(0, SrvMap_COUNT, srvClear);
+	if (!this->isCleared)
+	{
+		this->deviceContext->CSSetShader(0, 0, 0);
+		ID3D11ShaderResourceView* srvClear[SrvMap_COUNT] = { 0 };
+		this->deviceContext->CSSetShaderResources(0, SrvMap_COUNT, srvClear);
+
+		ID3D11UnorderedAccessView* uav[] = { 0 };
+		this->deviceContext->CSSetUnorderedAccessViews(0, Util::NumElementsOf(uav), uav, 0);
+		this->isCleared = true;
+	}
 }
 
 

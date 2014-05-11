@@ -6,6 +6,8 @@
 #include "InputLayoutState.h"
 #include <d3dcompiler.h>
 #include "..\Utilities\WindowShell.h"
+#include "..\Utilities\TextRender.h"
+#include "..\Utilities\Util.h"
 
 using namespace Pipeline;
 struct winRectangle :public RECT
@@ -58,20 +60,27 @@ void PipelineManager::Release()
 	ShaderStates::DepthStencilState::Release();
 	ShaderStates::RasterizerState::Release();
 	ShaderStates::SamplerState::Release();
+
 	InputLayoutManager::Release();
 	
 	this->geometryPass.Release();
 	this->finalPass.Release();
 	this->lightPass.Release();
-	this->depthPass.Release();
+	this->sssPass.Release();
 
-	if (this->d3dSwapchain)				this->d3dSwapchain->Release();				this->d3dSwapchain = 0;
-	if (this->renderTarget)				this->renderTarget->Release();				this->renderTarget = 0;
-	if (this->objectMatrixBuffer)		this->objectMatrixBuffer->Release();		this->objectMatrixBuffer = 0;
-	if (this->sceneMatrixBuffer)		this->sceneMatrixBuffer->Release();			this->sceneMatrixBuffer = 0;
-	if (this->depthPointLightBuffer)	this->depthPointLightBuffer->Release();	this->depthPointLightBuffer = 0;
+	Util::SAFE_RELEASE(this->d3dSwapchain);
+	Util::SAFE_RELEASE(this->renderTarget);
+	Util::SAFE_RELEASE(this->objectMatrixBuffer);
+	Util::SAFE_RELEASE(this->sceneMatrixBuffer);
+	Util::SAFE_RELEASE(this->depthPointLightBuffer);
+
+	TextRender::Release();
+
+	delete this->spriteBatch;
+	this->spriteBatch = 0;
 
 	delete pipelineManagerInstance;
+
 	pipelineManagerInstance = 0;
 }
 bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height)
@@ -79,22 +88,22 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	this->device = device;
 	this->deviceContext = deviceContext;
 
-	this->debugSP = new DirectX::SpriteBatch(deviceContext);
+	this->spriteBatch = new DirectX::SpriteBatch(deviceContext);
 
 	if (!this->CreateSwapChain(width, height))			return false;
-	if (!this->CreateRTV())					return false;
+	if (!this->CreateRTV())								return false;
 	
-	this->geometryPass.Initiate(device, deviceContext, width, height, false);
-	this->lightPass.Initiate(device, deviceContext, width, height, false);
-	this->finalPass.Initiate(device, deviceContext, width, height, false);
-	this->depthPass.Initiate(device, deviceContext, 512, 512, false);
-	
+	if(!this->geometryPass.Initiate(device, deviceContext, width, height, false)) return false;
+	if(!this->lightPass.Initiate(device, deviceContext, width, height, false)) return false;
+	if(!this->finalPass.Initiate(device, deviceContext, width, height, false, this->d3dSwapchain)) return false;
+	if(!this->sssPass.Initiate(device, deviceContext, width, height)) return false;
 	CreateViewport(width, height);
 	this->CreateConstantBuffers();
 
 	return true;
 }
-
+static ID3D11ShaderResourceView* ttt1 = 0;
+static ID3D11ShaderResourceView* ttt2 = 0;
 void PipelineManager::ApplyGeometryPass()
 {
 	if (this->prevPass) this->prevPass->Clear();
@@ -105,7 +114,6 @@ void PipelineManager::ApplyGeometryPass()
 	
 	this->prevPass = &this->geometryPass;
 }
-
 void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 {
 	if (this->prevPass) this->prevPass->Clear();
@@ -114,88 +122,80 @@ void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 	
 	this->prevPass = &this->lightPass;
 }
-
-void PipelineManager::ApplyDepthPass(DepthPass::DepthMapType depthMapType)
+//void PipelineManager::ApplyShadowMapPass( ShadowMap& output, SimpleMath::Matrix view, SimpleMath::Matrix projection )
+//{
+//	//if(!ttt1)	ttt1 = output;
+//	//else		ttt2 = output;
+//	//
+//	//if(this->prevPass && prevPass != &this->depthPass) this->prevPass->Clear();
+//	//
+//	///**
+//    // * This is for rendering linear values:
+//    // * Check this: http://www.mvps.org/directx/articles/linear_z/linearz.htm
+//    // */
+//    //SimpleMath::Matrix linearProjection = projection;
+//    //float Q = projection._33;
+//    //float N = -projection._43 / projection._33;
+//    //float F = -N * Q / (1 - Q);
+//    //linearProjection._33 /= F;
+//    //linearProjection._43 /= F;
+//	//
+//	//SetSceneMatrixBuffers(view, projection);
+//	//
+//	//this->depthPass.Apply(output);
+//	//
+//	//this->prevPass = &this->depthPass;
+//}
+void PipelineManager::ApplyFinalPass()
 {
 	if (this->prevPass) this->prevPass->Clear();
 
-	this->depthPass.Apply(depthMapType);
 
-	this->prevPass = &this->depthPass;
-}
-
-void PipelineManager::RenderDepthMap(DirectX::XMFLOAT3 pos, DirectX::XMFLOAT3 lookAt)
-{
-	this->depthPass.Render(pos, lookAt);
-}
-
-void PipelineManager::RenderDepthMap(DirectX::XMFLOAT3 pos, DepthPass::CubeFace face)
-{
-	//this->depthPass.Render(pos, face);
-}
-
-ID3D11ShaderResourceView* PipelineManager::GetDepthMapSRVSingle()
-{
-	return this->depthPass.GetDepthMapSRVSingle();
-}
-
-ID3D11ShaderResourceView* PipelineManager::GetDepthMapSRVCube()
-{
-	ID3D11ShaderResourceView* n = NULL;
-	return n;
-	//return this->depthPass.GetDepthMapSRVCube();
-}
-
-DirectX::XMFLOAT4X4 PipelineManager::GetDepthCameraView()
-{
-	return this->depthPass.GetCameraView();
-}
-
-DirectX::XMFLOAT4X4 PipelineManager::GetDepthCameraProj()
-{
-	return this->depthPass.GetCameraProj();
-}
-
-
-void PipelineManager::Present()
-{
-	if (this->prevPass) this->prevPass->Clear();
+	FinalPass::DispatchTextureData td;
+	td.DiffuseMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR);
+	td.LightMap = this->lightPass.GetLightMapSRV();
+	td.NormalMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL);
+	td.ShadowMap = 0;
+	td.ThicknessMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS);
+	
+	this->finalPass.Apply(td);
+	this->finalPass.Clear();
 
 	this->deviceContext->RSSetViewports(1, &this->viewPort);
-
 	ID3D11RenderTargetView* rtv[] = { this->renderTarget };
 	this->deviceContext->OMSetRenderTargets(1, rtv, 0);
 	
-	ID3D11ShaderResourceView* srv[] =
+	this->spriteBatch->Begin();
 	{
-		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL),
-		this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR),
-		this->lightPass.GetLightMapSRV(),
-		this->depthPass.GetDepthMapSRVSingle(),
-		//this->depthPass.GetDepthMapSRVCube(),
-	};
-
-	this->deviceContext->PSSetShaderResources(0, 4, srv);
-	this->finalPass.Apply();
-
-	if (this->debugRTV)
-	{
-		this->debugSP->Begin();
+		if (this->debugRTV)
 		{
-			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), winRectangle(0, 0, 200, 200));
-			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle(200, 0, 200, 200));
-			this->debugSP->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle(400, 0, 200, 200));
-			this->debugSP->Draw(this->lightPass.GetLightMapSRV(), winRectangle(600, 0, 200, 200));
-			this->debugSP->Draw(this->depthPass.GetDepthMapSRVSingle(), winRectangle(800, 0, 200, 200));
+			int off = 0;
+			int size = 100;
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), winRectangle((off), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle((off += size), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR), winRectangle((off += size), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS), winRectangle((off += size), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle((off += size), 0, size, size));
+			this->spriteBatch->Draw(this->lightPass.GetLightMapSRV(), winRectangle((off += size), 0, size, size));
+			if(ttt1) this->spriteBatch->Draw(ttt1, winRectangle(0, 520, size, size));
+			if(ttt2) this->spriteBatch->Draw(ttt2, winRectangle(200, 520, size, size));
+			//this->spriteBatch->Draw(this->depthPass.GetDepthMapSRVSingle(), winRectangle((off += 200), 0, 200, 200));
 		}
-		this->debugSP->End();
-	}
+	
+		//Draw some text
+		TextRender::Present(this->spriteBatch);
+	
+	}this->spriteBatch->End();
 
 	this->d3dSwapchain->Present(0, 0);
-
+	ttt1 = 0;
+	ttt2 = 0;
 	this->prevPass = &this->finalPass;
 }
-
+//void PipelineManager::ApplySSSPass(const ShadowLight* depths, unsigned int totalDepths)
+//{
+//
+//}
 void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose)
 {
 	D3D11_MAPPED_SUBRESOURCE res;
@@ -231,23 +231,6 @@ void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, con
 	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
 }
 
-void PipelineManager::SetDepthPointLightData(const DirectX::XMFLOAT4& posRange)
-{
-	D3D11_MAPPED_SUBRESOURCE res;
-	if (SUCCEEDED(this->deviceContext->Map(this->depthPointLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
-	{
-		DepthPointLightData* data = (DepthPointLightData*)res.pData;
-		DirectX::XMStoreFloat4(&data->posRange, DirectX::XMLoadFloat4(&posRange));
-		this->deviceContext->Unmap(this->depthPointLightBuffer, 0);
-	}
-
-	ID3D11Buffer* buff[] =
-	{
-		this->depthPointLightBuffer,
-	};
-	this->deviceContext->VSSetConstantBuffers(2, 1, buff);
-}
-
 PipelineManager::PipelineManager()
 {
 	this->prevPass = 0;
@@ -255,7 +238,6 @@ PipelineManager::PipelineManager()
 }
 PipelineManager::~PipelineManager()
 {
-
 }
 
 bool PipelineManager::CreateSwapChain(int width, int height)
@@ -266,7 +248,7 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 	desc.OutputWindow = WindowShell::GetHWND();
 	desc.BufferCount = 1;
 	desc.Windowed = true;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	desc.Flags = 0;
 
@@ -307,7 +289,7 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 		return false;
 	}
 	dxgiAdapter->Release();
-
+	
 	//Create SwapChain
 	if (FAILED(dxgiFactory->CreateSwapChain(this->device, &desc, &this->d3dSwapchain)))
 	{
@@ -328,7 +310,7 @@ bool PipelineManager::CreateRTV()
 		printf("Failed to get BackBuffer from Swapchain");
 		return false;
 	}
-
+	
 	if (FAILED(this->device->CreateRenderTargetView(backBuffer, 0, &this->renderTarget)))
 	{
 		printf("Failed to create RTV for BackBuffer");
@@ -373,3 +355,5 @@ bool PipelineManager::CreateConstantBuffers()
 
 	return true;
 }
+
+

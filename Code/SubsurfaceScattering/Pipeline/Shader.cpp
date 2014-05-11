@@ -16,8 +16,6 @@ ID3D11DeviceContext* Shader::deviceContext = 0;
 Shader::Shader()
 {
 	memset(&this->shaderData, 0, sizeof(ShaderData));
-	this->device = 0;
-	this->deviceContext = 0;
 	this->type = ShaderType_None;
 	this->size = 0;
 	this->shaderID = -1;
@@ -95,6 +93,9 @@ bool Shader::CreateShader(const char filename[], char* target, UINT flag, const 
 }
 bool Shader::LoadCompiledShader(const char filename[], ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
+	if (!device || !deviceContext)
+		return false;
+
 	this->type = type;
 	this->device = device;
 	this->deviceContext = deviceContext;
@@ -143,6 +144,10 @@ bool Shader::LoadCompiledShader(const char filename[], ShaderType type, ID3D11De
 		this->size = size;
 		this->shaderID = globaShaderID++;
 	}
+	else
+	{
+		return false;
+	}
 	return true;
 }
 Shader::ShaderData Shader::GetShader()
@@ -176,7 +181,7 @@ void Shader::Release()
 }
 void Shader::Apply()
 {
-	
+
 	switch (type)
 	{
 	case Pipeline::ShaderType_VS:

@@ -8,10 +8,9 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
 	float3 normal = NormalMap[DTid.xy].xyz;
 	float3 posW = PositionMap[DTid.xy].xyz;
 
-	for (int i = 0; i < nrOfPointLights; i++)
+	for (int p = 0; p < nrOfPointLights; p++)
 	{
-		lightCol += PointLightCalc(pointLights[i], posW, normal).xyz;
-
+		lightCol += PointLightCalc(pointLights[p], posW, normal).xyz;
 	}
 
 	for (int d = 0; d < nrOfDirLights; d++)

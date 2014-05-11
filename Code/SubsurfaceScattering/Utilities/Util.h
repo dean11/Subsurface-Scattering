@@ -5,6 +5,24 @@
 
 namespace Util
 {
+//#define SAFE_RELEASE(x) if( x ) { (x)->Release(); (x) = NULL; }
+
+	template<typename ComObj>
+	inline void SAFE_RELEASE(ComObj & t)
+	{
+		if (t)
+		{
+			t->Release();
+			t = 0;
+		}
+	}
+
+	template<typename ScalarType, unsigned int num>
+	inline unsigned int NumElementsOf(const ScalarType(&)[num])
+	{
+		return num;
+	}
+
 	static ::std::wstring & StringToWstring(const ::std::string &str, ::std::wstring &wstr)
 	{
 		const char *orig = str.c_str();

@@ -1,16 +1,18 @@
 #ifndef BETCHELOR_PIPELINEMANAGER_H
 #define BETCHELOR_PIPELINEMANAGER_H
 
+#include <vld.h>
 #include <d3d11.h>
 #include <vector>
 #include <DirectXMath.h>
 
 #include "Pass\ShaderPass.h"
 #include "Shader.h"
+#include "ShadowMap.h"
 #include "Pass\GeometryPass.h"
 #include "Pass\FinalPass.h"
 #include "Pass\LightPass.h"
-#include "Pass\DepthPass.h"
+#include "Pass\SSSPass.h"
 #include <D3DTK\SpriteBatch.h>
 
 namespace Pipeline
@@ -26,22 +28,12 @@ namespace Pipeline
 
 		void ApplyGeometryPass();
 		void ApplyLightPass(const LightPass::LightData& data);
-		void ApplyDepthPass(DepthPass::DepthMapType depthMapType);
-		void RenderDepthMap(DirectX::XMFLOAT3 pos, DirectX::XMFLOAT3 lookAt);
-		void RenderDepthMap(DirectX::XMFLOAT3 pos, DepthPass::CubeFace face);
-		ID3D11ShaderResourceView* GetDepthMapSRVSingle();
-		ID3D11ShaderResourceView* GetDepthMapSRVCube();
-		DirectX::XMFLOAT4X4 GetDepthCameraView();
-		DirectX::XMFLOAT4X4 GetDepthCameraProj();
-		void ApplySSSPass(){}
-
-		void Present();
+		void ApplyFinalPass();
+		//void ApplyShadowMapPass( ShadowMap& output, SimpleMath::Matrix view, SimpleMath::Matrix projection );
+		void ApplySSSPass(const ShadowMap* depths, unsigned int totalDepths);
 
 		void SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose);
 		void SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection);
-		void SetDepthPointLightData(const DirectX::XMFLOAT4& posRange);
-
-
 
 	private:
 		PipelineManager();
@@ -65,11 +57,11 @@ namespace Pipeline
 		FinalPass finalPass;
 		GeometryPass geometryPass;
 		LightPass lightPass;
-		DepthPass depthPass;
+		SSSPass sssPass;
 
 		ShaderPass* prevPass;
 
-		DirectX::SpriteBatch *debugSP;
+		DirectX::SpriteBatch *spriteBatch;
 		bool debugRTV;
 	};
 

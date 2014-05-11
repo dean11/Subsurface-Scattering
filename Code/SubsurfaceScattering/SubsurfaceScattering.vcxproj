@@ -19,17 +19,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\DepthPassCube.vertex.hlsl">
+    <FxCompile Include="Shaders\DepthShader.vertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shaders\DepthPassSingle.vertex.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    <FxCompile Include="Shaders\FinalPass.compute.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Shaders\geometry.vertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
@@ -42,18 +46,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shaders\FinalPass.pixel.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shaders\FinalPass.vertex.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="Shaders\LightPass.header.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
@@ -82,7 +74,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shaders\sss.compute.hlsl">
+    <FxCompile Include="Shaders\SubsurfaceScattering\SSS.compute.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
@@ -93,30 +85,31 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="Importing\ObjGeometryImporter.h" />
     <ClInclude Include="Input.h" />
-    <ClInclude Include="Pipeline\Pass\DepthPass.h" />
-    <ClInclude Include="Pipeline\Pass\LightPass.h" />
-    <ClInclude Include="Pipeline\Pass\FinalPass.h" />
     <ClInclude Include="Pipeline\InputLayoutState.h" />
+    <ClInclude Include="Pipeline\Pass\FinalPass.h" />
+    <ClInclude Include="Pipeline\Pass\GeometryPass.h" />
+    <ClInclude Include="Pipeline\Pass\LightPass.h" />
     <ClInclude Include="Pipeline\Pass\ShaderPass.h" />
+    <ClInclude Include="Pipeline\Pass\SSSPass.h" />
+    <ClInclude Include="Pipeline\PipelineManager.h" />
     <ClInclude Include="Pipeline\RenderState\BlendState.h" />
     <ClInclude Include="Pipeline\RenderState\DepthStencilState.h" />
     <ClInclude Include="Pipeline\RenderState\RasterizerState.h" />
     <ClInclude Include="Pipeline\RenderState\SamplerState.h" />
     <ClInclude Include="Pipeline\RenderSurface.h" />
+    <ClInclude Include="Pipeline\Shader.h" />
+    <ClInclude Include="Pipeline\ShadowMap.h" />
     <ClInclude Include="Pipeline\Vertex.h" />
     <ClInclude Include="Utilities\BasicLightData.h" />
-    <ClInclude Include="Scene\LightScatteringScene.h" />
     <ClInclude Include="Scene\Plane.h" />
     <ClInclude Include="Scene\SphereMap.h" />
-    <ClInclude Include="Scene\SubsurfaceScatteringScene.h" />
+    <ClInclude Include="Scene\Renderer.h" />
     <ClInclude Include="Utilities\Camera.h" />
     <ClInclude Include="Utilities\clock.h" />
     <ClInclude Include="Scene\Model.h" />
-    <ClInclude Include="Pipeline\Pass\GeometryPass.h" />
-    <ClInclude Include="Pipeline\PipelineManager.h" />
-    <ClInclude Include="Scene\Scene.h" />
-    <ClInclude Include="Pipeline\Shader.h" />
     <ClInclude Include="Utilities\DepthCamera.h" />
+    <ClInclude Include="Utilities\DynamicArray.h" />
+    <ClInclude Include="Utilities\TextRender.h" />
     <ClInclude Include="Utilities\Util.h" />
     <ClInclude Include="Utilities\WindowShell.h" />
   </ItemGroup>
@@ -124,31 +117,33 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Importing\ObjGeometryImporter.cpp" />
     <ClCompile Include="Pipeline\InputLayoutState.cpp" />
-    <ClCompile Include="Pipeline\Pass\DepthPass.cpp" />
-    <ClCompile Include="Pipeline\Pass\LightPass.cpp" />
     <ClCompile Include="Pipeline\Pass\FinalPass.cpp" />
+    <ClCompile Include="Pipeline\Pass\GeometryPass.cpp" />
+    <ClCompile Include="Pipeline\Pass\LightPass.cpp" />
+    <ClCompile Include="Pipeline\Pass\SSSPass.cpp" />
+    <ClCompile Include="Pipeline\PipelineManager.cpp" />
     <ClCompile Include="Pipeline\RenderState\BlendState.cpp" />
     <ClCompile Include="Pipeline\RenderState\DepthStencilState.cpp" />
     <ClCompile Include="Pipeline\RenderState\RasterizerState.cpp" />
     <ClCompile Include="Pipeline\RenderState\SamplerState.cpp" />
     <ClCompile Include="Pipeline\RenderSurface.cpp" />
-    <ClCompile Include="Scene\LightScatteringScene.cpp" />
+    <ClCompile Include="Pipeline\Shader.cpp" />
+    <ClCompile Include="Pipeline\ShadowMap.cpp" />
     <ClCompile Include="Scene\Plane.cpp" />
     <ClCompile Include="Scene\SphereMap.cpp" />
-    <ClCompile Include="Scene\SubsurfaceScatteringScene.cpp" />
+    <ClCompile Include="Scene\Renderer.cpp" />
     <ClCompile Include="Utilities\Camera.cpp" />
     <ClCompile Include="Utilities\clock.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Scene\Model.cpp" />
-    <ClCompile Include="Pipeline\Pass\GeometryPass.cpp" />
-    <ClCompile Include="Pipeline\PipelineManager.cpp" />
-    <ClCompile Include="Pipeline\Shader.cpp" />
     <ClCompile Include="Utilities\DepthCamera.cpp" />
+    <ClCompile Include="Utilities\TextRender.cpp" />
     <ClCompile Include="Utilities\WindowShell.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\DepthPass.header.hlsli" />
+    <None Include="Shaders\DepthShader.header.hlsli" />
     <None Include="Shaders\FinalPass.header.hlsli" />
+    <None Include="Shaders\SubsurfaceScattering\SSS.header.hlsli" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{58160821-AE5A-4C43-BA7E-101414687B21}</ProjectGuid>
@@ -235,6 +230,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
       <SubSystem>Windows</SubSystem>
+      <StackReserveSize>
+      </StackReserveSize>
+      <StackCommitSize>
+      </StackCommitSize>
     </Link>
     <FxCompile>
       <ShaderModel>5.0</ShaderModel>

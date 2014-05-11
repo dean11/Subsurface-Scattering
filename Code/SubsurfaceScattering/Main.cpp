@@ -1,3 +1,6 @@
+
+#include <vld.h>
+
 #ifdef _WIN32
 #include <Windows.h>
 void SetDllPath()
@@ -12,19 +15,18 @@ void SetDllPath()
 void SetDllPath(){}
 #endif
 
-#include <vld.h>
 #include "App.h"
+
+
 
 int WINAPI WinMain( HINSTANCE hinst, HINSTANCE prevInst, PSTR cmdLine, int cmdShow)
 {
-	
-
 	App *app = new App();
-
+	
 	if(app->Initiate())
 	{
 		app->Run();
-
+	
 		app->Release();
 	}
 	

@@ -16,6 +16,7 @@ public:
 		unsigned int vertexStride;
 		ID3D11Buffer* vertexBuffer;
 		ID3D11ShaderResourceView* diffuse;
+		ID3D11ShaderResourceView* thickness;
 	};
 	
 public:
@@ -24,6 +25,8 @@ public:
 
 	virtual void Release();
 	virtual bool CreateModel(const char path[], ID3D11Device* device);
+
+	void DrawModel(ID3D11DeviceContext* dc);
 
 	Mesh& GetMesh();
 	DirectX::XMFLOAT4X4 GetWorld();
@@ -34,9 +37,9 @@ public:
 
 	void SetWorld(DirectX::XMFLOAT4X4 world);
 	//void SetWorldInversTranspose(DirectX::XMFLOAT4X4 worldInvTrans); SÄTTA DENNA I SAMBAND MED NY WORLD?
-	protected:
+
+protected:
 	Mesh mesh;
-	//DirectX::XMFLOAT4X4 world;
 	DirectX::SimpleMath::Matrix world;
 };
 

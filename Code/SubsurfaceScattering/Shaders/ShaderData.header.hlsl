@@ -25,6 +25,7 @@ struct geomPixOut
 	float4 normal		: SV_TARGET0;	//xyz = normal, w = depth
 	float4 diff			: SV_TARGET1;	//xyz = diffuse, w = ?
 	float4 position		: SV_TARGET2;	//xyz = pos, w = ?
+	float4 thickness	: SV_TARGET3;	//xyz = pos, w = ?
 };
 
 struct PointLight
@@ -48,6 +49,7 @@ cbuffer cMatrixBuffer :register(b1)
 
 
 Texture2D Diffuse : register(t0);
+Texture2D Thickness : register(t1);
 TextureCube CubeMap : register(t2);
 
 

@@ -4,7 +4,7 @@
 #include "..\RenderState\RasterizerState.h"
 #include "..\RenderState\SamplerState.h"
 #include <D3DTK\SimpleMath.h>
-
+#include "..\..\Utilities\Util.h"
 
 struct ConstLightBuffer
 {
@@ -41,19 +41,18 @@ LightPass::~LightPass()
 
 void LightPass::Release()
 {
+	this->device = 0;
+	this->deviceContext = 0;
 
 	this->lightShader.Release();
 
-	if (this->constLightBuffer) this->constLightBuffer->Release(); this->constLightBuffer = 0;
-
-	if (lightMapUAV) lightMapUAV->Release(); lightMapUAV = 0;
-	if (lightMapSRV) lightMapSRV->Release(); lightMapSRV = 0;
-
-	if (pointLightBufferSRV) pointLightBufferSRV->Release(); pointLightBufferSRV = 0;
-	if (spotLightBufferSRV) spotLightBufferSRV->Release(); spotLightBufferSRV = 0;
-	if (dirLightBufferSRV) dirLightBufferSRV->Release(); dirLightBufferSRV = 0;
-
-	if (lightBuffer) lightBuffer->Release(); lightBuffer = 0;
+	Util::SAFE_RELEASE(this->lightMapUAV);
+	Util::SAFE_RELEASE(this->lightMapSRV);
+	Util::SAFE_RELEASE(this->pointLightBufferSRV);
+	Util::SAFE_RELEASE(this->spotLightBufferSRV);
+	Util::SAFE_RELEASE(this->dirLightBufferSRV);
+	Util::SAFE_RELEASE(this->constLightBuffer);
+	Util::SAFE_RELEASE(this->lightBuffer);
 }
 
 void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMap, ID3D11ShaderResourceView* normalMap, ID3D11ShaderResourceView* positionMap)
@@ -113,26 +112,9 @@ bool LightPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 
 	ShaderStates::SamplerState::GetPoint(device);
 
-	UINT flag = 0;
-#if defined(DEBUG) || defined(_DEBUG)
-	flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-	bool result = true;
-	std::string file;
-
-	if (forceShaderCompile)
-	{
-
-		if (!this->lightShader.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\LightPass.compute.hlsl", "ps_5_0", flag, 0, ShaderType_CS, device, deviceContext))
-			return false;
-	}
-	else
-	{
-
-		if (!this->lightShader.LoadCompiledShader("Shaders\\LightPass.compute.cso", ShaderType_CS, device, deviceContext))
-			return false;
-	}
-
+	if (!this->lightShader.LoadCompiledShader("Shaders\\LightPass.compute.cso", ShaderType_CS, device, deviceContext))
+		return false;
+	
 	if (!CreateSRVAndBuffer(width, height)) return false;
 	if (!ShaderStates::DepthStencilState::GetDisabledDepth(device)) return false;
 	if (!ShaderStates::RasterizerState::GetNoCullNoMs(device)) return false;
@@ -257,6 +239,8 @@ bool LightPass::CreateSRVAndBuffer(int width, int height)
 
 		hr = this->device->CreateShaderResourceView(t2D, 0, &this->lightMapSRV);
 		if (FAILED(hr)) return false;
+
+		t2D->Release();
 	}
 #pragma endregion
 	return true;

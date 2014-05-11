@@ -238,20 +238,21 @@ bool ObjGeometryImporter::processMtlFile(std::string& currentDir, std::vector<Ma
 					pos = (int)material.size() - 1;
 				}
 			}
-			else if(this->strInData == "#")				{ readLine(mtl); }
-			else if(this->strInData == "Ka")			{ material[pos].Ka			= AlphaToFloat3(readLine(mtl)); }
+			else if (this->strInData == "#")				{ readLine(mtl); }
+			else if (this->strInData == "Ka")			{ material[pos].Ka			= AlphaToFloat3(readLine(mtl)); }
 			else if (this->strInData == "Kd")			{ material[pos].Kd			= AlphaToFloat3(readLine(mtl)); }
 			else if (this->strInData == "Ks")			{ material[pos].Ks			= AlphaToFloat3(readLine(mtl)); }
 			else if (this->strInData == "Tf")			{ material[pos].Tf			= AlphaToFloat3(readLine(mtl)); }
-			else if(this->strInData == "illum")			{ material[pos].Illum		= atoi (readLine(mtl).c_str()); }
-			else if(this->strInData == "Ni")			{ material[pos].Ni			= (float)atof(read(mtl).c_str()); }
-			else if(this->strInData == "Ns")			{ material[pos].Ns			= (float)atof(read(mtl).c_str()); }
-			else if(this->strInData == "map_Ka")		{ material[pos].map_Ka		= readLine(mtl); }
-			else if(this->strInData == "map_Kd")		{ material[pos].map_Kd		= readLine(mtl); }
-			else if(this->strInData == "map_Ks")		{ material[pos].map_Ks		= readLine(mtl); }
-			else if(this->strInData == "disp")			{ material[pos].disp		= readLine(mtl); }
-			else if(this->strInData == "bump")			{ material[pos].bump		= readLine(mtl); }
-			else if(this->strInData == "occlusion")		{ material[pos].occlusion	= readLine(mtl); }
+			else if (this->strInData == "illum")		{ material[pos].Illum		= atoi (readLine(mtl).c_str()); }
+			else if (this->strInData == "Ni")			{ material[pos].Ni			= (float)atof(read(mtl).c_str()); }
+			else if (this->strInData == "Ns")			{ material[pos].Ns			= (float)atof(read(mtl).c_str()); }
+			else if (this->strInData == "map_Ka")		{ material[pos].map_Ka		= readLine(mtl); }
+			else if (this->strInData == "map_Td")		{ material[pos].map_Td		= readLine(mtl); }
+			else if (this->strInData == "map_Kd")		{ material[pos].map_Kd		= readLine(mtl); }
+			else if (this->strInData == "map_Ks")		{ material[pos].map_Ks		= readLine(mtl); }
+			else if (this->strInData == "disp")			{ material[pos].disp		= readLine(mtl); }
+			else if (this->strInData == "bump")			{ material[pos].bump		= readLine(mtl); }
+			else if (this->strInData == "occlusion")	{ material[pos].occlusion	= readLine(mtl); }
 			
 		}
 		mtl.close();

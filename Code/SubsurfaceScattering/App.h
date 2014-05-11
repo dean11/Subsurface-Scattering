@@ -7,12 +7,13 @@
 #else
 #pragma comment(lib, "DirectXTK_release.lib")
 #endif
-
+#include <vld.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
 
-#include "Scene\Scene.h"
+#include "Scene\Renderer.h"
 #include "Utilities\Camera.h"
+#include "Utilities\DynamicArray.h"
 
 class App
 {
@@ -24,8 +25,6 @@ class App
 		void Release();
 
 	private:
-		bool Init3D_DeviceAndContext();
-		bool Init3D_Pipeline();
 		bool InitWindow();
 	
 		static LRESULT CALLBACK WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l);
@@ -35,13 +34,9 @@ class App
 		bool isInitiated;
 		bool isRunning;
 
-		ID3D11Device* d3dDevice;
-		ID3D11DeviceContext* d3dDeviceContext;
-		
 		Camera camera;
 
-		Scene *subsurface;
-		Scene *volumeLight;
+		Renderer *renderer;
 };
 
 #endif // !BACHELOR_APP_H
