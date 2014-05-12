@@ -35,6 +35,7 @@ bool Shader::CreateShader(const char filename[], char* target, UINT flag, const 
 	wchar_t buff[255];
 	_wgetcwd(buff, 255);
 	HRESULT hr = S_OK;
+
 	if(FAILED ( hr = D3DCompileFromFile(Util::StringToWstring(filename, std::wstring()).c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
 	{
 		if(err) 
@@ -174,9 +175,9 @@ void Shader::Release()
 	}
 
 }
-void Shader::Apply()
+void Shader::Apply(ID3D11DeviceContext *dc)
 {
-	
+	this->deviceContext = dc;
 	switch (type)
 	{
 	case Pipeline::ShaderType_VS:

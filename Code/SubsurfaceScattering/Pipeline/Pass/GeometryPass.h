@@ -40,6 +40,7 @@ namespace Pipeline
 		bool CreateDepthStencilAndRenderTargets(int width, int height);
 
 		Shader vertex;
+		Shader geometry;
 		Shader pixel;
 
 		RenderSurface GBufferRTVs[GBuffer_RTV_Layout_COUNT];

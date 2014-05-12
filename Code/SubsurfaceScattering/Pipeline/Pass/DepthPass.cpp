@@ -363,7 +363,7 @@ void DepthPass::ApplySingle()
 	this->dc->RSSetViewports(1, &this->viewPort);
 	ID3D11RenderTargetView *rtv = { 0 };
 	this->dc->OMSetRenderTargets(1, &rtv, this->singleDSV);
-	this->depthSingleShader.Apply();
+	this->depthSingleShader.Apply(this->dc);
 	this->dc->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
 	
 	

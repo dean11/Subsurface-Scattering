@@ -81,9 +81,11 @@ void ObjGeometryImporter::Tidy()
 		this->inStream.close();
 	this->inStream.clear();
 
+	this->indexMap.clear();
+
 }
 
-bool  ObjGeometryImporter::LoadGeometry(std::string filename, std::vector<float>& out_floatData, unsigned int& nrOfVertecies, unsigned int& vertexStride, std::vector<Material>& out_material)
+bool  ObjGeometryImporter::LoadGeometry(std::string filename, std::vector<VertexVNT>& out_floatData, std::vector<unsigned int>&out_indices, unsigned int& nrOfIndices, unsigned int& nrOfVertecies, unsigned int& vertexStride, std::vector<Material>& out_material)
 {
 	bool result = true;
 
@@ -104,27 +106,91 @@ bool  ObjGeometryImporter::LoadGeometry(std::string filename, std::vector<float>
 		else if (this->strInData == "mtllib")					{ if (!processMtlFile(filename, out_material)) { Tidy(); return false; } }
 	}
 	nrOfVertecies = 0;
+	VertexVNT temp;
 	for (size_t i = 0; i < this->faces.size(); i += 1)
 	{
 		for (size_t k = 0; k < 3; k++)
 		{
-			nrOfVertecies++;
+
 			//V
-			out_floatData.push_back(this->vertecies.v[this->faces[i].vertecies[k].vIndex].x);
+
+			/*out_floatData.push_back(this->vertecies.v[this->faces[i].vertecies[k].vIndex].x);
 			out_floatData.push_back(this->vertecies.v[this->faces[i].vertecies[k].vIndex].y);
-			out_floatData.push_back(this->vertecies.v[this->faces[i].vertecies[k].vIndex].z);
+			out_floatData.push_back(this->vertecies.v[this->faces[i].vertecies[k].vIndex].z);*/
 			//VN
-			out_floatData.push_back(this->vertecies.vn[this->faces[i].vertecies[k].vnIndex].x);
-			out_floatData.push_back(this->vertecies.vn[this->faces[i].vertecies[k].vnIndex].y);
-			out_floatData.push_back(this->vertecies.vn[this->faces[i].vertecies[k].vnIndex].z);
+			//this->vertecies.vn[i];
+			/*out_floatData.push_back(0);
+			out_floatData.push_back(0);
+			out_floatData.push_back(0);*/
+			//out_floatData.push_back(this->vertecies.vn[this->faces[i].vertecies[k].vnIndex].x);
+			//out_floatData.push_back(this->vertecies.vn[this->faces[i].vertecies[k].vnIndex].y);
+			//out_floatData.push_back(this->vertecies.vn[this->faces[i].vertecies[k].vnIndex].z);
 			//VT
-			out_floatData.push_back(this->vertecies.vt[this->faces[i].vertecies[k].vtIndex].x);
-			out_floatData.push_back(this->vertecies.vt[this->faces[i].vertecies[k].vtIndex].y);
+
+			/*out_floatData.push_back(this->vertecies.vt[this->faces[i].vertecies[k].vtIndex].x);
+			out_floatData.push_back(this->vertecies.vt[this->faces[i].vertecies[k].vtIndex].y);*/
+			
+			//out_indices.push_back(this->faces[i].vertecies[k].vIndex);
+			temp.v = this->vertecies.v[this->faces[i].vertecies[k].vIndex];
+			temp.vn = this->vertecies.vn[this->faces[i].vertecies[k].vnIndex];
+			temp.uv = this->vertecies.vt[this->faces[i].vertecies[k].vtIndex];
+			out_floatData.push_back(temp);
+			nrOfVertecies++;
+			//out_indices.push_back(this->faces[i].vertecies[k].vIndex);
+			
 		}
+
+
+		//Edge e1(this->faces[i].vertecies[0].vIndex, this->faces[i].vertecies[1].vIndex);
+		//Edge e2(this->faces[i].vertecies[1].vIndex, this->faces[i].vertecies[2].vIndex);
+		//Edge e3(this->faces[i].vertecies[2].vIndex, this->faces[i].vertecies[0].vIndex);
+
+		//this->indexMap[e1].AddNeigbor(i);
+		//this->indexMap[e2].AddNeigbor(i);
+		//this->indexMap[e3].AddNeigbor(i);
 	}
 
+
+	//int n1Borked = 0;
+	//int n2Borked = 0;
+	//nrOfIndices = 0;
+	//for (size_t i = 0; i < this->faces.size(); i += 1)
+	//{
+	//	for (size_t k = 0; k < 3; k++)
+	//	{
+	//		Edge e(this->faces[i].vertecies[k].vIndex, this->faces[i].vertecies[(k+1) % 3].vIndex);
+	//		
+	//	/*	if (this->indexMap.find(e) != this->indexMap.end())
+	//		{
+	//			int a = 0;
+	//			a += 3;
+	//		}*/
+	//		Neighbors n = this->indexMap[e];
+	//		unsigned int otherTri = n.GetOther(i);
+	//		if (n.n1 == (unsigned int)-1)
+	//		{
+	//			n1Borked++;
+	//		}
+	//		if (n.n2 == (unsigned int)-1)
+	//		{
+	//			n2Borked++;
+	//		}
+
+	//		unsigned int oppositeIndex = this->faces[otherTri].GetOppositeIndex(e);
+
+	//		out_indices.push_back(this->faces[i].vertecies[k].vIndex);
+	//		out_indices.push_back(oppositeIndex);
+	//		
+	//	}
+
+	//}
+	//n1Borked;
+	//n2Borked;
+
+	//nrOfIndices = (unsigned int)this->faces.size() * 6;
 	//nrOfVertecies = this->vertecies.v.size();
-	vertexStride = sizeof(float)* 8;
+	vertexStride = sizeof(VertexVNT);
+	//vertexStride = sizeof(float) * 3;
 	Tidy();
 
 	return result;

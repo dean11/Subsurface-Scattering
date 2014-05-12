@@ -8,7 +8,8 @@
 
 struct ConstLightBuffer
 {
-	DirectX::XMFLOAT4X4 invProj;
+	DirectX::XMFLOAT4X4 proj;
+	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4 ambientLight;
 	int pointLightCount;
 	int spotLightCount;
@@ -70,7 +71,7 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMa
 
 		this->deviceContext->Unmap(this->lightBuffer, 0);
 	}
-	this->lightShader.Apply();
+	this->lightShader.Apply(this->deviceContext);
 
 	//Set the buffer
 	if (SUCCEEDED(this->deviceContext->Map(this->constLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
@@ -80,7 +81,8 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMa
 		b->pointLightCount = lights.pointCount;
 		b->spotLightCount = lights.spotCount;
 		b->ambientLight = DirectX::XMFLOAT4(lights.ambientLight.x, lights.ambientLight.y, lights.ambientLight.z, 0.0f);
-		b->invProj = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.invProj)).Transpose();
+		b->proj = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.proj)).Transpose();
+		b->view = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.view)).Transpose();
 
 		this->deviceContext->Unmap(this->constLightBuffer, 0);
 		this->deviceContext->CSSetConstantBuffers(0, 1, &this->constLightBuffer);
@@ -181,7 +183,7 @@ ID3D11ShaderResourceView* LightPass::GetLightMapSRV()
 void LightPass::Clear()
 {
 	ID3D11ShaderResourceView* nullSRV[] = { 0, 0, 0, 0, 0 };
-	this->deviceContext->CSSetShaderResources(0, 5, nullSRV);
+	this->deviceContext->CSSetShaderResources(0, 4, nullSRV);
 	ID3D11UnorderedAccessView* nullUAV[] = { 0 };
 	this->deviceContext->CSSetUnorderedAccessViews(0, 1, nullUAV, 0);
 }

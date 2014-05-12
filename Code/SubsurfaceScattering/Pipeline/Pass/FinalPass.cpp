@@ -39,8 +39,8 @@ void FinalPass::Apply()
 	this->deviceContext->IASetIndexBuffer(this->quadIBuffer, DXGI_FORMAT_R32_UINT, 0);
 	this->deviceContext->IASetVertexBuffers(0, 1, &this->quadVBuffer, &elemSize, &off);
 
-	this->vertex.Apply();
-	this->pixel.Apply();
+	this->vertex.Apply(this->deviceContext);
+	this->pixel.Apply(this->deviceContext);
 
 	this->deviceContext->DrawIndexed(6, 0, 0);
 }

@@ -109,8 +109,8 @@ void PipelineManager::ApplyGeometryPass()
 void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 {
 	if (this->prevPass) this->prevPass->Clear();
-
-	this->lightPass.Apply(data, this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION));
+	this->deviceContext->GSSetShader(0, 0, 0);
+	this->lightPass.Apply(data, this->depthPass.GetDepthMapSRVSingle(), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION));
 	
 	this->prevPass = &this->lightPass;
 }
@@ -176,6 +176,7 @@ void PipelineManager::Present()
 	};
 
 	this->deviceContext->PSSetShaderResources(0, 4, srv);
+	this->deviceContext->GSSetShader(0, 0, 0);
 	this->finalPass.Apply();
 
 	if (this->debugRTV)
@@ -212,6 +213,7 @@ void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, c
 		this->objectMatrixBuffer,
 	};
 	this->deviceContext->VSSetConstantBuffers(0, 1, buff);
+	this->deviceContext->GSSetConstantBuffers(0, 1, buff);
 }
 void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
 {
@@ -229,6 +231,7 @@ void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, con
 		this->sceneMatrixBuffer,
 	};
 	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
+	this->deviceContext->GSSetConstantBuffers(1, 1, buff);
 }
 
 void PipelineManager::SetDepthPointLightData(const DirectX::XMFLOAT4& posRange)
@@ -266,7 +269,7 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 	desc.OutputWindow = WindowShell::GetHWND();
 	desc.BufferCount = 1;
 	desc.Windowed = true;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	desc.Flags = 0;
 
@@ -326,6 +329,11 @@ bool PipelineManager::CreateRTV()
 	if (FAILED(this->d3dSwapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer))))
 	{
 		printf("Failed to get BackBuffer from Swapchain");
+		return false;
+	}
+
+	if (FAILED(this->device->CreateUnorderedAccessView(backBuffer, 0, &this->backbufferUAV)))
+	{
 		return false;
 	}
 

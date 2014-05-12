@@ -6,19 +6,13 @@
 
 //GEOMETRY VERTEX SHADER
 
-pixIn main(vertexIn vIn)
+gsIn main(gsIn vIn)
 {
-	pixIn d = (pixIn)0;
+	gsIn vOut = (gsIn)0;
 
-	d.posH = mul(float4(vIn.posW, 1.0f), mul(world, mul(view, projection)));
-	
-	d.posW = mul(float4(vIn.posW, 1.0f), world).xyz;
-	//d.posW = mul(float4(vIn.posW, 1.0f), mul(world, view)).xyz;
-	
-	//d.normal = mul(float4(vIn.normal, 0.0f), worlInvTrans);
-	d.normal = vIn.normal;
+	vOut.posW = vIn.posW;
+	vOut.normal = vIn.normal;
+	vOut.uv = vIn.uv;
 
-	d.uv = vIn.uv;
-
-	return d;
+	return vOut;
 }

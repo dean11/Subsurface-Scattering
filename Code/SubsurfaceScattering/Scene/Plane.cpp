@@ -95,6 +95,7 @@ void Plane::Render(ID3D11DeviceContext* dc)
 	UINT off = 0;
 	dc->PSSetShaderResources(0, 1, &this->mesh.diffuse);
 	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
+	dc->IASetIndexBuffer(0, DXGI_FORMAT_R32_UINT, 0);
 	DirectX::XMFLOAT4X4 inv;
 	DirectX::XMStoreFloat4x4(&inv, DirectX::XMMatrixInverse(0, DirectX::XMLoadFloat4x4(&this->world)));
 	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world, inv);

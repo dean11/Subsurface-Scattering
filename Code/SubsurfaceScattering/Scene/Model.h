@@ -6,6 +6,7 @@
 #include <D3DTK\DDSTextureLoader.h>
 #include "..\Utilities\Util.h"
 #include <D3DTK\SimpleMath.h>
+#include "..\Importing\ObjGeometryImporter.h"
 
 class Model
 {
@@ -14,7 +15,9 @@ public:
 	{
 		unsigned int vertexCount;
 		unsigned int vertexStride;
+		unsigned int indexCount;
 		ID3D11Buffer* vertexBuffer;
+		ID3D11Buffer* indexBuffer;
 		ID3D11ShaderResourceView* diffuse;
 	};
 	
@@ -34,10 +37,13 @@ public:
 
 	void SetWorld(DirectX::XMFLOAT4X4 world);
 	//void SetWorldInversTranspose(DirectX::XMFLOAT4X4 worldInvTrans); SÄTTA DENNA I SAMBAND MED NY WORLD?
-	protected:
+protected:
 	Mesh mesh;
 	//DirectX::XMFLOAT4X4 world;
 	DirectX::SimpleMath::Matrix world;
+
+private:
+	void CreateAdjData(std::vector<ObjGeometryImporter::VertexVNT> &v, std::vector<unsigned int> &index);
 };
 
 #endif // !BATCHELOR_MESHMANAGER_H

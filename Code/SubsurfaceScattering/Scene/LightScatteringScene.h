@@ -4,6 +4,7 @@
 #include "Scene.h"
 #include "..\Utilities\Camera.h"
 #include "SphereMap.h"
+#include "Plane.h"
 //#include "PointLight.h"
 
 class LightScatteringScene : public Scene
@@ -27,9 +28,14 @@ private:
 	ID3D11DeviceContext* dc;
 	Camera* mainCam;
 	LSSInitDesc desc;
-	//SphereMap sphereMap; - Moved this to base class instead!
-	BasicLightData::PointLight data;
-	//PointLight pointLight;
+	Plane ground;
+	
+	std::vector<BasicLightData::PointLight> pointLights;
+	std::vector<BasicLightData::Directional> directionalLight;
+	std::vector<BasicLightData::Spotlight> spotLight;
+
+	void CreateLights();
+	void RenderDepthMap();
 };
 
 #endif

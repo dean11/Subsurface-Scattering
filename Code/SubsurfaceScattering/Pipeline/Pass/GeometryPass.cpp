@@ -18,6 +18,7 @@ void GeometryPass::Release()
 	}
 	this->depthStencil.Release();
 	this->vertex.Release();
+	this->geometry.Release();
 	this->pixel.Release();
 }
 bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile)
@@ -34,18 +35,24 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	
 	if (foreShaderCompile)
 	{
-		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\geometry.vertex.hlsl", "vs_5_0", flag, 0, ShaderType_VS, device, deviceContext))
+		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\Geometry.vertex.hlsl", "vs_5_0", flag, 0, ShaderType_VS, device, deviceContext))
 			return false;
 
-		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\geometry.pixel.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
+		if (!this->geometry.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\Geometry.geometry.hlsl", "gs_5_0", flag, 0, ShaderType_GS, device, deviceContext))
+			return false;
+
+		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\Geometry.pixel.hlsl", "ps_5_0", flag, 0, ShaderType_PS, device, deviceContext))
 			return false;
 	}
 	else
 	{
-		if (!this->vertex.LoadCompiledShader("Shaders\\geometry.vertex.cso", ShaderType_VS, device, deviceContext))
+		if (!this->vertex.LoadCompiledShader("Shaders\\Geometry.vertex.cso", ShaderType_VS, device, deviceContext))
 			return false;
 
-		if (!this->pixel.LoadCompiledShader("Shaders\\geometry.pixel.cso", ShaderType_PS, device, deviceContext))
+		if (!this->geometry.LoadCompiledShader("Shaders\\Geometry.geometry.cso", ShaderType_GS, device, deviceContext))
+			return false;
+
+		if (!this->pixel.LoadCompiledShader("Shaders\\Geometry.pixel.cso", ShaderType_PS, device, deviceContext))
 			return false;
 	}
 
@@ -89,25 +96,30 @@ void GeometryPass::Apply()
 
 	this->deviceContext->ClearDepthStencilView(this->depthStencil, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	
-	this->deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	this->deviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ);
 	this->deviceContext->IASetInputLayout(InputLayoutManager::GetLayout_V_VN_VT());
 	ID3D11RenderTargetView* rtv[] =
 	{
 		this->GBufferRTVs[GBuffer_RTV_Layout_NORMAL],
 		this->GBufferRTVs[GBuffer_RTV_Layout_COLOR],
 		this->GBufferRTVs[GBuffer_RTV_Layout_POSITION],
+
 	};
 	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, rtv, this->depthStencil);
 
 	ID3D11SamplerState* smp[] = { ShaderStates::SamplerState::GetLinear() };
+	this->deviceContext->HSSetShader(0, 0, 0);
+	this->deviceContext->DSSetShader(0, 0, 0);
+	this->deviceContext->GSSetSamplers(0, 1, smp);
 	this->deviceContext->PSSetSamplers(0, 1, smp);
 	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetBackCullNoMS());
 	this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetEnabledDepth(), 0);
 	float blend[4] = { 1.0f };
 	this->deviceContext->OMSetBlendState(ShaderStates::BlendStates::GetDisabledBlend(), blend, 0xffffffffu);
 
-	this->vertex.Apply();
-	this->pixel.Apply();
+	this->vertex.Apply(this->deviceContext);
+	this->geometry.Apply(this->deviceContext);
+	this->pixel.Apply(this->deviceContext);
 }
 
 GeometryPass::GeometryPass()
@@ -201,6 +213,7 @@ bool GeometryPass::CreateDepthStencilAndRenderTargets(int width, int height)
 			return false;
 		if (!this->GBufferRTVs[GBuffer_RTV_Layout_POSITION].Create(surfaceDesc, this->device))
 			return false;
+
 	}
 #pragma endregion
 
@@ -211,4 +224,5 @@ void GeometryPass::Clear()
 {
 	static ID3D11RenderTargetView* rtv[GBuffer_RTV_Layout_COUNT] = { 0 };
 	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, rtv, 0);
+	this->deviceContext->GSSetShader(0, 0, 0);
 }

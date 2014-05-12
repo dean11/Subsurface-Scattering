@@ -57,6 +57,7 @@ namespace Pipeline
 		ID3D11DeviceContext* deviceContext;
 		IDXGISwapChain* d3dSwapchain;
 		ID3D11RenderTargetView* renderTarget;
+		ID3D11UnorderedAccessView* backbufferUAV;
 
 		ID3D11Buffer *objectMatrixBuffer;
 		ID3D11Buffer *sceneMatrixBuffer;

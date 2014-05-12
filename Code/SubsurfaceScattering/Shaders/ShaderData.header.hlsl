@@ -7,11 +7,14 @@ struct vertexIn
 	float3 normal	: NORMAL0;
 	float2 uv		: TEXCOORD0;
 };
-struct vOutFSQ
+
+struct gsIn
 {
-	float4 posH	: SV_POSITION;
-	float2 uv	: TEXCOORD0;
+	float3 posW		: POSITION0;
+	float3 normal	: NORMAL0;
+	float2 uv		: TEXCOORD0;
 };
+
 struct pixIn
 {
 	float4 posH			: SV_POSITION;

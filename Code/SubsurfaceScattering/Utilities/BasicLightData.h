@@ -17,7 +17,8 @@ public:
 	{
 		DirectX::XMFLOAT3 color;
 		DirectX::XMFLOAT3 direction;
-		float pad[2 + 4 + 4];
+		DirectX::XMFLOAT3 position;
+		float pad[3 + 4];
 	};
 
 	struct PointLight

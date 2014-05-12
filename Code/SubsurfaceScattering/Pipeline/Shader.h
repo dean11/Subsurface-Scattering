@@ -38,7 +38,7 @@ namespace Pipeline
 		bool LoadCompiledShader(const char filename[], ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		ShaderData GetShader();
 		void Release();
-		void Apply();
+		void Apply(ID3D11DeviceContext *dc);
 
 		char* GetByteCode();
 		size_t GetByteCodeSize();

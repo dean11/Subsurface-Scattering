@@ -18,7 +18,6 @@ void SetDllPath(){}
 int WINAPI WinMain( HINSTANCE hinst, HINSTANCE prevInst, PSTR cmdLine, int cmdShow)
 {
 	
-
 	App *app = new App();
 
 	if(app->Initiate())

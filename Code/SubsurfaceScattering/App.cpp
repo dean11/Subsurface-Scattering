@@ -12,8 +12,8 @@
 #include "Input.h"
 #include <D3DTK\SpriteFont.h>
 
-#define SUBSURFACESCATTERING
-//#define LIGHTSCATTERING
+//#define SUBSURFACESCATTERING
+#define LIGHTSCATTERING
 Scene *currentScene = 0;
 App* app = 0;
 int oldX = 0;

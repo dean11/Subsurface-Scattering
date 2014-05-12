@@ -34,7 +34,7 @@ void SphereMap::Render(float delta, DirectX::XMFLOAT3 camPos)
 	this->dc->PSSetShaderResources(2, 1, &this->sphereMap.GetMesh().diffuse);
 	this->dc->IASetVertexBuffers(0, 1, &this->sphereMap.GetMesh().vertexBuffer, &this->sphereMap.GetMesh().vertexStride, &off);
 	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world4x4, this->world4x4);
-	pix.Apply();
+	pix.Apply(this->dc);
 	this->dc->Draw(this->sphereMap.GetMesh().vertexCount, 0);
 }
 

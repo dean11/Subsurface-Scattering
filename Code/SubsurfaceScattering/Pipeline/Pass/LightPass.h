@@ -31,7 +31,7 @@ namespace Pipeline
 			const BasicLightData::Directional* dirData;
 			int dirCount;
 
-			DirectX::XMFLOAT4X4 invProj;
+			DirectX::XMFLOAT4X4 proj;
 			DirectX::XMFLOAT4X4 view;
 			DirectX::XMFLOAT3 ambientLight;
 		};

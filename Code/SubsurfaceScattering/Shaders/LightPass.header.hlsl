@@ -2,7 +2,8 @@ struct DirLight
 {
 	float3 color;
 	float3 direction;
-	float pad[1 + 1 + 4 + 4];
+	float3 position;
+	float pad[3 + 4];
 };
 
 struct SpotLight
@@ -26,7 +27,8 @@ struct PointLight
 
 cbuffer cLightBuffer :register(b0)
 {
-	float4x4 invProj;
+	float4x4 proj;
+	float4x4 view;
 	float4 ambientLight;
 	int nrOfPointLights;
 	int nrOfSpotLights;

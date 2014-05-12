@@ -90,7 +90,7 @@ void SubsurfaceScatteringScene::Frame(float delta)
 		lData.dirData = &this->directionalLight[0];
 	lData.dirCount = (int)this->directionalLight.size();
 
-	lData.invProj = this->mainCam->GetInverseProjectionMatrix();
+	lData.proj = this->mainCam->GetInverseProjectionMatrix();
 	lData.view = this->mainCam->GetViewMatrix();
 	lData.ambientLight = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 
