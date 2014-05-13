@@ -7,6 +7,7 @@
 #include "..\Utilities\Util.h"
 #include <D3DTK\SimpleMath.h>
 
+using namespace DirectX;
 class Model
 {
 public:
@@ -26,7 +27,7 @@ public:
 	virtual void Release();
 	virtual bool CreateModel(const char path[], ID3D11Device* device);
 
-	void DrawModel(ID3D11DeviceContext* dc);
+	void DrawModel(ID3D11DeviceContext* dc, bool useTextures = true);
 
 	Mesh& GetMesh();
 	DirectX::XMFLOAT4X4 GetWorld();
@@ -36,7 +37,14 @@ public:
 	DirectX::XMFLOAT4X4 GetWorldInversTranspose() const;
 
 	void SetWorld(DirectX::XMFLOAT4X4 world);
+	void SetPosition(float x, float y, float z);
+	void SetPosition(DirectX::XMFLOAT3& v);
+	void Forward(float val);
+	void Up(float val);
+	void Right(float val);
 	//void SetWorldInversTranspose(DirectX::XMFLOAT4X4 worldInvTrans); SÄTTA DENNA I SAMBAND MED NY WORLD?
+	DirectX::SimpleMath::Vector3 GetPosition();
+	void Rotate(const SimpleMath::Vector3& angle);
 
 protected:
 	Mesh mesh;

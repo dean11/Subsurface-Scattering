@@ -21,6 +21,7 @@ struct winRectangle :public RECT
 	}
 };
 static PipelineManager* pipelineManagerInstance = 0;
+static std::vector<ID3D11ShaderResourceView*> shadowMapDebug;
 
 struct ObjectMatrixData
 {
@@ -102,8 +103,8 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 
 	return true;
 }
-static ID3D11ShaderResourceView* ttt1 = 0;
-static ID3D11ShaderResourceView* ttt2 = 0;
+
+
 void PipelineManager::ApplyGeometryPass()
 {
 	if (this->prevPass) this->prevPass->Clear();
@@ -116,36 +117,22 @@ void PipelineManager::ApplyGeometryPass()
 }
 void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 {
+	if(this->debugRTV)
+	{
+		shadowMapDebug.resize(0);
+		for (size_t i = 0; i < (size_t)data.shadowCount; i++)
+			shadowMapDebug.push_back(data.shadowData[i].shadowMap);
+	}
+
 	if (this->prevPass) this->prevPass->Clear();
 
-	this->lightPass.Apply(data, this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION));
+	this->lightPass.Apply(	data, 
+							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), 
+							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), 
+							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS));
 	
 	this->prevPass = &this->lightPass;
 }
-//void PipelineManager::ApplyShadowMapPass( ShadowMap& output, SimpleMath::Matrix view, SimpleMath::Matrix projection )
-//{
-//	//if(!ttt1)	ttt1 = output;
-//	//else		ttt2 = output;
-//	//
-//	//if(this->prevPass && prevPass != &this->depthPass) this->prevPass->Clear();
-//	//
-//	///**
-//    // * This is for rendering linear values:
-//    // * Check this: http://www.mvps.org/directx/articles/linear_z/linearz.htm
-//    // */
-//    //SimpleMath::Matrix linearProjection = projection;
-//    //float Q = projection._33;
-//    //float N = -projection._43 / projection._33;
-//    //float F = -N * Q / (1 - Q);
-//    //linearProjection._33 /= F;
-//    //linearProjection._43 /= F;
-//	//
-//	//SetSceneMatrixBuffers(view, projection);
-//	//
-//	//this->depthPass.Apply(output);
-//	//
-//	//this->prevPass = &this->depthPass;
-//}
 void PipelineManager::ApplyFinalPass()
 {
 	if (this->prevPass) this->prevPass->Clear();
@@ -177,9 +164,10 @@ void PipelineManager::ApplyFinalPass()
 			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS), winRectangle((off += size), 0, size, size));
 			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle((off += size), 0, size, size));
 			this->spriteBatch->Draw(this->lightPass.GetLightMapSRV(), winRectangle((off += size), 0, size, size));
-			if(ttt1) this->spriteBatch->Draw(ttt1, winRectangle(0, 520, size, size));
-			if(ttt2) this->spriteBatch->Draw(ttt2, winRectangle(200, 520, size, size));
-			//this->spriteBatch->Draw(this->depthPass.GetDepthMapSRVSingle(), winRectangle((off += 200), 0, 200, 200));
+			
+			off = -size;
+			for (size_t i = 0; i < shadowMapDebug.size(); i++)
+				this->spriteBatch->Draw(shadowMapDebug[i], winRectangle((off += size), 520, size, size));
 		}
 	
 		//Draw some text
@@ -188,14 +176,8 @@ void PipelineManager::ApplyFinalPass()
 	}this->spriteBatch->End();
 
 	this->d3dSwapchain->Present(0, 0);
-	ttt1 = 0;
-	ttt2 = 0;
 	this->prevPass = &this->finalPass;
 }
-//void PipelineManager::ApplySSSPass(const ShadowLight* depths, unsigned int totalDepths)
-//{
-//
-//}
 void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose)
 {
 	D3D11_MAPPED_SUBRESOURCE res;
@@ -203,7 +185,7 @@ void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, c
 	{
 		ObjectMatrixData* data = (ObjectMatrixData*)res.pData;
 		DirectX::XMStoreFloat4x4(&data->world, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&world)));
-		data->worldInversTranspose = worldInversTranspose;
+		DirectX::XMStoreFloat4x4(&data->worldInversTranspose, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&worldInversTranspose)));
 		this->deviceContext->Unmap(this->objectMatrixBuffer, 0);
 	}
 

@@ -26,6 +26,7 @@ void main(	uint3 dti	: SV_DispatchThreadID,
 	FinalImage[dti.xy] = (saturate(color) * saturate(light));
 	//FinalImage[dti.xy] = saturate(color + (saturate(light) * lDotN));
 	//FinalImage[dti.xy] = normal;
+	//FinalImage[dti.xy] = light;
 	//FinalImage[dti.xy] = thickness;
 }
 

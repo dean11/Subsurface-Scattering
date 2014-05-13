@@ -15,6 +15,7 @@ namespace ShaderStates
 			static ID3D11SamplerState* GetAnisotropic4(ID3D11Device* device = 0);
 			static ID3D11SamplerState* GetAnisotropic8(ID3D11Device* device = 0);
 			static ID3D11SamplerState* GetAnisotropic16(ID3D11Device* device = 0);
+			static ID3D11SamplerState* GetShadow(ID3D11Device* device = 0);
 
 
 	};

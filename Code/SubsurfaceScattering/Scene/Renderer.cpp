@@ -11,6 +11,7 @@ std::string lightPassStrign = "Light pass: ";
 std::string depthPassString = "Depth pass: ";
 std::string finalPassString = "Final pass: ";
 std::string totalStatsString = "Total stats: ";
+bool moveObjectToggle = false;
 
 Renderer::Renderer()
 {
@@ -27,9 +28,9 @@ void Renderer::Release()
 		this->models[i].Release();
 	}
 
-	for (size_t i = 0; i < this->lightDepthSurface.Size(); i++)
+	for (size_t i = 0; i < this->shadowMaps.Size(); i++)
 	{
-		this->lightDepthSurface[i].Release();
+		this->shadowMaps[i].shadowMap.Release();
 	}
 
 	this->device->Release();
@@ -41,10 +42,15 @@ void Renderer::Frame(float delta)
 
 	RenderShadowMaps();
 	RenderGeometry();
-	RenderSSS();
+	//RenderSSS();
 	RenderLights();
 	RenderFinal(delta);
 
+	if(Input::IsKeyDown(VK_UP))			this->models[1].Forward(+0.5f);
+	if(Input::IsKeyDown(VK_DOWN))		this->models[1].Forward(-0.5f);
+	if(Input::IsKeyDown(VK_RIGHT))		this->models[1].Right(+0.5f);
+	if(Input::IsKeyDown(VK_LEFT))		this->models[1].Right(-0.5f);
+	
 	if (time > timeMax)
 		time = 0.0f;
 }
@@ -60,12 +66,15 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 
 	Model bth;
 	if (!bth.CreateModel("Models\\bth.righthanded.obj", device))
+	//if (!bth.CreateModel("Models\\sphere.obj", device))
 		return false;
-
-	SimpleMath::Matrix m = SimpleMath::Matrix::CreateFromYawPitchRoll(0.2f, 0.3f, 1.0f);
-		bth.SetWorld(m);
-
 	this->models.push_back(bth);
+
+	Model cube;
+	if (!cube.CreateModel("Models\\plane.obj", device))
+		return false;
+	cube.SetPosition(0, -100, 50);
+	this->models.push_back(cube);
 
 	//this->sphereMap.CreateSkyBox(device, dc);
 
@@ -78,34 +87,6 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	TextRender::Initiate(this->device, this->deviceContext, L"Models\\arial.spritefont");
 
 	return true;
-}
-void Renderer::SetMainCamera(Camera* cam)
-{
-	this->mainCam = cam;
-}
-
-void Renderer::PrintStats(float dt)
-{
-	if (time > timeMax)
-	{
-		totalStatsString.resize(0);
-		totalStatsString = "Total ";
-		char a[50];
-		//FPS
-		sprintf_s(a, "%d", (int)(1.0f / dt));
-		totalStatsString.append("FPS: ");
-		totalStatsString.append(a);
-		//DELTA TIME
-		sprintf_s(a, "%f", dt);
-		totalStatsString.append(" - ms:");
-		totalStatsString.append(a);
-	}
-
-	TextRender::Write(Util::StringToWstring(totalStatsString, std::wstring()).c_str(), 10, 210);
-	TextRender::Write(Util::StringToWstring(geomPassStrign, std::wstring()).c_str(), 10, 230);
-	TextRender::Write(Util::StringToWstring(lightPassStrign, std::wstring()).c_str(), 10, 250);
-	TextRender::Write(Util::StringToWstring(depthPassString, std::wstring()).c_str(), 10, 270);
-	TextRender::Write(Util::StringToWstring(finalPassString, std::wstring()).c_str(), 10, 290);
 }
 bool Renderer::CreateLights()
 {
@@ -122,46 +103,163 @@ bool Renderer::CreateLights()
 	//}
 	//
 
-	BasicLightData::Directional dl;
-	dl.color = DirectX::XMFLOAT3(0.8f, 0.8f, 0.8f);
+#pragma region Create normal lights
+
+	//BasicLightData::Directional dl;
+	//dl.color = DirectX::XMFLOAT3(0.8f, 0.8f, 0.8f);
+	////dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
 	//dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
-	dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
-	this->directionalLight.Push(dl);
-	
-	dl.color = DirectX::XMFLOAT3(0.8f, 0.4f, 0.8f);
-	dl.direction = DirectX::XMFLOAT3(0.9f, -0.9f, 0.9f);
-	this->directionalLight.Push(dl);
+	//this->directionalLight.Push(dl);
+	//
+	//dl.color = DirectX::XMFLOAT3(0.8f, 0.4f, 0.8f);
+	//dl.direction = DirectX::XMFLOAT3(0.9f, -0.9f, 0.9f);
+	//this->directionalLight.Push(dl);
 
-	//Light casts shadow and sss
-	ShadowMap lds;
-	SimpleMath::Matrix lproj = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, 0.1f, 1000.0f);
-	SimpleMath::Matrix lview = SimpleMath::Matrix::Identity();
-	if(!lds.Create(this->device, this->deviceContext, this->desc.width, this->desc.height, lview, lproj))
-		return false;
-	this->lightDepthSurface.Push(lds);
+#pragma endregion
 
-	//Light casts shadow and sss
-	ShadowMap lds1;
-	//lds1.projection = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, 0.1f, 1000.0f);
-	lproj = XMLoadFloat4x4(& this->mainCam->GetProjectionMatrix() );
-	lview = SimpleMath::Matrix::Identity();
-	if(!lds1.Create(this->device, this->deviceContext, this->desc.width, this->desc.height, lview, lproj))
-		return false;
-	this->lightDepthSurface.Push(lds1);
-	
-	//size_t totSpot = 1;
-	//BasicLightData::Spotlight sl;
-	//for (size_t i = 0; i < totSpot; i++)
-	//{
-	//	sl.coneAngle = 20.0f;
-	//	sl.color = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
-	//	sl.position = DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f);
-	//	sl.range = 1000.0f;
-	//	sl.unitDir = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
-	//	sl.attenuation = DirectX::XMFLOAT3(0.4f, 0.02f, 0.0f);
-	//	this->spotLight.push_back(sl);
-	//}
+#pragma region Create shadow and lights
 
+	//BasicLightData::ShadowMapLight lds;
+	//SimpleMath::Matrix lproj = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
+	////SimpleMath::Matrix lproj = DirectX::XMLoadFloat4x4(& this->mainCam->GetProjectionMatrix() );
+	//SimpleMath::Matrix lview = SimpleMath::Matrix::Identity();
+	//if(!lds.shadowMap.Create(this->device, this->deviceContext, this->desc.width, this->desc.height))
+	//	return false;
+	//lds.attenuation		= 1.0f / 128.0f;
+	//lds.bias			= -0.01f;
+	//lds.color			= this->directionalLight[0].color;
+	//lds.direction		= this->directionalLight[0].direction;
+	//lds.falloffStart	= cos(0.5f * (45.0f * DirectX::XM_PI / 180.f));
+	//lds.falloffWidth	= 0.05f;
+	//lds.farPlane		= 10.0f;
+	//lds.position		= DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	//lds.view			= lview;
+	//lds.projection		= lproj;
+	//this->shadowMaps.Push(lds);
+	//
+	////Light casts shadow and sss
+	//BasicLightData::ShadowMapLight lds1;
+	////lds1.projection = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, 0.1f, 1000.0f);
+	//lproj = DirectX::XMLoadFloat4x4(& this->mainCam->GetProjectionMatrix() );
+	//lview = SimpleMath::Matrix::Identity();
+	//if(!lds1.shadowMap.Create(this->device, this->deviceContext, this->desc.width, this->desc.height))
+	//	return false;
+	//lds1.attenuation	= 1.0f / 128.0f;
+	//lds1.bias			= -0.01f;
+	//lds1.color			= this->directionalLight[1].color;
+	//lds1.direction		= this->directionalLight[1].direction;
+	//lds1.falloffStart	= cos(0.5f * (45.0f * DirectX::XM_PI / 180.f));
+	//lds1.falloffWidth	= 0.05f;
+	//lds1.farPlane		= 10.0f;
+	//lds1.position		= DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	//lds1.view			= lview;
+	//lds1.projection		= lproj;
+	//this->shadowMaps.Push(lds1);
+
+#pragma endregion
+	{
+		//Light casts shadow and sss
+		BasicLightData::ShadowMapLight lds1;
+		{
+			if(!lds1.shadowMap.Create(this->device, this->deviceContext, this->desc.width, this->desc.height))
+				return false;
+		
+			lds1.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
+			lds1.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
+			lds1.cone				= 500.0f;
+			lds1.range				= 1000.0f;
+		
+			lds1.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), ((float)this->desc.width/(float)this->desc.height), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
+			lds1.camera.SetPosition(0.0f, 0.0f, -90.0f);
+			lds1.camera.SetRotation(0.0f, 0.0f, 0.0f);
+			lds1.camera.Render();
+		}
+		/*
+		BasicLightData::ShadowMapLight lds2;
+		{
+			if(!lds2.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
+				return false;
+		
+			lds2.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
+			lds2.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
+			lds2.cone				= 200.0f;
+			lds2.range				= 1000.0f;
+		
+			lds2.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
+			lds2.camera.SetPosition(0.0f, 90.0f, 0.0f);
+			lds2.camera.SetRotation(90.0f, 0.0f, 0.0f);
+			lds2.camera.Render();
+		}
+
+		BasicLightData::ShadowMapLight lds3;
+		{
+			if(!lds3.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
+				return false;
+		
+			lds3.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
+			lds3.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
+			lds3.cone				= 200.0f;
+			lds3.range				= 1000.0f;
+		
+			lds3.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
+			lds3.camera.SetPosition(20.0f, 20.0f, 0.0f);
+			lds3.camera.SetRotation(45.0f, -90.0f, 0.0f);
+			lds3.camera.Render();
+		}
+		BasicLightData::ShadowMapLight lds4;
+		{
+			if(!lds4.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
+				return false;
+		
+			lds4.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
+			lds4.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
+			lds4.cone				= 500.0f;
+			lds4.range				= 1000.0f;
+		
+			lds4.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
+			lds4.camera.SetPosition(-20.0f, 20.0f, 0.0f);
+			lds4.camera.SetRotation(45.0f, 90.0f, 0.0f);
+			lds4.camera.Render();
+		}
+		BasicLightData::ShadowMapLight lds5;
+		{
+			if(!lds5.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
+				return false;
+		
+			lds5.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
+			lds5.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
+			lds5.cone				= 500.0f;
+			lds5.range				= 1000.0f;
+		
+			lds5.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
+			lds5.camera.SetPosition(0.0f, 20.0f, -25.0f);
+			lds5.camera.SetRotation(45.0f, 0.0f, 0.0f);
+			lds5.camera.Render();
+		}
+		*/
+		this->shadowMaps.Push(lds1);
+		//this->shadowMaps.Push(lds2);
+		//this->shadowMaps.Push(lds3);
+		//this->shadowMaps.Push(lds4);
+		//this->shadowMaps.Push(lds5);
+		
+
+		//SimpleMath::Matrix lproj = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
+		//SimpleMath::Matrix lview = SimpleMath::Matrix::CreateWorld(SimpleMath::Vector3(0.0f, 0.0f, -55.0f), SimpleMath::Vector3(0.0f, 0.0f, 1.0f), SimpleMath::Vector3(0.0f, 1.0f, 0.0f));
+
+		//size_t totSpot = 1;
+		//BasicLightData::Spotlight sl;
+		//for (size_t i = 0; i < totSpot; i++)
+		//{
+		//	sl.coneAngle = 20.0f;
+		//	sl.color = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+		//	sl.position = DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f);
+		//	sl.range = 1000.0f;
+		//	sl.unitDir = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
+		//	sl.attenuation = DirectX::XMFLOAT3(0.4f, 0.02f, 0.0f);
+		//	this->spotLight.push_back(sl);
+		//}
+	}
 	return true;
 }
 bool Renderer::CreateDeviceAndContext()
@@ -192,27 +290,32 @@ bool Renderer::CreateDeviceAndContext()
 
 	return true;
 }
+void Renderer::SetMainCamera(Camera* cam)
+{
+	this->mainCam = cam;
+}
+
 
 void Renderer::RenderShadowMaps()
 {
 	clock.reset();
-
-	//this->lightDepthSurface[1].view = XMLoadFloat4x4(& this->mainCam->GetViewMatrix() );
-
-	//Render scene from each view
-	for (size_t i = 0; i < this->lightDepthSurface.Size(); i++)
 	{
-		this->lightDepthSurface[i].Begin();
+		//Render scene from each view
+		for (size_t i = 0; i < this->shadowMaps.Size(); i++)
 		{
-			for (size_t i = 0; i < this->models.size(); i++)
+			//this->shadowMaps[i].view = XMLoadFloat4x4(&this->mainCam->GetViewMatrix());
+			//this->shadowMaps[i].projection = XMLoadFloat4x4(&this->mainCam->GetProjectionMatrix());
+
+			this->shadowMaps[i].shadowMap.Begin(XMLoadFloat4x4(&this->shadowMaps[i].camera.GetViewMatrix()), XMLoadFloat4x4(&this->shadowMaps[i].camera.GetProjectionMatrix()));
 			{
-				Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->models[i].GetWorld(), this->models[i].GetWorldInversTranspose());
-				this->models[i].DrawModel(this->deviceContext);
-			}
+				for (size_t k = 0; k < this->models.size(); k++)
+				{
+					this->shadowMaps[i].shadowMap.Draw(this->models[k]);
+				}
 
-		} this->lightDepthSurface[i].End();
+			} this->shadowMaps[i].shadowMap.End();
+		}
 	}
-
 	float tid = (float)clock.getElapsedSeconds();
 	if(time > timeMax)
 	{
@@ -259,6 +362,9 @@ void Renderer::RenderGeometry()
 		
 		for (size_t i = 0; i < this->models.size(); i++)
 		{
+			//if(i == 0)
+			//	this->models[i].Rotate(SimpleMath::Vector3(0.003f, 0.003f, 0.003f));
+
 			this->models[i].DrawModel(this->deviceContext);
 		}
 	}
@@ -278,17 +384,19 @@ void Renderer::RenderLights()
 	Pipeline::LightPass::LightData lData;
 	memset(&lData, 0, sizeof(Pipeline::LightPass::LightData));
 
-	if (this->pointLights.Size())
-		lData.pointData = &this->pointLights[0];
+	if (this->pointLights.Size())		lData.pointData = &this->pointLights[0];
 	lData.pointCount = (int)this->pointLights.Size();
 
-	if (this->spotLight.Size())
-		lData.spotData = &this->spotLight[0];
+	if (this->spotLight.Size())			lData.spotData = &this->spotLight[0];
 	lData.spotCount = this->spotLight.Size();
 
-	if (this->directionalLight.Size())
-		lData.dirData = &this->directionalLight[0];
+	if (this->directionalLight.Size())	lData.dirData = &this->directionalLight[0];
 	lData.dirCount = (int)this->directionalLight.Size();
+
+	if (this->shadowMaps.Size())	lData.shadowData = &this->shadowMaps[0];
+	lData.shadowCount = this->shadowMaps.Size();
+	
+	
 
 	lData.invProj = this->mainCam->GetInverseProjectionMatrix();
 	lData.view = this->mainCam->GetViewMatrix();
@@ -306,9 +414,9 @@ void Renderer::RenderLights()
 }
 void Renderer::RenderSSS()
 {
-	if (this->lightDepthSurface.Size() > 0)
+	if (this->shadowMaps.Size() > 0)
 	{
-		for (size_t i = 0; i < this->lightDepthSurface.Size(); i++)
+		for (size_t i = 0; i < this->shadowMaps.Size(); i++)
 		{
 			//Pipeline::PipelineManager::Instance().ApplySSSPass(
 		}
@@ -354,6 +462,28 @@ void Renderer::RenderFinal(float dt)
 	}
 }
 
+void Renderer::PrintStats(float dt)
+{
+	if (time > timeMax)
+	{
+		totalStatsString.resize(0);
+		totalStatsString = "Total ";
+		char a[50];
+		//FPS
+		sprintf_s(a, "%d", (int)(1.0f / dt));
+		totalStatsString.append("FPS: ");
+		totalStatsString.append(a);
+		//DELTA TIME
+		sprintf_s(a, "%f", dt);
+		totalStatsString.append(" - ms:");
+		totalStatsString.append(a);
+	}
 
+	TextRender::Write(Util::StringToWstring(totalStatsString, std::wstring()).c_str(), 10, 210);
+	TextRender::Write(Util::StringToWstring(geomPassStrign, std::wstring()).c_str(), 10, 230);
+	TextRender::Write(Util::StringToWstring(lightPassStrign, std::wstring()).c_str(), 10, 250);
+	TextRender::Write(Util::StringToWstring(depthPassString, std::wstring()).c_str(), 10, 270);
+	TextRender::Write(Util::StringToWstring(finalPassString, std::wstring()).c_str(), 10, 290);
+}
 
 

@@ -13,10 +13,8 @@ pixIn main(vertexIn vIn)
 	d.posH = mul(float4(vIn.posW, 1.0f), mul(world, mul(view, projection)));
 	
 	d.posW = mul(float4(vIn.posW, 1.0f), world).xyz;
-	//d.posW = mul(float4(vIn.posW, 1.0f), mul(world, view)).xyz;
 	
-	//d.normal = mul(float4(vIn.normal, 0.0f), worlInvTrans);
-	d.normal = vIn.normal;
+	d.normal = mul(float4(vIn.normal, 0.0f), worlInvTrans);
 
 	d.uv = vIn.uv;
 

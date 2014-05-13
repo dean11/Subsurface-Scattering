@@ -6,13 +6,35 @@
 #include <D3DTK\SimpleMath.h>
 #include "..\..\Utilities\Util.h"
 
+struct ShadowMapLightProxy
+{
+	DirectX::XMFLOAT4X4 viewProjection;
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 direction;
+	DirectX::XMFLOAT3 attenuation;
+	DirectX::XMFLOAT3 color;
+	float range;
+	float cone;
+
+    //float falloffStart;
+    //float falloffWidth;
+    //float attenuation;
+    //float farPlane;
+    //float bias;
+	int shadowIndex;
+	float pad[1];
+};
 struct ConstLightBuffer
 {
 	DirectX::XMFLOAT4X4 invProj;
 	DirectX::XMFLOAT4 ambientLight;
+	DirectX::XMFLOAT3 cameraPosition;
+
 	int pointLightCount;
 	int spotLightCount;
 	int dirLightCount;
+	int shadowCount;
+
 	float pad[1];
 };
 
@@ -53,14 +75,17 @@ void LightPass::Release()
 	Util::SAFE_RELEASE(this->dirLightBufferSRV);
 	Util::SAFE_RELEASE(this->constLightBuffer);
 	Util::SAFE_RELEASE(this->lightBuffer);
+	
+	Util::SAFE_RELEASE(this->shadowBuffer);
+	Util::SAFE_RELEASE(this->shadowBufferSRV);
 }
 
-void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMap, ID3D11ShaderResourceView* normalMap, ID3D11ShaderResourceView* positionMap)
+void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* normalMap, ID3D11ShaderResourceView* positionMap, ID3D11ShaderResourceView* thickness)
 {
 	this->deviceContext->CSSetUnorderedAccessViews(0, 1, &this->lightMapUAV, 0);
 
 	D3D11_MAPPED_SUBRESOURCE mappedData;
-	if (SUCCEEDED(this->deviceContext->Map(this->lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
+	if (((lights.dirCount + lights.pointCount + lights.spotCount) != 0) && SUCCEEDED(this->deviceContext->Map(this->lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
 	{
 		BasicLightData::PointLight* l = (BasicLightData::PointLight*)mappedData.pData;
 		this->RenderPointLight(&l[this->firstPointLight], lights.pointData, lights.pointCount, lights.view);
@@ -69,7 +94,6 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMa
 
 		this->deviceContext->Unmap(this->lightBuffer, 0);
 	}
-	this->lightShader.Apply();
 
 	//Set the buffer
 	if (SUCCEEDED(this->deviceContext->Map(this->constLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
@@ -80,25 +104,61 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* depthMa
 		b->spotLightCount = lights.spotCount;
 		b->ambientLight = DirectX::XMFLOAT4(lights.ambientLight.x, lights.ambientLight.y, lights.ambientLight.z, 0.0f);
 		b->invProj = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.invProj)).Transpose();
-
+		b->shadowCount = min(lights.shadowCount, 5);
 		this->deviceContext->Unmap(this->constLightBuffer, 0);
 		this->deviceContext->CSSetConstantBuffers(0, 1, &this->constLightBuffer);
 	}
 	
 	ID3D11ShaderResourceView* srv[] =
-	{
-		depthMap, 
+	{ 
 		normalMap, 
 		positionMap,
+		thickness,
+		0, 0, 0, 0, 0,
 		this->pointLightBufferSRV,
 		this->spotLightBufferSRV,
-		this->dirLightBufferSRV
+		this->dirLightBufferSRV,
+		this->shadowBufferSRV,
 	};
-	UINT srvCount = 6;
-	this->deviceContext->CSSetShaderResources(0, srvCount, srv);
 
-	ID3D11SamplerState* samp[] = { ShaderStates::SamplerState::GetPoint() };
-	this->deviceContext->CSSetSamplers(0, 1, samp);
+#pragma region Apply shadow data
+
+	if ( (lights.shadowCount != 0) && SUCCEEDED(this->deviceContext->Map(this->shadowBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
+	{
+		ShadowMapLightProxy* s = (ShadowMapLightProxy*)mappedData.pData;
+		for (int i = 0; i < lights.shadowCount; i++)
+		{
+			srv[i+3]					= lights.shadowData[i].shadowMap;
+			s[i].attenuation			= lights.shadowData[i].attenuation;
+			s[i].color					= lights.shadowData[i].color;
+			s[i].cone					= lights.shadowData[i].cone;
+			s[i].direction				= lights.shadowData[i].camera.GetForward();
+			s[i].position				= lights.shadowData[i].camera.GetPosition();
+			s[i].range					= lights.shadowData[i].range;
+			s[i].shadowIndex			= i;
+
+			/**
+			 * This is for rendering linear values:
+			 * Check this: http://www.mvps.org/directx/articles/linear_z/linearz.htm
+			 */
+			SimpleMath::Matrix projection = XMLoadFloat4x4(& lights.shadowData[i].camera.GetProjectionMatrix() );
+			float Q = projection._33;
+			float N = -projection._43 / projection._33;
+			float F = -N * Q / (1 - Q);
+			projection._33 /= F;
+			projection._43 /= F;
+			s[i].viewProjection = (SimpleMath::Matrix( XMLoadFloat4x4(&lights.shadowData[i].camera.GetViewMatrix())) * projection).Transpose();
+		}
+		this->deviceContext->Unmap(this->shadowBuffer, 0);
+	}
+#pragma endregion
+
+	this->deviceContext->CSSetShaderResources(0, Util::NumElementsOf(srv), srv);
+
+	ID3D11SamplerState* samp[] = { ShaderStates::SamplerState::GetPoint(this->device), ShaderStates::SamplerState::GetShadow(this->device) };
+	this->deviceContext->CSSetSamplers(0, 2, samp);
+
+	this->lightShader.Apply();
 
 	this->deviceContext->Dispatch((unsigned int)((this->width + 31) / 32), (unsigned int)((this->height + 31) / 32), 1);
 }
@@ -138,21 +198,30 @@ void LightPass::RenderPointLight(BasicLightData::PointLight* dest, const BasicLi
 		dest[i].lightColour		= data[i].lightColour;
 	}
 }
-
 void LightPass::RenderSpotLight(BasicLightData::Spotlight* dest, const BasicLightData::Spotlight* data, int count, const DirectX::XMFLOAT4X4& view)
 {
 	if (!count || !data) return;
 	int tot = min(this->maxPointLight, count);
-
-	memcpy(dest, data, sizeof(BasicLightData::Spotlight) * tot);
+	for (int i = 0; i < tot; i++)
+	{
+		dest[i].attenuation		= data[i].attenuation;
+		dest[i].color			= data[i].color;
+		dest[i].coneAngle		= data[i].coneAngle;
+		dest[i].position		= data[i].position;
+		dest[i].range			= data[i].range;
+		dest[i].unitDir			= data[i].unitDir;
+	}
 }
-
 void LightPass::RenderDirectionalLight(BasicLightData::Directional* dest, const BasicLightData::Directional* data, int count, const DirectX::XMFLOAT4X4& view)
 {
 	if (!count || !data) return;
 	int tot = min(this->maxDirLight, count);
 
-	memcpy(dest, data, sizeof(BasicLightData::Directional) * tot);
+	for (int i = 0; i < tot; i++)
+	{
+		dest[i].color		= data[i].color;
+		dest[i].direction	= data[i].direction;
+	}
 }
 
 ID3D11ShaderResourceView* LightPass::GetLightMapSRV()
@@ -162,8 +231,8 @@ ID3D11ShaderResourceView* LightPass::GetLightMapSRV()
 
 void LightPass::Clear()
 {
-	ID3D11ShaderResourceView* nullSRV[] = { 0, 0, 0, 0, 0 };
-	this->deviceContext->CSSetShaderResources(0, 5, nullSRV);
+	ID3D11ShaderResourceView* nullSRV[12] = { 0 };
+	this->deviceContext->CSSetShaderResources(0, 12, nullSRV);
 	ID3D11UnorderedAccessView* nullUAV[] = { 0 };
 	this->deviceContext->CSSetUnorderedAccessViews(0, 1, nullUAV, 0);
 }
@@ -172,6 +241,7 @@ void LightPass::Clear()
 // Private functions ############################
 bool LightPass::CreateSRVAndBuffer(int width, int height)
 {
+#pragma region Create structured light buffers
 	HRESULT hr = S_OK;
 	D3D11_BUFFER_DESC bDesc;
 	bDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -213,7 +283,30 @@ bool LightPass::CreateSRVAndBuffer(int width, int height)
 	lBdesc.Usage = D3D11_USAGE_DYNAMIC;
 	if (FAILED(this->device->CreateBuffer(&lBdesc, 0, &this->constLightBuffer)))
 		return false;
+#pragma endregion
 
+#pragma region Create shadow buffer
+	UINT totalShadowBuffers = 5;
+	D3D11_BUFFER_DESC shadowDesc;
+	shadowDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.ByteWidth = (sizeof(ShadowMapLightProxy) * totalShadowBuffers);
+	shadowDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	shadowDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	shadowDesc.StructureByteStride = sizeof(ShadowMapLightProxy);
+	shadowDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	if (FAILED(this->device->CreateBuffer(&shadowDesc, 0, &this->shadowBuffer))) 
+		return false;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shadowSrvDesc;
+	shadowSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	shadowSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	shadowSrvDesc.Buffer.ElementOffset = 0;
+	shadowSrvDesc.Buffer.ElementWidth = totalShadowBuffers;
+	if (FAILED(this->device->CreateShaderResourceView(this->shadowBuffer, &shadowSrvDesc, &this->shadowBufferSRV)))
+		return false;	
+
+#pragma endregion
 
 #pragma region SRV
 	{
@@ -245,3 +338,5 @@ bool LightPass::CreateSRVAndBuffer(int width, int height)
 #pragma endregion
 	return true;
 }
+
+

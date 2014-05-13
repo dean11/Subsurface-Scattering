@@ -3,6 +3,7 @@
 #include <D3DTK\SimpleMath.h>
 
 #include "..\Pipeline\ShadowMap.h"
+#include "Camera.h"
 
 using namespace DirectX;
 
@@ -40,6 +41,16 @@ public:
 		DirectX::XMFLOAT3 attenuation;
 		DirectX::XMFLOAT3 color;
 		float pad[2];
+	};
+
+	struct ShadowMapLight
+	{
+		DirectX::XMFLOAT3 attenuation;
+		DirectX::XMFLOAT3 color;
+		float range;
+		float cone;
+		Camera camera;
+		ShadowMap shadowMap;
 	};
 };
 

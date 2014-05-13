@@ -56,14 +56,17 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 	return true;
 }
 
-void Model::DrawModel(ID3D11DeviceContext* dc)
+void Model::DrawModel(ID3D11DeviceContext* dc, bool useTexture)
 {
 	UINT off = 0;
-	ID3D11ShaderResourceView* srv[] = { this->mesh.diffuse, this->mesh.thickness };
-	dc->PSSetShaderResources(0, Util::NumElementsOf(srv), srv);
+	if(useTexture)
+	{
+		ID3D11ShaderResourceView* srv[] = { this->mesh.diffuse, this->mesh.thickness };
+		dc->PSSetShaderResources(0, Util::NumElementsOf(srv), srv);
+	}
 
 	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
-	
+
 	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world, this->world.Invert().Transpose());
 
 	dc->Draw(this->mesh.vertexCount, 0);
@@ -94,7 +97,45 @@ void Model::SetWorld(DirectX::XMFLOAT4X4 world)
 	this->world = DirectX::SimpleMath::Matrix(&world._11);
 
 }
+void Model::SetPosition(float x, float y, float z)
+{
+	this->world._41 = x;
+	this->world._42 = y;
+	this->world._43 = z;
+}
+void Model::SetPosition(DirectX::XMFLOAT3& v)
+{
+	this->world._41 = v.x;
+	this->world._42 = v.y;
+	this->world._43 = v.z;
+}
+void Model::Forward(float val)
+{
+	SimpleMath::Vector3 v(this->world._31, this->world._32, this->world._33);
+	SimpleMath::Vector3 p = v * val + GetPosition();
+	SetPosition(p);
+}
+void Model::Up(float val)
+{
+	SimpleMath::Vector3 v(this->world._21, this->world._22, this->world._23);
+	SimpleMath::Vector3 p = (v * val) + GetPosition();
+	SetPosition(p);
+}
+void Model::Right(float val)
+{
+	SimpleMath::Vector3 v(this->world._11, this->world._12, this->world._13);
+	SimpleMath::Vector3 p = v * val + GetPosition();
+	SetPosition(p);
+}
+void Model::Rotate(const SimpleMath::Vector3& angle)
+{
+	SimpleMath::Matrix m;
+	this->world *= m.CreateFromYawPitchRoll(angle.x, angle.y, angle.z);
+	//this->world *= m;
+}
 
-
-
+SimpleMath::Vector3 Model::GetPosition()
+{
+	return SimpleMath::Vector3(this->world._41, this->world._42 ,this->world._43);// = z;
+}
 

@@ -26,10 +26,15 @@ namespace Pipeline
 		{
 			const BasicLightData::PointLight* pointData;
 			int pointCount;
+
 			const BasicLightData::Spotlight* spotData;
 			int spotCount;
+
 			const BasicLightData::Directional* dirData;
 			int dirCount;
+
+			BasicLightData::ShadowMapLight *shadowData;
+			int shadowCount;
 
 			DirectX::XMFLOAT4X4 invProj;
 			DirectX::XMFLOAT4X4 view;
@@ -43,7 +48,7 @@ namespace Pipeline
 		void Release() override;
 		void Clear() override;
 
-		void Apply(const LightData& lights, ID3D11ShaderResourceView* depthMap, ID3D11ShaderResourceView* normalMap, ID3D11ShaderResourceView* positionMap);
+		void Apply(const LightData& lights, ID3D11ShaderResourceView* normalMap, ID3D11ShaderResourceView* positionMap, ID3D11ShaderResourceView* thickness);
 
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile);
 		ID3D11ShaderResourceView* GetLightMapSRV();
@@ -66,19 +71,20 @@ namespace Pipeline
 		ID3D11ShaderResourceView* pointLightBufferSRV;
 		ID3D11ShaderResourceView* spotLightBufferSRV;
 		ID3D11ShaderResourceView* dirLightBufferSRV;
+		ID3D11ShaderResourceView* shadowBufferSRV;
 
 		ID3D11Buffer* constLightBuffer;
+		ID3D11Buffer* shadowBuffer;
 
 		ID3D11Buffer* lightBuffer;
 
 		int firstPointLight;
 		int firstDirLight;
 		int firstSpotLight;
+
 		int maxPointLight;
 		int maxDirLight;
 		int maxSpotLight;
-
-		
 
 		ID3D11Device* device;
 		ID3D11DeviceContext* deviceContext;

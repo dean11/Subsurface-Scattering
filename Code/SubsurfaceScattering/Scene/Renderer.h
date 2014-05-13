@@ -1,6 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <dxgidebug.h>
+
 #include "..\Utilities\Camera.h"
 #include "SphereMap.h"
 #include "Plane.h"
@@ -41,7 +43,8 @@ private:
 	Util::DynamicArray<BasicLightData::PointLight> pointLights;
 	Util::DynamicArray<BasicLightData::Directional> directionalLight;
 	Util::DynamicArray<BasicLightData::Spotlight> spotLight;
-	Util::DynamicArray<ShadowMap> lightDepthSurface;
+	//Util::DynamicArray<ShadowMap> shadowMaps;
+	Util::DynamicArray<BasicLightData::ShadowMapLight> shadowMaps;
 
 private:
 	void RenderGeometry();

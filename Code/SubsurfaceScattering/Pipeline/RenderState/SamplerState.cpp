@@ -123,6 +123,27 @@ namespace
 
 		return sd;
 	}
+	static D3D11_SAMPLER_DESC samplerStateShadowMapDesc()
+	{
+		D3D11_SAMPLER_DESC sd;
+		
+		ZeroMemory(&sd, sizeof(sd));
+		sd.Filter           = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+		sd.AddressU         = D3D11_TEXTURE_ADDRESS_WRAP;
+		sd.AddressV         = D3D11_TEXTURE_ADDRESS_WRAP;
+		sd.AddressW         = D3D11_TEXTURE_ADDRESS_WRAP;
+		sd.MipLODBias		= 0.0f;
+		sd.MaxAnisotropy	= 1;
+		sd.ComparisonFunc	= D3D11_COMPARISON_LESS;
+		sd.BorderColor[0]	= 0.0f;
+		sd.BorderColor[1]	= 0.0f;
+		sd.BorderColor[2]	= 0.0f;
+		sd.BorderColor[3]	= 0.0f;
+		sd.MinLOD           = 0.0f;
+		sd.MaxLOD           = D3D11_FLOAT32_MAX;
+		
+		return sd;
+	}
 
     static ID3D11SamplerState* samplerStatePoint;
     static ID3D11SamplerState* samplerStateLinear;
@@ -130,6 +151,7 @@ namespace
     static ID3D11SamplerState* samplerStateAnisotropic4;
     static ID3D11SamplerState* samplerStateAnisotropic8;
     static ID3D11SamplerState* samplerStateAnisotropic16;
+    static ID3D11SamplerState* samplerStateShadowMap;
 }
 
 void SamplerState::Release()
@@ -140,6 +162,7 @@ void SamplerState::Release()
 	if (samplerStateAnisotropic4)	samplerStateAnisotropic4->Release();	samplerStateAnisotropic4 = 0;
 	if (samplerStateAnisotropic8)	samplerStateAnisotropic8->Release();	samplerStateAnisotropic8 = 0;
 	if (samplerStateAnisotropic16)	samplerStateAnisotropic16->Release();	samplerStateAnisotropic16 = 0;
+	if (samplerStateShadowMap)		samplerStateShadowMap->Release();		samplerStateShadowMap = 0;
 }
 ID3D11SamplerState* SamplerState::GetPoint(ID3D11Device* device)
 {
@@ -182,6 +205,13 @@ ID3D11SamplerState* SamplerState::GetAnisotropic16(ID3D11Device* device)
 		return false;
 
 	return samplerStateAnisotropic16;
+}
+ID3D11SamplerState* SamplerState::GetShadow(ID3D11Device* device)
+{
+	if (!samplerStateShadowMap && device && FAILED(device->CreateSamplerState(&samplerStateShadowMapDesc(), &samplerStateShadowMap)))
+		return false;
+
+	return samplerStateShadowMap;
 }
 
 

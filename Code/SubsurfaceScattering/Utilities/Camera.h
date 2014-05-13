@@ -48,6 +48,7 @@ class Camera
 		void RelativeRoll(float degrees);
 
 		void SetViewMatrix(DirectX::XMFLOAT4X4 view);
+		void SetViewMatrix(DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 direction, DirectX::XMFLOAT3 right);
 		void SetProjectionMatrix(float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
 		void SetProjectionMatrix(DirectX::XMFLOAT4X4 projection);
 		void SetOrthogonalMatrix(float width, float height, float nearPlane, float farPlane);

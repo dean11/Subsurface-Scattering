@@ -1,5 +1,5 @@
 #include "Camera.h"
-
+#include <D3DTK\SimpleMath.h>
 using namespace DirectX;
 
 Camera::Camera()
@@ -167,7 +167,29 @@ void Camera::RelativeRoll(float degrees)
 
 void Camera::SetViewMatrix(DirectX::XMFLOAT4X4 view)
 {
+	this->positionX = view._41;
+	this->positionY = view._42;
+	this->positionZ = view._43;
+
+	this->lookAt.x = view._31;
+	this->lookAt.y = view._32;
+	this->lookAt.z = view._33;
+
 	this->viewMatrix = view;
+}
+void Camera::SetViewMatrix(DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 direction, DirectX::XMFLOAT3 right)
+{
+	this->positionX = position.x;
+	this->positionY = position.y;
+	this->positionZ = position.z;
+
+	this->lookAt = direction;
+
+	XMVECTOR p = XMLoadFloat3(&position);
+	XMVECTOR d = XMLoadFloat3(&direction);
+	XMVECTOR u = XMVector3Cross(d, XMLoadFloat3(&right));
+
+	XMStoreFloat4x4 (&this->viewMatrix, DirectX::XMMatrixLookToLH(p, d, u));
 }
 void Camera::SetProjectionMatrix(DirectX::XMFLOAT4X4 projection)
 {
@@ -196,8 +218,6 @@ void Camera::Render()
 	DirectX::XMFLOAT3 up, position, xAxis, yAxis, zAxis;
 	float yaw, pitch, roll;
 	
-	
-
 	//Set position
 	position.x = this->positionX;
 	position.y = this->positionY;
@@ -220,13 +240,9 @@ void Camera::Render()
 
 
 	//Create rotation matrix
-	//D3DXMatrixRotationYawPitchRoll(&rotationMatrix, yaw, pitch, roll);
 	FXMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
-	//XMStoreFloat4x4(&rotationMatrix, XMMatrixRotationRollPitchYaw(pitch, yaw, roll));
 
 	//Transform lookAt and up so they are rotated accordingly
-	//D3DXVec3TransformCoord(&this->lookAt, &this->lookAt, &rotationMatrix);
-	//D3DXVec3TransformCoord(&up, &up, &rotationMatrix);
 	XMStoreFloat3(&this->lookAt, XMVector3TransformCoord(XMLoadFloat3(&this->lookAt), rotationMatrix));
 	XMStoreFloat3(&up, XMVector3TransformCoord(XMLoadFloat3(&up), rotationMatrix));
 	

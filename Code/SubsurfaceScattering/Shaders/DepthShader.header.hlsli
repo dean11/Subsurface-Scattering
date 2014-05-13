@@ -9,7 +9,6 @@ struct vertexIn
 cbuffer perObject	:register(b0)
 {
 	float4x4 world;
-	float4x4 worlInvTrans;
 };
 
 cbuffer cMatrixBuffer :register(b1)
