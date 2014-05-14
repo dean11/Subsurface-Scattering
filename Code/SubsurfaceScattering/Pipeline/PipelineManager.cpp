@@ -8,6 +8,7 @@
 #include "..\Utilities\WindowShell.h"
 #include "..\Utilities\TextRender.h"
 #include "..\Utilities\Util.h"
+#include "..\Input.h"
 
 using namespace Pipeline;
 struct winRectangle :public RECT
@@ -117,6 +118,9 @@ void PipelineManager::ApplyGeometryPass()
 }
 void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 {
+	if(Input::IsKeyDown(VK_L))
+		this->lightPass.ReloadShader();
+
 	if(this->debugRTV)
 	{
 		shadowMapDebug.resize(0);

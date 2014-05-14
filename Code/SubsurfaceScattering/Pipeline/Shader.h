@@ -34,6 +34,7 @@ namespace Pipeline
 	public:
 		Shader();
 		virtual~Shader();
+		static bool CompileShaderToCSO(const char filename[], const char output[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		bool CreateShader(const char filename[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		bool LoadCompiledShader(const char filename[], ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		ShaderData GetShader();

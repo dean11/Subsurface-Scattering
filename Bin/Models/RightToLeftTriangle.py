@@ -1,9 +1,9 @@
 import os
 
-filename = "sbun.obj.old"
+filename = "wall.obj.old"
 
 f = open(filename, 'r')
-fOut = open("sbun.obj", 'w')
+fOut = open("wall.obj", 'w')
 
 
 while True:

@@ -141,18 +141,14 @@ float4 DirLightCalc(in DirLight pl, in float3 vertPos, in float3 vNormal)
 
 	return diffuse;
 }
-float ShadowPCF(float3 posW, const int shadowIndex) 
+float ShadowPCF(in float3 posW, in int i, const float4x4 lightViewProj, in const float2 shadowMapSize) 
 {
-	float4 shadowPosH = mul(float4(posW, 1.0f), shadowLights[shadowIndex].viewProjection);
+	float4 shadowPosH = mul(float4(posW, 1.0f), lightViewProj);
 	float lit = 0.0f;
 	shadowPosH.xy /= shadowPosH.w;					// Project the texture coords and scale/offset to [0, 1].
 	float depth = (shadowPosH.z - 0.0001f) / 1.0f;		// pixel depth for shadowing is linear.
 	
-	float2 len = (float2)0.0f;
-	ShadowMaps[shadowIndex].GetDimensions(len.x, len.y);
-	
-	
-	float dx = 1.0f / len.x;
+	float dx = 1.0f / shadowMapSize.x;
 	float2 smTex = float2(0.5f * shadowPosH.x, -0.5f * shadowPosH.y) + 0.5f;	//Compute shadow map tex coord
 	
 	float2 off[9] = 
@@ -165,7 +161,7 @@ float ShadowPCF(float3 posW, const int shadowIndex)
 	[unroll]
 	for(int i = 0; i < 9; i++)
 	{
-		lit += ShadowMaps[shadowIndex].SampleCmpLevelZero(ShadowSampler, smTex + off[i], depth).r;
+		lit += ShadowMaps[i].SampleCmpLevelZero(ShadowSampler, smTex + off[i], depth).r;
 	}
 	
 	lit /= 9;
@@ -202,12 +198,12 @@ float3 T(float s)
 }
 
 //SSS
-float3 SSSTranslucency(	uint3 shadowIndex,
-						float translucency,
-						float3 posW,
+float3 SSSTranslucency(	uint i,
+						float2 shadowMapSize,
+						float4 translucency,
 						float3 normalW,
 						float3 lightVecW,
-						float4 shrinkedVertPos,
+						float3 shrinkedVertPos,
 						float4x4 lightViewProjection,
 						float lightFarPlane)
 {
@@ -215,28 +211,31 @@ float3 SSSTranslucency(	uint3 shadowIndex,
 		* Calculate the scale of the effect.
 		*/
 	//float scale = 8.25 * (1.0 - translucency) / 1.0f;
-	float scale = 8.25 * (1.0 - translucency) / 1.0f;
+	float scale = 1.25 * (1.0 - translucency.x) / 1.0f;
       
 	/**
 		* Now we calculate the thickness from the light point of view:
 		*/
-	float4 shadowPosition = mul(shrinkedVertPos, lightViewProjection);
-	float d1 = ShadowMaps[shadowIndex.x].SampleLevel(LinearSampler, shadowPosition.xy / shadowPosition.w, 0).r; // 'd1' has a range of 0..1
+	float4 shadowPosition = mul(float4(shrinkedVertPos, 1.0f), lightViewProjection);
+	
+	//float d1 = ShadowMaps[i].SampleLevel(LinearSampler, shadowPosition.xy / shadowPosition.w, 0).r; // 'd1' has a range of 0..1
+	float d1 = ShadowMaps[i][(shadowPosition.xy / shadowPosition.w) * (shadowMapSize - 1)].r; // 'd1' has a range of 0..1
+	
 	float d2 = shadowPosition.z; // 'd2' has a range of 0..'lightFarPlane'
-	d1 *= 10.0f; // So we scale 'd1' accordingly:
+	d1 *= lightFarPlane; // So we scale 'd1' accordingly:
 	float d = scale * abs(d1 - d2);
 
 	
 	float dd = -d * d;
 	float3 profile = T(dd);
+	profile = (float3)0.5f;
 
 	/** 
 		* Using the profile, we finally approximate the transmitted lighting from
 		* the back of the object:
 		*/
+	//return (float3)0.8;
 	return profile * saturate(0.3 + dot(lightVecW, -normalW));
-	//return profile;
-	return (float3)d1;
 }
 
 //-----------------------------------------------------------------------------

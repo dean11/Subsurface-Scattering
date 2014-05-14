@@ -24,16 +24,12 @@ Shader::~Shader()
 {
 }
 
-bool Shader::CreateShader(const char filename[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+bool Shader::CompileShaderToCSO(const char filename[], const char output[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
-	if(!this->device)			this->device = device;
-	if(!this->deviceContext)	this->deviceContext = deviceContext;
-
 	ID3DBlob* s = 0, *err = 0;
-	wchar_t buff[255];
-	_wgetcwd(buff, 255);
 	HRESULT hr = S_OK;
-	if(FAILED ( hr = D3DCompileFromFile(Util::StringToWstring(filename, std::wstring()).c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
+	
+	if(FAILED ( hr = D3DCompileFromFile(Util::StringToWstring(filename, std::wstring()).c_str(), macro, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
 	{
 		if(err) 
 		{
@@ -49,8 +45,45 @@ bool Shader::CreateShader(const char filename[], char* target, UINT flag, const 
 		return false;
 	}
 
-	memset(&this->shaderData, 0, sizeof(Shader::ShaderData));
+	std::ofstream f;
+	f.open(output, std::ifstream::out | std::ifstream::binary);
+	if(f.is_open())
+	{
+		f.write((char*)s->GetBufferPointer(), s->GetBufferSize());
+		f.close();
+	}
+	s->Release();
+	return true;
+}
+bool Shader::CreateShader(const char filename[], char* target, UINT flag, const D3D_SHADER_MACRO* macro, ShaderType type, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+{
+	ID3DBlob* s = 0, *err = 0;
+	HRESULT hr = S_OK;
+
 	
+
+	if(!this->device)			this->device = device;
+	if(!this->deviceContext)	this->deviceContext = deviceContext;
+	
+	if(FAILED ( hr = D3DCompileFromFile(Util::StringToWstring(filename, std::wstring()).c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
+	{
+		if(err) 
+		{
+			char* compileErrors = (char*)(err->GetBufferPointer());
+			size_t bufferSize = err->GetBufferSize();
+
+			printf("%s", compileErrors);
+			
+			err->Release();
+			err = 0;
+		}
+
+		return false;
+	}
+	
+	if(this->shaderData.data)
+		this->Release();
+
 	switch (type)
 	{
 	case Pipeline::ShaderType_VS:
@@ -177,7 +210,6 @@ void Shader::Release()
 		if (this->shaderData.data) this->shaderData.domainShader->Release();	this->shaderData.data = 0;
 		break;
 	}
-
 }
 void Shader::Apply()
 {

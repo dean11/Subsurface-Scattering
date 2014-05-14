@@ -165,6 +165,19 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* normalM
 	this->deviceContext->Dispatch((unsigned int)((this->width + 31) / 32), (unsigned int)((this->height + 31) / 32), 1);
 }
 
+void LightPass::ReloadShader()
+{
+	UINT flag = 0;
+
+#if defined (DEBUG) || defined (_DEBUG)
+	flag |= D3DCOMPILE_DEBUG;
+#endif
+	if (!Shader::CompileShaderToCSO("..\\Code\\SubsurfaceScattering\\Shaders\\LightPass.header.hlsl", "Shaders\\LightPass.header.cso", "fx_5_0", flag, 0, ShaderType_CS, device, deviceContext))
+		return;
+	if (!this->lightShader.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\LightPass.compute.hlsl", "cs_5_0", flag, 0, ShaderType_CS, device, deviceContext))
+		return;
+}
+
 bool LightPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile)
 {
 	this->device = device;

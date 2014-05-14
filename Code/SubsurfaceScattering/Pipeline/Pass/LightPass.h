@@ -53,6 +53,8 @@ namespace Pipeline
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool forceShaderCompile);
 		ID3D11ShaderResourceView* GetLightMapSRV();
 
+		void ReloadShader();
+
 	private:
 		void RenderPointLight(BasicLightData::PointLight *dest, const BasicLightData::PointLight* data, int count, const DirectX::XMFLOAT4X4& view);
 		void RenderSpotLight(BasicLightData::Spotlight *dest, const BasicLightData::Spotlight* data, int count, const DirectX::XMFLOAT4X4& view);

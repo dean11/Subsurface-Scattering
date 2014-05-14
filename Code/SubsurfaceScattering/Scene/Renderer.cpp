@@ -71,13 +71,21 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	//	return false;
 	//this->models.push_back(bth);
 
-	Model *bun = new Model();
-	if (!bun->CreateModel("Models\\sbun.obj_low", device))
-		return false;
-	this->models.push_back(bun);
-	bun->SetScale(0.2f);
-	bun->SetPosition(0.0f, -112.0f, 150.0f);
-	this->player = bun;
+	//Model *bun = new Model();
+	//if (!bun->CreateModel("Models\\sbun.obj_low", device))
+	//	return false;
+	//this->models.push_back(bun);
+	//bun->SetScale(0.3f);
+	//bun->SetPosition(0.0f, -112.0f, 150.0f);
+	//this->player = bun;
+
+	//Model *bud = new Model();
+	//if (!bud->CreateModel("Models\\bu.obj", device))
+	//	return false;
+	//this->models.push_back(bud);
+	////bud->SetScale(0.2f);
+	//bud->SetPosition(0.0f, -80.0f, 150.0f);
+	//this->player = bud;
 
 	//Model *cube = new Model();
 	//if (!cube->CreateModel("Models\\plane.obj", device))
@@ -85,6 +93,13 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	//cube->SetPosition(0, -100, 50);
 	//this->models.push_back(cube);
 	//this->player = cube;
+
+	Model *wall = new Model();
+	if (!wall->CreateModel("Models\\wall.obj", device))
+		return false;
+	wall->SetPosition(0, -100, 50);
+	this->models.push_back(wall);
+	this->player = wall;
 
 	//this->sphereMap.CreateSkyBox(device, dc);
 
@@ -184,23 +199,22 @@ bool Renderer::CreateLights()
 			lds1.camera.SetRotation(40.0f, 0.0f, 0.0f);
 			lds1.camera.Render();
 		}
-		/*
+		
 		BasicLightData::ShadowMapLight lds2;
 		{
 			if(!lds2.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
 				return false;
 		
-			lds2.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
+			lds2.attenuation		= SimpleMath::Vector3(0.2f, 0.001f, 0.0001f);
 			lds2.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-			lds2.cone				= 200.0f;
+			lds2.cone				= 20.0f;
 			lds2.range				= 1000.0f;
 		
 			lds2.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-			lds2.camera.SetPosition(0.0f, 90.0f, 0.0f);
-			lds2.camera.SetRotation(90.0f, 0.0f, 0.0f);
+			lds2.camera.SetPosition(0.0f, -90.0f, 0.0f);
 			lds2.camera.Render();
 		}
-
+		/*
 		BasicLightData::ShadowMapLight lds3;
 		{
 			if(!lds3.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
@@ -248,7 +262,7 @@ bool Renderer::CreateLights()
 		}
 		*/
 		this->shadowMaps.Push(lds1);
-		//this->shadowMaps.Push(lds2);
+		this->shadowMaps.Push(lds2);
 		//this->shadowMaps.Push(lds3);
 		//this->shadowMaps.Push(lds4);
 		//this->shadowMaps.Push(lds5);
