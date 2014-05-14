@@ -6,6 +6,9 @@
 #define		VK_W		0x57
 #define		VK_A		0x41
 #define		VK_D		0x44
+#define		VK_P		0x50
+#define		VK_Q		0x51
+#define		VK_R		0x52
 #define		VK_MINUS	109
 #define		VK_PLUS		107
 

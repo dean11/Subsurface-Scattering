@@ -29,9 +29,7 @@ namespace Pipeline
 		void ApplyGeometryPass();
 		void ApplyLightPass(const LightPass::LightData& data);
 		void ApplyFinalPass();
-		void ApplyShadowMapPass( ShadowMap& output, SimpleMath::Matrix view, SimpleMath::Matrix projection );
-		void ApplySSSPass(const ShadowMap* depths, unsigned int totalDepths);
-
+		
 		void SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose);
 		void SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection);
 

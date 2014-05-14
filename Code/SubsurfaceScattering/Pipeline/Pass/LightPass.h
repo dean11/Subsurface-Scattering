@@ -33,7 +33,7 @@ namespace Pipeline
 			const BasicLightData::Directional* dirData;
 			int dirCount;
 
-			BasicLightData::ShadowMapLight *shadowData;
+			BasicLightData::ShadowMapLight* shadowData;
 			int shadowCount;
 
 			DirectX::XMFLOAT4X4 invProj;

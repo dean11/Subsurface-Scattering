@@ -1,3 +1,4 @@
+#define SSS_ENABLE
 
 //Standarnd Lights
 struct DirLight
@@ -47,7 +48,6 @@ struct ShadowMapLightData
 cbuffer cLightBuffer :register(b0)
 {
 	float4x4 invProj;
-
 	float4 ambientLight;
 	float3 cameraPosition;
 
@@ -56,7 +56,8 @@ cbuffer cLightBuffer :register(b0)
 	int nrOfDirLights;
 	int nrOfShadowLights;
 
-	float pad[2];
+	int sssEnabled;
+	//float pad[1];
 };
 
 // Deferred textures
@@ -75,7 +76,7 @@ StructuredBuffer<ShadowMapLightData>	shadowLights		: register(t11);
 RWTexture2D<float4> LightMap								: register(u0);
 
 //Samplers
-SamplerState PointSampler									: register(s0);
+SamplerState LinearSampler									: register(s0);
 SamplerComparisonState ShadowSampler						: register(s1);
 
 //Methods
@@ -140,16 +141,19 @@ float4 DirLightCalc(in DirLight pl, in float3 vertPos, in float3 vNormal)
 
 	return diffuse;
 }
-float ShadowPCF(float3 posW, int shadowIndex) 
+float ShadowPCF(float3 posW, const int shadowIndex) 
 {
-	float2 len = ShadowMaps[shadowIndex].Length.xy;
 	float4 shadowPosH = mul(float4(posW, 1.0f), shadowLights[shadowIndex].viewProjection);
-
-	// Project the texture coords and scale/offset to [0, 1].
-	shadowPosH.xy /= shadowPosH.w;
-	float depth = shadowPosH.z / shadowPosH.w; // pixel depth for shadowing.
+	float lit = 0.0f;
+	shadowPosH.xy /= shadowPosH.w;					// Project the texture coords and scale/offset to [0, 1].
+	float depth = (shadowPosH.z - 0.0001f) / 1.0f;		// pixel depth for shadowing is linear.
+	
+	float2 len = (float2)0.0f;
+	ShadowMaps[shadowIndex].GetDimensions(len.x, len.y);
+	
+	
 	float dx = 1.0f / len.x;
-	float2 smTex = float2(0.5f*shadowPosH.x, -0.5f*shadowPosH.y) + 0.5f;	//Compute shadow map tex coord
+	float2 smTex = float2(0.5f * shadowPosH.x, -0.5f * shadowPosH.y) + 0.5f;	//Compute shadow map tex coord
 	
 	float2 off[9] = 
 	{
@@ -158,37 +162,14 @@ float ShadowPCF(float3 posW, int shadowIndex)
 		float2(-dx, dx  ),	float2(0.0f, dx  ),	float2(dx, dx),
 	};
 	
-	float lit = 0.0f;
+	[unroll]
 	for(int i = 0; i < 9; i++)
 	{
 		lit += ShadowMaps[shadowIndex].SampleCmpLevelZero(ShadowSampler, smTex + off[i], depth).r;
 	}
-
+	
 	lit /= 9;
 	return lit;
-
-	/*
-	float4 shadowPosition = mul(float4(worldPosition, 1.0), shadowLights[i].viewProjection);
-    shadowPosition.xy /= shadowPosition.w;
-    //shadowPosition.z += shadowLights[i].bias;
-    
-    float2 size = ShadowMaps[i].Length.xy;
-
-    float shadow = 0.0;
-    float offset = (samples - 1.0) / 2.0;
-    [unroll]
-    for (float x = -offset; x <= offset; x += 1.0) 
-	{
-        [unroll]
-        for (float y = -offset; y <= offset; y += 1.0) 
-		{
-            float3 pos = float3((shadowPosition.xy + width * float2(x, y) / size.x), i);
-           // shadow += ShadowMaps[i].SampleCmpLevelZero(ShadowSampler, pos, (shadowPosition.z / shadowLights[i].farPlane)).r;
-        }
-    }
-    shadow /= samples * samples;
-    return shadow;
-	*/
 }
 
 
@@ -200,7 +181,8 @@ float LightTravelDist(uint3 i, float3 normalW, float4 shrinkedVertexPosition)
 	float4 posLightSpace = mul(shrinkedVertexPosition, shadowLights[i.x].viewProjection);
 
 	// Fetch depth from the shadow map: (Depth from shadow maps is linear)
-	float d1 = ShadowMaps[i.x][ ((posLightSpace.xy / posLightSpace.w)  * (ShadowMaps[i.x].Length.xy))].r;
+	float d1 = ShadowMaps[i.x].SampleLevel(LinearSampler, (posLightSpace.xy / posLightSpace.w), 0).r;
+	//float d1 = ShadowMaps[i.x][ ((posLightSpace.xy / posLightSpace.w)  * (ShadowMaps[i.x].Length.xy))].r;
 	float d2 = posLightSpace.z;
 
 	// Calculate the difference:
@@ -209,6 +191,7 @@ float LightTravelDist(uint3 i, float3 normalW, float4 shrinkedVertexPosition)
 float3 T(float s) 
 {
 	// Source: http://www.iryoku.com/translucency/
+	// Precalculated transmittance profile
 
 	return	float3(0.233, 0.455, 0.649) * exp(-s * s / 0.0064) +
 			float3(0.1,   0.336, 0.344) * exp(-s * s / 0.0484) +
@@ -228,31 +211,32 @@ float3 SSSTranslucency(	uint3 shadowIndex,
 						float4x4 lightViewProjection,
 						float lightFarPlane)
 {
-    /**
-     *	Now we calculate the thickness from the light point of view:
-     */
+	/**
+		* Calculate the scale of the effect.
+		*/
+	//float scale = 8.25 * (1.0 - translucency) / 1.0f;
+	float scale = 8.25 * (1.0 - translucency) / 1.0f;
+      
+	/**
+		* Now we calculate the thickness from the light point of view:
+		*/
 	float4 shadowPosition = mul(shrinkedVertPos, lightViewProjection);
-	//float d1 = SSSSSample(shadowMap, shadowPosition.xy / shadowPosition.w).r; // 'd1' has a range of 0..1
-	//float d1 = ShadowMaps[shadowIndex.x][shadowPosition.xy / shadowPosition.w].r; // 'd1' has a range of 0..1
-	float d1 = ShadowMaps[shadowIndex.x][((shadowPosition.xy / shadowPosition.w) * (ShadowMaps[shadowIndex.x].Length.xy))].r; // 'd1' has a range of 0..1
+	float d1 = ShadowMaps[shadowIndex.x].SampleLevel(LinearSampler, shadowPosition.xy / shadowPosition.w, 0).r; // 'd1' has a range of 0..1
 	float d2 = shadowPosition.z; // 'd2' has a range of 0..'lightFarPlane'
-	d1 *= lightFarPlane; // So we scale 'd1' accordingly:
-	float d = abs(d1 - d2);
+	d1 *= 10.0f; // So we scale 'd1' accordingly:
+	float d = scale * abs(d1 - d2);
 
-    /**
-     * Armed with the thickness, we can now calculate the color by means of the
-     * precalculated transmittance profile.
-     * (It can be precomputed into a texture, for maximum performance):
-     */
+	
 	float dd = -d * d;
 	float3 profile = T(dd);
 
-    /** 
-     * Using the profile, we finally approximate the transmitted lighting from
-     * the back of the object:
-     */
-    return profile * saturate(0.3 + dot(lightVecW, -normalW));
-    //return saturate(0.3 + dot(lightVecW, -normalW));
+	/** 
+		* Using the profile, we finally approximate the transmitted lighting from
+		* the back of the object:
+		*/
+	return profile * saturate(0.3 + dot(lightVecW, -normalW));
+	//return profile;
+	return (float3)d1;
 }
 
 //-----------------------------------------------------------------------------

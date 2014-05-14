@@ -5,6 +5,7 @@
 #include "..\RenderState\SamplerState.h"
 #include <D3DTK\SimpleMath.h>
 #include "..\..\Utilities\Util.h"
+#include "..\..\Input.h"
 
 struct ShadowMapLightProxy
 {
@@ -34,8 +35,8 @@ struct ConstLightBuffer
 	int spotLightCount;
 	int dirLightCount;
 	int shadowCount;
-
-	float pad[1];
+	int sssEnabled;
+	//float pad[1];
 };
 
 using namespace Pipeline;
@@ -105,6 +106,7 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* normalM
 		b->ambientLight = DirectX::XMFLOAT4(lights.ambientLight.x, lights.ambientLight.y, lights.ambientLight.z, 0.0f);
 		b->invProj = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.invProj)).Transpose();
 		b->shadowCount = min(lights.shadowCount, 5);
+		b->sssEnabled = Input::IsKeyDown(VK_P) ? 1 : 0;
 		this->deviceContext->Unmap(this->constLightBuffer, 0);
 		this->deviceContext->CSSetConstantBuffers(0, 1, &this->constLightBuffer);
 	}
@@ -155,7 +157,7 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* normalM
 
 	this->deviceContext->CSSetShaderResources(0, Util::NumElementsOf(srv), srv);
 
-	ID3D11SamplerState* samp[] = { ShaderStates::SamplerState::GetPoint(this->device), ShaderStates::SamplerState::GetShadow(this->device) };
+	ID3D11SamplerState* samp[] = { ShaderStates::SamplerState::GetLinear(this->device), ShaderStates::SamplerState::GetShadow(this->device) };
 	this->deviceContext->CSSetSamplers(0, 2, samp);
 
 	this->lightShader.Apply();

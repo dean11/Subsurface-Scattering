@@ -27,10 +27,10 @@ namespace
 	{
 		D3D11_SAMPLER_DESC sd;
 		ZeroMemory(&sd, sizeof(sd));
-		sd.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		sd.AddressU			= D3D11_TEXTURE_ADDRESS_WRAP;
-		sd.AddressV			= D3D11_TEXTURE_ADDRESS_WRAP;
-		sd.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;
+		sd.Filter			= D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		sd.AddressU			= D3D11_TEXTURE_ADDRESS_CLAMP;
+		sd.AddressV			= D3D11_TEXTURE_ADDRESS_CLAMP;
+		sd.AddressW			= D3D11_TEXTURE_ADDRESS_CLAMP;
 		sd.MipLODBias		= 0.0f;
 		sd.MaxAnisotropy	= 1;
 		sd.ComparisonFunc	= D3D11_COMPARISON_ALWAYS;
@@ -129,9 +129,9 @@ namespace
 		
 		ZeroMemory(&sd, sizeof(sd));
 		sd.Filter           = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-		sd.AddressU         = D3D11_TEXTURE_ADDRESS_WRAP;
-		sd.AddressV         = D3D11_TEXTURE_ADDRESS_WRAP;
-		sd.AddressW         = D3D11_TEXTURE_ADDRESS_WRAP;
+		sd.AddressU         = D3D11_TEXTURE_ADDRESS_BORDER;
+		sd.AddressV         = D3D11_TEXTURE_ADDRESS_BORDER;
+		sd.AddressW         = D3D11_TEXTURE_ADDRESS_BORDER;
 		sd.MipLODBias		= 0.0f;
 		sd.MaxAnisotropy	= 1;
 		sd.ComparisonFunc	= D3D11_COMPARISON_LESS;

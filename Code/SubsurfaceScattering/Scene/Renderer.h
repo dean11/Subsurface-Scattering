@@ -35,9 +35,9 @@ private:
 	ID3D11DeviceContext *deviceContext;
 
 	Camera *mainCam;
-	Plane ground;
+	Plane *ground;
 	RendererInitDesc desc;
-	std::vector<Model> models;
+	std::vector<Model*> models;
 	SphereMap sphereMap;
 
 	Util::DynamicArray<BasicLightData::PointLight> pointLights;
@@ -45,7 +45,7 @@ private:
 	Util::DynamicArray<BasicLightData::Spotlight> spotLight;
 	//Util::DynamicArray<ShadowMap> shadowMaps;
 	Util::DynamicArray<BasicLightData::ShadowMapLight> shadowMaps;
-
+	Model* player;
 private:
 	void RenderGeometry();
 	void RenderShadowMaps();

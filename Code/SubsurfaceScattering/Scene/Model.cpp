@@ -133,7 +133,18 @@ void Model::Rotate(const SimpleMath::Vector3& angle)
 	this->world *= m.CreateFromYawPitchRoll(angle.x, angle.y, angle.z);
 	//this->world *= m;
 }
-
+void Model::SetScale(float x, float y, float z)
+{
+	this->world._11 = x;	
+	this->world._22 = y;	
+	this->world._33 = z;	
+}
+void Model::SetScale(float s)
+{
+	this->world._11 = s;	
+	this->world._22 = s;	
+	this->world._33 = s;	
+}
 SimpleMath::Vector3 Model::GetPosition()
 {
 	return SimpleMath::Vector3(this->world._41, this->world._42 ,this->world._43);// = z;

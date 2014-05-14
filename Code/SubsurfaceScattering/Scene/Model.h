@@ -45,6 +45,8 @@ public:
 	//void SetWorldInversTranspose(DirectX::XMFLOAT4X4 worldInvTrans); SÄTTA DENNA I SAMBAND MED NY WORLD?
 	DirectX::SimpleMath::Vector3 GetPosition();
 	void Rotate(const SimpleMath::Vector3& angle);
+	void SetScale(float x, float y, float z);
+	void SetScale(float s);
 
 protected:
 	Mesh mesh;

@@ -25,7 +25,9 @@ void Renderer::Release()
 {
 	for (size_t i = 0; i < this->models.size(); i++)
 	{
-		this->models[i].Release();
+		this->models[i]->Release();
+		delete this->models[i];
+		this->models[i] = 0;;
 	}
 
 	for (size_t i = 0; i < this->shadowMaps.Size(); i++)
@@ -46,10 +48,10 @@ void Renderer::Frame(float delta)
 	RenderLights();
 	RenderFinal(delta);
 
-	if(Input::IsKeyDown(VK_UP))			this->models[1].Forward(+0.5f);
-	if(Input::IsKeyDown(VK_DOWN))		this->models[1].Forward(-0.5f);
-	if(Input::IsKeyDown(VK_RIGHT))		this->models[1].Right(+0.5f);
-	if(Input::IsKeyDown(VK_LEFT))		this->models[1].Right(-0.5f);
+	if(Input::IsKeyDown(VK_UP))			this->player->Forward(+1.5f);
+	if(Input::IsKeyDown(VK_DOWN))		this->player->Forward(-1.5f);
+	if(Input::IsKeyDown(VK_RIGHT))		this->player->Right(+1.5f);
+	if(Input::IsKeyDown(VK_LEFT))		this->player->Right(-1.5f);
 	
 	if (time > timeMax)
 		time = 0.0f;
@@ -64,21 +66,29 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 		return false;
 
 
-	Model bth;
-	if (!bth.CreateModel("Models\\bth.righthanded.obj", device))
-	//if (!bth.CreateModel("Models\\sphere.obj", device))
-		return false;
-	this->models.push_back(bth);
+	//Model *bth = new Model();
+	//if (!bth->CreateModel("Models\\bth.righthanded.obj", device))
+	//	return false;
+	//this->models.push_back(bth);
 
-	Model cube;
-	if (!cube.CreateModel("Models\\plane.obj", device))
+	Model *bun = new Model();
+	if (!bun->CreateModel("Models\\sbun.obj_low", device))
 		return false;
-	cube.SetPosition(0, -100, 50);
-	this->models.push_back(cube);
+	this->models.push_back(bun);
+	bun->SetScale(0.2f);
+	bun->SetPosition(0.0f, -112.0f, 150.0f);
+	this->player = bun;
+
+	//Model *cube = new Model();
+	//if (!cube->CreateModel("Models\\plane.obj", device))
+	//	return false;
+	//cube->SetPosition(0, -100, 50);
+	//this->models.push_back(cube);
+	//this->player = cube;
 
 	//this->sphereMap.CreateSkyBox(device, dc);
 
-	this->ground.CreatePlane(device, DirectX::XMFLOAT3(0.0, -100.0f, 0.0f), L"Models\\gray.dds", 1000.0f, 1000.0f, 1.0f);
+	(this->ground = new Plane())->CreatePlane(device, DirectX::XMFLOAT3(0.0, -100.0f, 0.0f), L"Models\\gray.dds", 1000.0f, 1000.0f, 1.0f);
 	this->models.push_back(this->ground);
 
 	if(!CreateLights())
@@ -166,12 +176,12 @@ bool Renderer::CreateLights()
 		
 			lds1.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
 			lds1.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-			lds1.cone				= 500.0f;
+			lds1.cone				= 50.0f;
 			lds1.range				= 1000.0f;
 		
 			lds1.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), ((float)this->desc.width/(float)this->desc.height), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-			lds1.camera.SetPosition(0.0f, 0.0f, -90.0f);
-			lds1.camera.SetRotation(0.0f, 0.0f, 0.0f);
+			lds1.camera.SetPosition(0.0f, 100.0f, -30.0f);
+			lds1.camera.SetRotation(40.0f, 0.0f, 0.0f);
 			lds1.camera.Render();
 		}
 		/*
@@ -310,7 +320,7 @@ void Renderer::RenderShadowMaps()
 			{
 				for (size_t k = 0; k < this->models.size(); k++)
 				{
-					this->shadowMaps[i].shadowMap.Draw(this->models[k]);
+					this->shadowMaps[i].shadowMap.Draw(*this->models[k]);
 				}
 
 			} this->shadowMaps[i].shadowMap.End();
@@ -365,7 +375,7 @@ void Renderer::RenderGeometry()
 			//if(i == 0)
 			//	this->models[i].Rotate(SimpleMath::Vector3(0.003f, 0.003f, 0.003f));
 
-			this->models[i].DrawModel(this->deviceContext);
+			this->models[i]->DrawModel(this->deviceContext);
 		}
 	}
 
@@ -395,12 +405,10 @@ void Renderer::RenderLights()
 
 	if (this->shadowMaps.Size())	lData.shadowData = &this->shadowMaps[0];
 	lData.shadowCount = this->shadowMaps.Size();
-	
-	
 
 	lData.invProj = this->mainCam->GetInverseProjectionMatrix();
 	lData.view = this->mainCam->GetViewMatrix();
-	lData.ambientLight = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	lData.ambientLight = DirectX::XMFLOAT3(0.02f, 0.02f, 0.02f);
 
 	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
 
