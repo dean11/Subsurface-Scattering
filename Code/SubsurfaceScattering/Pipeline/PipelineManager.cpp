@@ -24,6 +24,7 @@ struct winRectangle :public RECT
 static PipelineManager* pipelineManagerInstance = 0;
 static std::vector<ID3D11ShaderResourceView*> shadowMapDebug;
 
+
 struct ObjectMatrixData
 {
 	DirectX::XMFLOAT4X4 world;
@@ -66,9 +67,10 @@ void PipelineManager::Release()
 	InputLayoutManager::Release();
 	
 	this->geometryPass.Release();
-	this->finalPass.Release();
-	this->lightPass.Release();
-	this->sssPass.Release();
+	//this->finalPass.Release();
+	//this->lightPass.Release();
+	//this->sssPass.Release();
+	this->postPass.Release();
 
 	Util::SAFE_RELEASE(this->d3dSwapchain);
 	Util::SAFE_RELEASE(this->renderTarget);
@@ -87,6 +89,8 @@ void PipelineManager::Release()
 }
 bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height)
 {
+	this->width = width;
+	this->height = height;
 	this->device = device;
 	this->deviceContext = deviceContext;
 
@@ -96,9 +100,11 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	if (!this->CreateRTV())								return false;
 	
 	if(!this->geometryPass.Initiate(device, deviceContext, width, height, false)) return false;
-	if(!this->lightPass.Initiate(device, deviceContext, width, height, false)) return false;
-	if(!this->finalPass.Initiate(device, deviceContext, width, height, false, this->d3dSwapchain)) return false;
-	if(!this->sssPass.Initiate(device, deviceContext, width, height)) return false;
+	//if(!this->lightPass.Initiate(device, deviceContext, width, height, false)) return false;
+	//if(!this->finalPass.Initiate(device, deviceContext, width, height, false, this->d3dSwapchain)) return false;
+	//if(!this->sssPass.Initiate(device, deviceContext, width, height)) return false;
+	if(!this->postPass.Initiate(device, deviceContext, this->d3dSwapchain)) return false;
+
 	CreateViewport(width, height);
 	this->CreateConstantBuffers();
 
@@ -118,60 +124,138 @@ void PipelineManager::ApplyGeometryPass()
 }
 void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
 {
+	////if(Input::IsKeyDown(VK_L))
+	////	this->lightPass.ReloadShader();
+	//
+	//if(this->debugRTV)
+	//{
+	//	shadowMapDebug.resize(0);
+	//	for (size_t i = 0; i < (size_t)data.shadowCount; i++)
+	//		shadowMapDebug.push_back(data.shadowData[i].shadowMap);
+	//}
+	//
+	//if (this->prevPass) this->prevPass->Clear();
+	//
+	//this->lightPass.Apply(	data, 
+	//						this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), 
+	//						this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), 
+	//						this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS));
+	//
+	//this->prevPass = &this->lightPass;
+}
+void PipelineManager::ApplyFinalPass()
+{
+	//if (this->prevPass) this->prevPass->Clear();
+	//
+	//
+	//FinalPass::DispatchTextureData td;
+	//td.DiffuseMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR);
+	//td.LightMap = this->lightPass.GetLightMapSRV();
+	//td.NormalMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL);
+	//td.ShadowMap = 0;
+	//td.ThicknessMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS);
+	//
+	//this->finalPass.Apply(td);
+	//this->finalPass.Clear();
+	//
+	//this->deviceContext->RSSetViewports(1, &this->viewPort);
+	//ID3D11RenderTargetView* rtv[] = { this->renderTarget };
+	//this->deviceContext->OMSetRenderTargets(1, rtv, 0);
+	//
+	//this->spriteBatch->Begin();
+	//{
+	//	if (this->debugRTV)
+	//	{
+	//		int off = 0;
+	//		int size = 100;
+	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), winRectangle((off), 0, size, size));
+	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle((off += size), 0, size, size));
+	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR), winRectangle((off += size), 0, size, size));
+	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS), winRectangle((off += size), 0, size, size));
+	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle((off += size), 0, size, size));
+	//		this->spriteBatch->Draw(this->lightPass.GetLightMapSRV(), winRectangle((off += size), 0, size, size));
+	//		
+	//		off = -size;
+	//		for (size_t i = 0; i < shadowMapDebug.size(); i++)
+	//			this->spriteBatch->Draw(shadowMapDebug[i], winRectangle((off += size), 520, size, size));
+	//	}
+	//
+	//	//Draw some text
+	//	TextRender::Present(this->spriteBatch);
+	//
+	//}this->spriteBatch->End();
+	//
+	//this->d3dSwapchain->Present(0, 0);
+	//
+	//this->prevPass = 0;
+}
+void PipelineManager::ApplyPostEffectPass(const LightPass::LightData& light )
+{
+	if (this->prevPass) this->prevPass->Clear();
+
 	if(Input::IsKeyDown(VK_L))
-		this->lightPass.ReloadShader();
+		this->postPass.ReloadPostEffectShaders();
 
 	if(this->debugRTV)
 	{
 		shadowMapDebug.resize(0);
-		for (size_t i = 0; i < (size_t)data.shadowCount; i++)
-			shadowMapDebug.push_back(data.shadowData[i].shadowMap);
+		for (size_t i = 0; i < (size_t)light.shadowCount; i++)
+			shadowMapDebug.push_back(light.shadowData[i]->shadowMap);
 	}
 
-	if (this->prevPass) this->prevPass->Clear();
-
-	this->lightPass.Apply(	data, 
-							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), 
-							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), 
-							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS));
+	PostEffectPass::PostPassData post;
+	post.ambientLight	= light.ambientLight;
+	post.diffuseMap		= this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR);
+	post.positionMap	= this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION);
+	post.thicknessMap	= this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS);
+	post.normalMap		= this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL);
+	post.dirCount		= light.dirCount;
+	post.dirData		= light.dirData;
+	post.pointCount		= light.pointCount;
+	post.pointData		= light.pointData;
+	post.spotCount		= light.spotCount;
+	post.spotData		= light.spotData;
+	post.shadowCount	= light.shadowCount;
+	post.shadowData		= light.shadowData;
+	post.view			= light.view;
+	post.projection		= light.proj;
+	post.cameraPos		= light.cameraPos;
 	
-	this->prevPass = &this->lightPass;
+
+	this->postPass.Apply(post);
+	
+	this->prevPass = &this->postPass;
 }
-void PipelineManager::ApplyFinalPass()
+void PipelineManager::ApplyUIPass(ID3D11ShaderResourceView*const* srv, int total)
 {
-	if (this->prevPass) this->prevPass->Clear();
+	if(this->prevPass) this->prevPass->Clear();
 
-
-	FinalPass::DispatchTextureData td;
-	td.DiffuseMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR);
-	td.LightMap = this->lightPass.GetLightMapSRV();
-	td.NormalMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL);
-	td.ShadowMap = 0;
-	td.ThicknessMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS);
-	
-	this->finalPass.Apply(td);
-	this->finalPass.Clear();
-
+	//Render ui stuff
 	this->deviceContext->RSSetViewports(1, &this->viewPort);
 	ID3D11RenderTargetView* rtv[] = { this->renderTarget };
 	this->deviceContext->OMSetRenderTargets(1, rtv, 0);
-	
+
+	for (int i = 0; i < total; i++)
+	{
+		shadowMapDebug.push_back(srv[i]);
+	}
+
 	this->spriteBatch->Begin();
 	{
 		if (this->debugRTV)
 		{
 			int off = 0;
-			int size = 100;
+			int size = 150;
 			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), winRectangle((off), 0, size, size));
-			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle((off += size), 0, size, size));
-			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR), winRectangle((off += size), 0, size, size));
-			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS), winRectangle((off += size), 0, size, size));
-			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle((off += size), 0, size, size));
-			this->spriteBatch->Draw(this->lightPass.GetLightMapSRV(), winRectangle((off += size), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle((off += size+1), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR), winRectangle((off += size+1), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS), winRectangle((off += size+1), 0, size, size));
+			this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle((off += size+1), 0, size, size));
 			
+			size = 123;
 			off = -size;
 			for (size_t i = 0; i < shadowMapDebug.size(); i++)
-				this->spriteBatch->Draw(shadowMapDebug[i], winRectangle((off += size), 520, size, size));
+				this->spriteBatch->Draw(shadowMapDebug[i], winRectangle((off += size+1), height - size, size, size));
 		}
 	
 		//Draw some text
@@ -179,9 +263,18 @@ void PipelineManager::ApplyFinalPass()
 	
 	}this->spriteBatch->End();
 
-	this->d3dSwapchain->Present(0, 0);
-	this->prevPass = &this->finalPass;
+	ID3D11RenderTargetView* nullrtv[] = { 0 };
+	this->deviceContext->OMSetRenderTargets(Util::NumElementsOf(nullrtv), nullrtv, 0);
+	ID3D11ShaderResourceView* nullsrv[PostEffectPass::SrvRegister_COUNT] = {0};
+	this->deviceContext->PSSetShaderResources(0, Util::NumElementsOf(nullsrv), nullsrv );
+
+	shadowMapDebug.resize(0);
 }
+void PipelineManager::Present()
+{
+	this->d3dSwapchain->Present(0, 0);
+}
+
 void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose)
 {
 	D3D11_MAPPED_SUBRESOURCE res;

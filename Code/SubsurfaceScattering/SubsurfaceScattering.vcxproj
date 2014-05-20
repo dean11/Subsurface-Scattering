@@ -67,6 +67,16 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
     </FxCompile>
+    <FxCompile Include="Shaders\PostPass.compute.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderData.header.hlsl" />
     <FxCompile Include="Shaders\Skymap.pixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -83,6 +93,7 @@
     <ClInclude Include="Pipeline\Pass\FinalPass.h" />
     <ClInclude Include="Pipeline\Pass\GeometryPass.h" />
     <ClInclude Include="Pipeline\Pass\LightPass.h" />
+    <ClInclude Include="Pipeline\Pass\PostEffectPass.h" />
     <ClInclude Include="Pipeline\Pass\ShaderPass.h" />
     <ClInclude Include="Pipeline\Pass\SSSPass.h" />
     <ClInclude Include="Pipeline\PipelineManager.h" />
@@ -114,6 +125,7 @@
     <ClCompile Include="Pipeline\Pass\FinalPass.cpp" />
     <ClCompile Include="Pipeline\Pass\GeometryPass.cpp" />
     <ClCompile Include="Pipeline\Pass\LightPass.cpp" />
+    <ClCompile Include="Pipeline\Pass\PostEffectPass.cpp" />
     <ClCompile Include="Pipeline\Pass\SSSPass.cpp" />
     <ClCompile Include="Pipeline\PipelineManager.cpp" />
     <ClCompile Include="Pipeline\RenderState\BlendState.cpp" />
@@ -137,6 +149,7 @@
   <ItemGroup>
     <None Include="Shaders\DepthShader.header.hlsli" />
     <None Include="Shaders\FinalPass.header.hlsli" />
+    <None Include="Shaders\PostPass.header.hlsli" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{58160821-AE5A-4C43-BA7E-101414687B21}</ProjectGuid>

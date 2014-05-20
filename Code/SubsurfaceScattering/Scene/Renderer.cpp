@@ -10,6 +10,7 @@ std::string geomPassStrign = "Geometry pass: ";
 std::string lightPassStrign = "Light pass: ";
 std::string depthPassString = "Depth pass: ";
 std::string finalPassString = "Final pass: ";
+std::string postPassStrign = "Post stats: ";
 std::string totalStatsString = "Total stats: ";
 bool moveObjectToggle = false;
 
@@ -42,20 +43,40 @@ void Renderer::Frame(float delta)
 {
 	time += delta;
 
+	if(Input::IsKeyDown(VK_UP))			this->player->Forward(+1.0f);
+	if(Input::IsKeyDown(VK_DOWN))		this->player->Forward(-1.0f);
+	if(Input::IsKeyDown(VK_RIGHT))		this->player->Right(+1.0f);
+	if(Input::IsKeyDown(VK_LEFT))		this->player->Right(-1.0f);
+
+	if(Input::IsKeyDown(VK_0) && this->shadowMaps.Size() > 0) this->shadowMaps[0].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_1) && this->shadowMaps.Size() > 1) this->shadowMaps[1].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_2) && this->shadowMaps.Size() > 2) this->shadowMaps[2].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_3) && this->shadowMaps.Size() > 3) this->shadowMaps[3].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_4) && this->shadowMaps.Size() > 4) this->shadowMaps[4].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_5) && this->shadowMaps.Size() > 5) this->shadowMaps[5].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_6) && this->shadowMaps.Size() > 6) this->shadowMaps[6].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_7) && this->shadowMaps.Size() > 7) this->shadowMaps[7].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_8) && this->shadowMaps.Size() > 8) this->shadowMaps[8].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+	if(Input::IsKeyDown(VK_9) && this->shadowMaps.Size() > 9) this->shadowMaps[9].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
+
 	RenderShadowMaps();
 	RenderGeometry();
-	//RenderSSS();
-	RenderLights();
-	RenderFinal(delta);
-
-	if(Input::IsKeyDown(VK_UP))			this->player->Forward(+1.5f);
-	if(Input::IsKeyDown(VK_DOWN))		this->player->Forward(-1.5f);
-	if(Input::IsKeyDown(VK_RIGHT))		this->player->Right(+1.5f);
-	if(Input::IsKeyDown(VK_LEFT))		this->player->Right(-1.5f);
+	RenderPostPass(delta);
+	
+	PrintStats(delta);
+	//ID3D11ShaderResourceView* vb[20] = {0};
+	//for (size_t i = 0; i < this->shadowMaps.Size(); i++)
+	//{
+	//	vb[i] = this->shadowMaps[i].shadowMap;
+	//}
+	//PipelineManager::Instance().ApplyUIPass(vb, shadowMaps.Size());
+	PipelineManager::Instance().ApplyUIPass();
+	PipelineManager::Instance().Present();
 	
 	if (time > timeMax)
 		time = 0.0f;
 }
+
 bool Renderer::Initiate(RendererInitDesc& desc)
 {
 	this->desc = desc;
@@ -65,26 +86,29 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	if (!Pipeline::PipelineManager::Instance().Initiate(this->device, this->deviceContext, (int)this->desc.width, (int)this->desc.height))
 		return false;
 
-
 	//Model *bth = new Model();
 	//if (!bth->CreateModel("Models\\bth.righthanded.obj", device))
 	//	return false;
 	//this->models.push_back(bth);
-
-	//Model *bun = new Model();
-	//if (!bun->CreateModel("Models\\sbun.obj_low", device))
-	//	return false;
-	//this->models.push_back(bun);
-	//bun->SetScale(0.3f);
-	//bun->SetPosition(0.0f, -112.0f, 150.0f);
-	//this->player = bun;
-
+	//
+	for (size_t i = 0; i < 1; i++)
+	{
+		Model *bun = new Model();
+		if (!bun->CreateModel("Models\\sbun.obj", device))
+		//if (!bun->CreateModel("Models\\bunny.obj", device))
+			return false;
+		this->models.push_back(bun);
+		bun->SetScale(0.3f);
+		bun->SetPosition(40.0f * i, -120.0f, 0.0f);
+		//bun->SetPosition(10.0f * i, -112.0f, 150.0f);
+		this->player = bun;
+	}
+	//
 	//Model *bud = new Model();
 	//if (!bud->CreateModel("Models\\bu.obj", device))
 	//	return false;
 	//this->models.push_back(bud);
-	////bud->SetScale(0.2f);
-	//bud->SetPosition(0.0f, -80.0f, 150.0f);
+	//bud->SetPosition(-30.0f, -80.0f, 150.0f);
 	//this->player = bud;
 
 	//Model *cube = new Model();
@@ -94,12 +118,22 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	//this->models.push_back(cube);
 	//this->player = cube;
 
-	Model *wall = new Model();
-	if (!wall->CreateModel("Models\\wall.obj", device))
-		return false;
-	wall->SetPosition(0, -100, 50);
-	this->models.push_back(wall);
-	this->player = wall;
+	//Model *wall = new Model();
+	//if (!wall->CreateModel("Models\\wall.obj", device))
+	//	return false;
+	//wall->SetPosition(0, -100, 80);
+	////wall->Rotate(DirectX::SimpleMath::Vector3(10.0f, 0.0f, 0.0f));
+	//this->models.push_back(wall);
+	//this->player = wall;
+	//
+	//Model *wallSmall = new Model();
+	//if (!wallSmall->CreateModel("Models\\wallSmall.obj", device))
+	//	return false;
+	//wallSmall->SetPosition(0, -100, 0);
+	////wallSmall->SetScale(1.0f, 1.0f, 0.3f);
+	////wallSmall->Rotate(DirectX::SimpleMath::Vector3(10.0f, 0.0f, 0.0f));
+	//this->models.push_back(wallSmall);
+	//this->player = wallSmall;
 
 	//this->sphereMap.CreateSkyBox(device, dc);
 
@@ -113,27 +147,37 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 
 	return true;
 }
+
+struct pr
+{
+	XMFLOAT3 p;
+	XMFLOAT3 r;
+	pr(XMFLOAT3 _p, XMFLOAT3 _r)
+	{
+		p = _p;
+		r = _r;
+	}
+};
 bool Renderer::CreateLights()
 {
+#pragma region Create normal lights
+
 	//BasicLightData::PointLight pLight;
-	//size_t totPoint = 5;
+	//size_t totPoint = 15;
 	//for (size_t i = 0; i < totPoint; i++)
 	//{
 	//	float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 	//	float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 	//	float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 	//	pLight.lightColour = DirectX::XMFLOAT3(r, g, b);
-	//	pLight.positionRange = DirectX::XMFLOAT4((-((float)totPoint / 2.0f) * 5) + (float)i * 5, -90.0f, -10.0f, 190.0f);
-	//	this->pointLights.push_back(pLight);
+	//	pLight.positionRange = DirectX::XMFLOAT4((-((float)totPoint / 2.0f) * 40) + (float)i * 40, -90.0f, -10.0f, 190.0f);
+	//	this->pointLights.Push(pLight);
 	//}
-	//
-
-#pragma region Create normal lights
-
+	
 	//BasicLightData::Directional dl;
-	//dl.color = DirectX::XMFLOAT3(0.8f, 0.8f, 0.8f);
-	////dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
-	//dl.direction = DirectX::XMFLOAT3(0.22f, -0.71f, 0.35f);
+	//dl.color = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+	//dl.direction = DirectX::XMFLOAT3(0.0f, -0.7f, -0.3f);
+	//dl.intensity = 0.2f;
 	//this->directionalLight.Push(dl);
 	//
 	//dl.color = DirectX::XMFLOAT3(0.8f, 0.4f, 0.8f);
@@ -143,146 +187,47 @@ bool Renderer::CreateLights()
 #pragma endregion
 
 #pragma region Create shadow and lights
+	{
+		const float spot = 26.0f;
+		const float range = 450.0f;
+		const SimpleMath::Vector3 att(0.1f, 0.0f, 0.00002f);
+		
+		std::vector<pr> s;
+		//s.push_back (pr(XMFLOAT3(+100.0f, -90.0f, 0.0f) ,XMFLOAT3(0.0f, -90.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(-100.0f, -90.0f, 0.0f) ,XMFLOAT3(0.0f, 90.0f, 0.0f)));
+		s.push_back (pr(XMFLOAT3(0.0f, -90.0f, -100.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(0.0f, -90.0f, 100.0f) ,XMFLOAT3(0.0f, 180.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(-20.0f, -50.0f, 0.0f) ,XMFLOAT3(90.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(0.0f, -90.0f, 0.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(20.0f, -50.0f, 0.0f) ,XMFLOAT3(90.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(0.0f, -40.0f, 0.0f) ,XMFLOAT3(90.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(0.0f, -40.0f, 0.0f) ,XMFLOAT3(90.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(0.0f, -40.0f, 0.0f) ,XMFLOAT3(90.0f, 0.0f, 0.0f)));
 
-	//BasicLightData::ShadowMapLight lds;
-	//SimpleMath::Matrix lproj = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-	////SimpleMath::Matrix lproj = DirectX::XMLoadFloat4x4(& this->mainCam->GetProjectionMatrix() );
-	//SimpleMath::Matrix lview = SimpleMath::Matrix::Identity();
-	//if(!lds.shadowMap.Create(this->device, this->deviceContext, this->desc.width, this->desc.height))
-	//	return false;
-	//lds.attenuation		= 1.0f / 128.0f;
-	//lds.bias			= -0.01f;
-	//lds.color			= this->directionalLight[0].color;
-	//lds.direction		= this->directionalLight[0].direction;
-	//lds.falloffStart	= cos(0.5f * (45.0f * DirectX::XM_PI / 180.f));
-	//lds.falloffWidth	= 0.05f;
-	//lds.farPlane		= 10.0f;
-	//lds.position		= DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-	//lds.view			= lview;
-	//lds.projection		= lproj;
-	//this->shadowMaps.Push(lds);
-	//
-	////Light casts shadow and sss
-	//BasicLightData::ShadowMapLight lds1;
-	////lds1.projection = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, 0.1f, 1000.0f);
-	//lproj = DirectX::XMLoadFloat4x4(& this->mainCam->GetProjectionMatrix() );
-	//lview = SimpleMath::Matrix::Identity();
-	//if(!lds1.shadowMap.Create(this->device, this->deviceContext, this->desc.width, this->desc.height))
-	//	return false;
-	//lds1.attenuation	= 1.0f / 128.0f;
-	//lds1.bias			= -0.01f;
-	//lds1.color			= this->directionalLight[1].color;
-	//lds1.direction		= this->directionalLight[1].direction;
-	//lds1.falloffStart	= cos(0.5f * (45.0f * DirectX::XM_PI / 180.f));
-	//lds1.falloffWidth	= 0.05f;
-	//lds1.farPlane		= 10.0f;
-	//lds1.position		= DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-	//lds1.view			= lview;
-	//lds1.projection		= lproj;
-	//this->shadowMaps.Push(lds1);
+		//Light casts shadow and sss
+		for (size_t i = 0; i < s.size(); i++)
+		{
+			BasicLightData::ShadowMapLight shadow;
+			if(!shadow.shadowMap.Create(this->device, this->deviceContext, this->desc.width, this->desc.height))
+				break;
+
+			shadow.color.x = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+			shadow.color.y = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+			shadow.color.z = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+
+			shadow.attenuation		= att;
+			shadow.spot				= spot;
+			shadow.range			= range;
+		
+			shadow.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(65.0f), ((float)this->desc.width/(float)this->desc.height), 0.1, range);
+			shadow.camera.SetPosition(s[i].p);
+			//shadow.camera.SetRotation(s[i].r);
+			shadow.camera.Render();
+			shadow.isOn = true;
+			this->shadowMaps.Push(shadow);
+		}
 
 #pragma endregion
-	{
-		//Light casts shadow and sss
-		BasicLightData::ShadowMapLight lds1;
-		{
-			if(!lds1.shadowMap.Create(this->device, this->deviceContext, this->desc.width, this->desc.height))
-				return false;
-		
-			lds1.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
-			lds1.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-			lds1.cone				= 50.0f;
-			lds1.range				= 1000.0f;
-		
-			lds1.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), ((float)this->desc.width/(float)this->desc.height), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-			lds1.camera.SetPosition(0.0f, 100.0f, -30.0f);
-			lds1.camera.SetRotation(40.0f, 0.0f, 0.0f);
-			lds1.camera.Render();
-		}
-		
-		BasicLightData::ShadowMapLight lds2;
-		{
-			if(!lds2.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
-				return false;
-		
-			lds2.attenuation		= SimpleMath::Vector3(0.2f, 0.001f, 0.0001f);
-			lds2.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-			lds2.cone				= 20.0f;
-			lds2.range				= 1000.0f;
-		
-			lds2.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-			lds2.camera.SetPosition(0.0f, -90.0f, 0.0f);
-			lds2.camera.Render();
-		}
-		/*
-		BasicLightData::ShadowMapLight lds3;
-		{
-			if(!lds3.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
-				return false;
-		
-			lds3.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
-			lds3.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-			lds3.cone				= 200.0f;
-			lds3.range				= 1000.0f;
-		
-			lds3.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-			lds3.camera.SetPosition(20.0f, 20.0f, 0.0f);
-			lds3.camera.SetRotation(45.0f, -90.0f, 0.0f);
-			lds3.camera.Render();
-		}
-		BasicLightData::ShadowMapLight lds4;
-		{
-			if(!lds4.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
-				return false;
-		
-			lds4.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
-			lds4.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-			lds4.cone				= 500.0f;
-			lds4.range				= 1000.0f;
-		
-			lds4.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-			lds4.camera.SetPosition(-20.0f, 20.0f, 0.0f);
-			lds4.camera.SetRotation(45.0f, 90.0f, 0.0f);
-			lds4.camera.Render();
-		}
-		BasicLightData::ShadowMapLight lds5;
-		{
-			if(!lds5.shadowMap.Create(this->device, this->deviceContext, 2048, 2048))
-				return false;
-		
-			lds5.attenuation		= SimpleMath::Vector3(0.4f, 0.02f, 0.0f);
-			lds5.color				= SimpleMath::Vector3(1.0f, 1.0f, 1.0f);
-			lds5.cone				= 500.0f;
-			lds5.range				= 1000.0f;
-		
-			lds5.camera.SetProjectionMatrix(DirectX::XMConvertToRadians(45.0f), (2048.0f/2048.0f), this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-			lds5.camera.SetPosition(0.0f, 20.0f, -25.0f);
-			lds5.camera.SetRotation(45.0f, 0.0f, 0.0f);
-			lds5.camera.Render();
-		}
-		*/
-		this->shadowMaps.Push(lds1);
-		this->shadowMaps.Push(lds2);
-		//this->shadowMaps.Push(lds3);
-		//this->shadowMaps.Push(lds4);
-		//this->shadowMaps.Push(lds5);
-		
-
-		//SimpleMath::Matrix lproj = SimpleMath::Matrix::CreateOrthographic((float)this->desc.width, (float)this->desc.height, this->mainCam->GetNearZ(), this->mainCam->GetFarZ());
-		//SimpleMath::Matrix lview = SimpleMath::Matrix::CreateWorld(SimpleMath::Vector3(0.0f, 0.0f, -55.0f), SimpleMath::Vector3(0.0f, 0.0f, 1.0f), SimpleMath::Vector3(0.0f, 1.0f, 0.0f));
-
-		//size_t totSpot = 1;
-		//BasicLightData::Spotlight sl;
-		//for (size_t i = 0; i < totSpot; i++)
-		//{
-		//	sl.coneAngle = 20.0f;
-		//	sl.color = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
-		//	sl.position = DirectX::XMFLOAT3(0.0f, 0.0f, -10.0f);
-		//	sl.range = 1000.0f;
-		//	sl.unitDir = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
-		//	sl.attenuation = DirectX::XMFLOAT3(0.4f, 0.02f, 0.0f);
-		//	this->spotLight.push_back(sl);
-		//}
 	}
 	return true;
 }
@@ -327,8 +272,7 @@ void Renderer::RenderShadowMaps()
 		//Render scene from each view
 		for (size_t i = 0; i < this->shadowMaps.Size(); i++)
 		{
-			//this->shadowMaps[i].view = XMLoadFloat4x4(&this->mainCam->GetViewMatrix());
-			//this->shadowMaps[i].projection = XMLoadFloat4x4(&this->mainCam->GetProjectionMatrix());
+			if(!this->shadowMaps[i].isOn) continue;
 
 			this->shadowMaps[i].shadowMap.Begin(XMLoadFloat4x4(&this->shadowMaps[i].camera.GetViewMatrix()), XMLoadFloat4x4(&this->shadowMaps[i].camera.GetProjectionMatrix()));
 			{
@@ -347,33 +291,6 @@ void Renderer::RenderShadowMaps()
 		/*/FPS*/			sprintf_s(a, "%d", (int)(1.0f / tid)); depthPassString.append("Depth pass - FPS: "); depthPassString.append(a);
 		/*/DELTA TIME */	sprintf_s(a, "%f", tid); depthPassString.append(" - ms:"); depthPassString.append(a);
 	}
-
-	//if (this->directionalLight.Size() > 0)
-	//{
-	//	Pipeline::PipelineManager::Instance().ApplyDepthPass();
-	//
-	//	for (size_t i = 0; i < this->directionalLight.Size(); i++)
-	//	{
-	//		//Pipeline::PipelineManager::Instance().RenderDepthMap(DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), this->directionalLight[i].direction);
-	//
-	//		DirectX::XMFLOAT4X4 m;
-	//		DirectX::XMFLOAT3 f(0.2f, 0.3f, 1.0f);
-	//		XMStoreFloat4x4(&m, DirectX::XMMatrixRotationNormal(DirectX::XMLoadFloat3(&f),0.7f));
-	//
-	//		//Pipeline::PipelineManager::Instance().SetSceneMatrixBuffers(Pipeline::PipelineManager::Instance().GetDepthCameraView(),
-	//		//															Pipeline::PipelineManager::Instance().GetDepthCameraProj());
-	//	   
-	//		for (size_t i = 0; i < this->models.size(); i++)
-	//		{
-	//			UINT off = 0;
-	//			this->deviceContext->IASetVertexBuffers(0, 1, &this->models[i].GetMesh().vertexBuffer, &this->models[i].GetMesh().vertexStride, &off);
-	//			Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(m, this->models[i].GetWorldInversTranspose());
-	//			this->deviceContext->Draw(this->models[i].GetMesh().vertexCount, 0);
-	//		}
-	//
-	//		this->ground.RenderForDepthMap(this->deviceContext);
-	//	}
-	//}
 	
 }
 void Renderer::RenderGeometry()
@@ -403,48 +320,48 @@ void Renderer::RenderGeometry()
 }
 void Renderer::RenderLights()
 {
-	clock.reset();
-
-	Pipeline::LightPass::LightData lData;
-	memset(&lData, 0, sizeof(Pipeline::LightPass::LightData));
-
-	if (this->pointLights.Size())		lData.pointData = &this->pointLights[0];
-	lData.pointCount = (int)this->pointLights.Size();
-
-	if (this->spotLight.Size())			lData.spotData = &this->spotLight[0];
-	lData.spotCount = this->spotLight.Size();
-
-	if (this->directionalLight.Size())	lData.dirData = &this->directionalLight[0];
-	lData.dirCount = (int)this->directionalLight.Size();
-
-	if (this->shadowMaps.Size())	lData.shadowData = &this->shadowMaps[0];
-	lData.shadowCount = this->shadowMaps.Size();
-
-	lData.invProj = this->mainCam->GetInverseProjectionMatrix();
-	lData.view = this->mainCam->GetViewMatrix();
-	lData.ambientLight = DirectX::XMFLOAT3(0.02f, 0.02f, 0.02f);
-
-	Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
-
-	float tid = (float)clock.getElapsedSeconds();
-	if(time > timeMax)
-	{
-		lightPassStrign.resize(0); char a[50];
-		/*/FPS*/			sprintf_s(a, "%d", (int)(1.0f / tid)); lightPassStrign.append("Light pass - FPS: "); lightPassStrign.append(a);
-		/*/DELTA TIME */	sprintf_s(a, "%f", tid); lightPassStrign.append(" - ms:"); lightPassStrign.append(a);
-	}
+	//clock.reset();
+	//
+	//Pipeline::LightPass::LightData lData;
+	//memset(&lData, 0, sizeof(Pipeline::LightPass::LightData));
+	//
+	//if (this->pointLights.Size())		lData.pointData = &this->pointLights[0];
+	//lData.pointCount = (int)this->pointLights.Size();
+	//
+	//if (this->spotLight.Size())			lData.spotData = &this->spotLight[0];
+	//lData.spotCount = this->spotLight.Size();
+	//
+	//if (this->directionalLight.Size())	lData.dirData = &this->directionalLight[0];
+	//lData.dirCount = (int)this->directionalLight.Size();
+	//
+	//if (this->shadowMaps.Size())	lData.shadowData = this->shadowMaps;
+	//lData.shadowCount = this->shadowMaps.Size();
+	//
+	//lData.proj = this->mainCam->GetProjectionMatrix();
+	//lData.view = this->mainCam->GetViewMatrix();
+	//lData.ambientLight = DirectX::XMFLOAT3(0.28f, 0.28f, 0.28f);
+	//
+	//Pipeline::PipelineManager::Instance().ApplyLightPass(lData);
+	//
+	//float tid = (float)clock.getElapsedSeconds();
+	//if(time > timeMax)
+	//{
+	//	lightPassStrign.resize(0); char a[50];
+	//	/*/FPS*/			sprintf_s(a, "%d", (int)(1.0f / tid)); lightPassStrign.append("Light pass - FPS: "); lightPassStrign.append(a);
+	//	/*/DELTA TIME */	sprintf_s(a, "%f", tid); lightPassStrign.append(" - ms:"); lightPassStrign.append(a);
+	//}
 }
 void Renderer::RenderSSS()
 {
-	if (this->shadowMaps.Size() > 0)
-	{
-		for (size_t i = 0; i < this->shadowMaps.Size(); i++)
-		{
-			//Pipeline::PipelineManager::Instance().ApplySSSPass(
-		}
-		//Pipeline::PipelineManager::Instance().ApplyTranslucentShadowMap();
-
-		//for (size_t i = 0; i < this->directionalLight.Size(); i++)
+	//if (this->shadowMaps.Size() > 0)
+	//{
+	//	for (size_t i = 0; i < this->shadowMaps.Size(); i++)
+	//	{
+	//		//Pipeline::PipelineManager::Instance().ApplySSSPass(
+	//	}
+	//	//Pipeline::PipelineManager::Instance().ApplyTranslucentShadowMap();
+	//
+	//	//for (size_t i = 0; i < this->directionalLight.Size(); i++)
 		//{
 		//	Pipeline::PipelineManager::Instance().RenderDepthMap(DirectX::XMFLOAT3(0.0f, 10.0f, 0.0f), this->directionalLight[i].direction);
 		//
@@ -465,22 +382,69 @@ void Renderer::RenderSSS()
 		//
 		//	this->ground.RenderForDepthMap(this->deviceContext);
 		//}
-	}
+	//}
 }
 void Renderer::RenderFinal(float dt)
 {
+	//clock.reset();
+	//{
+	//	PrintStats(dt);
+	//	Pipeline::PipelineManager::Instance().ApplyFinalPass();
+	//}
+	//
+	//float tid = (float)clock.getElapsedSeconds();
+	//if(time > timeMax)
+	//{
+	//	finalPassString.resize(0); char a[50];
+	//	/*/FPS*/			sprintf_s(a, "%d", (int)(1.0f / tid)); finalPassString.append("Final pass - FPS: "); finalPassString.append(a);
+	//	/*/DELTA TIME */	sprintf_s(a, "%f", tid); finalPassString.append(" - ms:"); finalPassString.append(a);
+	//}
+}
+void Renderer::RenderPostPass(float dt)
+{
 	clock.reset();
+
+	Pipeline::LightPass::LightData lData;
+	memset(&lData, 0, sizeof(Pipeline::LightPass::LightData));
+
+	if (this->pointLights.Size())		lData.pointData = &this->pointLights[0];
+	lData.pointCount = (int)this->pointLights.Size();
+
+	if (this->spotLight.Size())			lData.spotData = &this->spotLight[0];
+	lData.spotCount = this->spotLight.Size();
+
+	if (this->directionalLight.Size())	lData.dirData = &this->directionalLight[0];
+	lData.dirCount = (int)this->directionalLight.Size();
+
+	BasicLightData::ShadowMapLight* shadowBuff[20] = {0};
+	int k = 0;
+	if (this->shadowMaps.Size())	
 	{
-		PrintStats(dt);
-		Pipeline::PipelineManager::Instance().ApplyFinalPass();
+		for (size_t i = 0; i < this->shadowMaps.Size(); i++)
+		{
+			if(this->shadowMaps[i].isOn)
+			{
+				shadowBuff[k] = &this->shadowMaps[i];
+				k++;
+			}
+		}
+		lData.shadowData = shadowBuff;
+		lData.shadowCount = k;
 	}
+
+	lData.proj = this->mainCam->GetProjectionMatrix();
+	lData.view = this->mainCam->GetViewMatrix();
+	lData.ambientLight = DirectX::XMFLOAT3(0.1f, 0.1f, 0.1f);
+	lData.cameraPos = this->mainCam->GetForward();
+
+		Pipeline::PipelineManager::Instance().ApplyPostEffectPass(lData);
 
 	float tid = (float)clock.getElapsedSeconds();
 	if(time > timeMax)
 	{
-		finalPassString.resize(0); char a[50];
-		/*/FPS*/			sprintf_s(a, "%d", (int)(1.0f / tid)); finalPassString.append("Final pass - FPS: "); finalPassString.append(a);
-		/*/DELTA TIME */	sprintf_s(a, "%f", tid); finalPassString.append(" - ms:"); finalPassString.append(a);
+		postPassStrign.resize(0); char a[50];
+		/*/FPS*/			sprintf_s(a, "%d", (int)(1.0f / tid)); postPassStrign.append("PostEffect pass - FPS: "); postPassStrign.append(a);
+		/*/DELTA TIME */	sprintf_s(a, "%f", tid); postPassStrign.append(" - ms:"); postPassStrign.append(a);
 	}
 }
 
@@ -503,9 +467,9 @@ void Renderer::PrintStats(float dt)
 
 	TextRender::Write(Util::StringToWstring(totalStatsString, std::wstring()).c_str(), 10, 210);
 	TextRender::Write(Util::StringToWstring(geomPassStrign, std::wstring()).c_str(), 10, 230);
-	TextRender::Write(Util::StringToWstring(lightPassStrign, std::wstring()).c_str(), 10, 250);
-	TextRender::Write(Util::StringToWstring(depthPassString, std::wstring()).c_str(), 10, 270);
-	TextRender::Write(Util::StringToWstring(finalPassString, std::wstring()).c_str(), 10, 290);
+	TextRender::Write(Util::StringToWstring(depthPassString, std::wstring()).c_str(), 10, 250);
+	TextRender::Write(Util::StringToWstring(postPassStrign, std::wstring()).c_str(), 10, 270);
+	
 }
 
 

@@ -21,6 +21,7 @@ bool LBUTTONDOWN = false;
 App::App()
 	:	isInitiated(false)
 	,	isRunning (false)
+	,	pause(false)
 	,	winDimension(1280, 720)
 {
 	app = this;
@@ -35,8 +36,11 @@ bool App::Initiate()
 	wdesc.windowSize.y = this->winDimension.y;
 	wdesc.windowProcCallback = App::WindowCallback;
 	
+	
 	if(!WindowShell::CreateWin(wdesc))
 		return false;
+
+	WindowShell::CreateConsoleWindow();
 
 	this->camera.SetPosition(0.0f, 0.0f, -5.0f);
 	this->camera.SetProjectionMatrix(((DirectX::XM_PI / 180.0f) * 45.0f), ((float)this->winDimension.x / (float)this->winDimension.x), 0.1f, 10000.0f);
@@ -62,20 +66,27 @@ void App::Run()
 	
 	while (WindowShell::Frame() && this->isRunning)
 	{
-		this->camera.Render();
+		if(pause) 
+		{
+			Sleep(100);
+		}
+		else
+		{
+			this->camera.Render();
 		
-		if (Input::IsKeyDown(VK_W))		this->camera.RelativeForward(0.5f);
-		if (Input::IsKeyDown(VK_S))		this->camera.RelativeForward(-0.5f);
-		if (Input::IsKeyDown(VK_A))		this->camera.RelativeRight(-0.5f);
-		if (Input::IsKeyDown(VK_D))		this->camera.RelativeRight(0.5f);
-		if (Input::IsKeyDown(VK_CONTROL))	app->camera.RelativeUp(-0.5f);
-		if (Input::IsKeyDown(VK_SPACE))		app->camera.RelativeUp(0.5f);
+			if (Input::IsKeyDown(VK_W))		this->camera.RelativeForward(0.5f);
+			if (Input::IsKeyDown(VK_S))		this->camera.RelativeForward(-0.5f);
+			if (Input::IsKeyDown(VK_A))		this->camera.RelativeRight(-0.5f);
+			if (Input::IsKeyDown(VK_D))		this->camera.RelativeRight(0.5f);
+			if (Input::IsKeyDown(VK_CONTROL))	app->camera.RelativeUp(-0.5f);
+			if (Input::IsKeyDown(VK_SPACE))		app->camera.RelativeUp(0.5f);
 			
 
-		float dt = (float)clock.getElapsedSeconds();
-		clock.reset();
+			float dt = (float)clock.getElapsedSeconds();
+			clock.reset();
 
-		this->renderer->Frame(dt);
+			this->renderer->Frame(dt);
+		}
 	}
 }
 void App::Release()
@@ -112,10 +123,12 @@ LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 			PostQuitMessage(0);
 		break;
 
+		case WM_SYSKEYUP:
 		case WM_KEYUP:
 		{
 			Input::SetKeyState(w, false);
 		} break;
+		case WM_SYSKEYDOWN:
 		case WM_KEYDOWN:
 
 			if (w == VK_ESCAPE)		PostQuitMessage(0);
@@ -123,6 +136,8 @@ LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 		break;
 
 		case WM_LBUTTONDOWN:
+			oldX = GET_X_LPARAM(l);
+			oldY = GET_Y_LPARAM(l);
 			LBUTTONDOWN = true;
 			break;
 		case WM_LBUTTONUP:
@@ -145,6 +160,12 @@ LRESULT CALLBACK App::WindowCallback(HWND h, UINT m, WPARAM w, LPARAM l)
 		case WM_NCACTIVATE:
 		case WM_ACTIVATE:
 		{
+			bool act = (LOWORD(w) != WA_INACTIVE) && (HIWORD(w) == 0);
+			if(act)
+				app->pause = false;
+			else
+				app->pause = true;
+
 			oldX = GET_X_LPARAM(l);
 			oldY = GET_Y_LPARAM(l);
 		}

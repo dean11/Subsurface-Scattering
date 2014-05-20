@@ -75,19 +75,19 @@ Model::Mesh& Model::GetMesh()
 {
 	return this->mesh;
 }
-DirectX::XMFLOAT4X4 Model::GetWorld()
+DirectX::XMMATRIX Model::GetWorld()
 {
 	return this->world;
 }
-DirectX::XMFLOAT4X4 Model::GetWorld() const
+DirectX::XMMATRIX Model::GetWorld() const
 {
 	return this->world;
 }
-DirectX::XMFLOAT4X4 Model::GetWorldInversTranspose()
+DirectX::XMMATRIX Model::GetWorldInversTranspose()
 {
 	return this->world.Invert().Transpose();
 }
-DirectX::XMFLOAT4X4 Model::GetWorldInversTranspose() const
+DirectX::XMMATRIX Model::GetWorldInversTranspose() const
 {
 	return this->world.Invert().Transpose();
 }

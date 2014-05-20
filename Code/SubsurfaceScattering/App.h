@@ -33,6 +33,7 @@ class App
 		DirectX::XMINT2 winDimension;
 		bool isInitiated;
 		bool isRunning;
+		bool pause;
 
 		Camera camera;
 

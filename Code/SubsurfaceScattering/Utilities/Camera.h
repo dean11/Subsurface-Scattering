@@ -19,7 +19,7 @@ class Camera
 
 	public:
 		Camera();
-		Camera(const Camera& other);
+		//Camera(const Camera& other);
 		~Camera();
 
 

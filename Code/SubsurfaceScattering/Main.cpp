@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#include <ctime>
 void SetDllPath()
 {
 #if defined(_WIN64)
@@ -21,6 +22,7 @@ void SetDllPath(){}
 
 int WINAPI WinMain( HINSTANCE hinst, HINSTANCE prevInst, PSTR cmdLine, int cmdShow)
 {
+	srand (time(NULL));
 	App *app = new App();
 	
 	if(app->Initiate())

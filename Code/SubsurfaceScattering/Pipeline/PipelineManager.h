@@ -13,6 +13,7 @@
 #include "Pass\FinalPass.h"
 #include "Pass\LightPass.h"
 #include "Pass\SSSPass.h"
+#include "Pass\PostEffectPass.h"
 #include <D3DTK\SpriteBatch.h>
 
 namespace Pipeline
@@ -29,7 +30,11 @@ namespace Pipeline
 		void ApplyGeometryPass();
 		void ApplyLightPass(const LightPass::LightData& data);
 		void ApplyFinalPass();
-		
+		void ApplyPostEffectPass(const LightPass::LightData& data );
+		void ApplyUIPass(ID3D11ShaderResourceView*const* srv = 0, int total = 0);
+
+		void Present();
+
 		void SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose);
 		void SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection);
 
@@ -52,15 +57,19 @@ namespace Pipeline
 		ID3D11Buffer *sceneMatrixBuffer;
 		ID3D11Buffer *depthPointLightBuffer;
 
-		FinalPass finalPass;
-		GeometryPass geometryPass;
-		LightPass lightPass;
-		SSSPass sssPass;
+		//FinalPass finalPass;
+		//
+		//LightPass lightPass;
+		//SSSPass sssPass;
 
+		GeometryPass geometryPass;
+		PostEffectPass postPass;
+		
 		ShaderPass* prevPass;
 
 		DirectX::SpriteBatch *spriteBatch;
 		bool debugRTV;
+		int width, height;
 	};
 
 }

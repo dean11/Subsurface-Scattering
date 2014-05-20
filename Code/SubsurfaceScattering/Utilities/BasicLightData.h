@@ -22,7 +22,8 @@ public:
 	{
 		DirectX::XMFLOAT3 color;
 		DirectX::XMFLOAT3 direction;
-		float pad[2 + 4 + 4];
+		float intensity;
+		float pad[1 + 4 + 4];
 	};
 
 	struct PointLight
@@ -48,9 +49,10 @@ public:
 		DirectX::XMFLOAT3 attenuation;
 		DirectX::XMFLOAT3 color;
 		float range;
-		float cone;
+		float spot;
 		Camera camera;
 		ShadowMap shadowMap;
+		bool isOn;
 	};
 };
 

@@ -1,8 +1,8 @@
-newmtl initialShadingGroup
+newmtl sbun_initialShadingGroup6
 illum 4
 Kd 0.00 0.00 0.00
 Ka 0.00 0.00 0.00
 Tf 1.00 1.00 1.00
-map_Kd jade.dds
+map_Kd bthcolor.dds
 map_Td var.dds
 Ni 1.00

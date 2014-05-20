@@ -52,6 +52,7 @@ private:
 	void RenderLights();
 	void RenderSSS();
 	void RenderFinal(float dt);
+	void Renderer::RenderPostPass(float dt);
 
 	void PrintStats(float dt);
 

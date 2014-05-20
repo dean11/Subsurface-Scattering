@@ -10,6 +10,16 @@
 #define		VK_P		0x50
 #define		VK_Q		0x51
 #define		VK_R		0x52
+#define		VK_0		96
+#define		VK_1		97
+#define		VK_2		98
+#define		VK_3		99
+#define		VK_4		100
+#define		VK_5		101
+#define		VK_6		102
+#define		VK_7		103
+#define		VK_8		104
+#define		VK_9		105
 #define		VK_MINUS	109
 #define		VK_PLUS		107
 

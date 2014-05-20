@@ -158,15 +158,12 @@ bool CreateSharedData(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 		ShadowMap_dc->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetEnabledDepth(), 0);
 		ShadowMap_dc->RSSetState(ShaderStates::RasterizerState::GetBackCullNoMS());
 	
-		//UINT i = 1;
-		//ShadowMap_dc->RSGetViewports(&i, &this->prevViewport);
-
 		ShadowMap_dc->RSSetViewports(1, &this->viewPort);
 		ShadowMap_dc->OMSetRenderTargets(0, 0, this->depth);
 
 		/**
-		 * This is for rendering linear values:
-		 * Check this: http://www.mvps.org/directx/articles/linear_z/linearz.htm
+		 *	This is for rendering linear values:
+		 *	Check this: http://www.mvps.org/directx/articles/linear_z/linearz.htm
 		 */
 		SimpleMath::Matrix projection = p;
 		float Q = projection._33;
@@ -197,7 +194,7 @@ bool CreateSharedData(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 		if( SUCCEEDED( ShadowMap_dc->Map( ShadowMap_objectBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &r)))
 		{
 			ShadowObjectData* t = (ShadowObjectData*)r.pData;
-			t->world = DirectX::XMLoadFloat4x4(&m.GetWorld());
+			t->world = m.GetWorld();
 			t->world = t->world.Transpose();
 
 			ShadowMap_dc->Unmap(ShadowMap_objectBuffer, 0);

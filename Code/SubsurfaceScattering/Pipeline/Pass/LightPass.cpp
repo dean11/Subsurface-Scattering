@@ -15,7 +15,7 @@ struct ShadowMapLightProxy
 	DirectX::XMFLOAT3 attenuation;
 	DirectX::XMFLOAT3 color;
 	float range;
-	float cone;
+	float spot;
 
     //float falloffStart;
     //float falloffWidth;
@@ -104,7 +104,7 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* normalM
 		b->pointLightCount = lights.pointCount;
 		b->spotLightCount = lights.spotCount;
 		b->ambientLight = DirectX::XMFLOAT4(lights.ambientLight.x, lights.ambientLight.y, lights.ambientLight.z, 0.0f);
-		b->invProj = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.invProj)).Transpose();
+		//b->invProj = DirectX::SimpleMath::Matrix(DirectX::XMLoadFloat4x4(&lights.invProj)).Transpose();
 		b->shadowCount = min(lights.shadowCount, 5);
 		b->sssEnabled = Input::IsKeyDown(VK_P) ? 1 : 0;
 		this->deviceContext->Unmap(this->constLightBuffer, 0);
@@ -130,26 +130,26 @@ void LightPass::Apply(const LightData& lights, ID3D11ShaderResourceView* normalM
 		ShadowMapLightProxy* s = (ShadowMapLightProxy*)mappedData.pData;
 		for (int i = 0; i < lights.shadowCount; i++)
 		{
-			srv[i+3]					= lights.shadowData[i].shadowMap;
-			s[i].attenuation			= lights.shadowData[i].attenuation;
-			s[i].color					= lights.shadowData[i].color;
-			s[i].cone					= lights.shadowData[i].cone;
-			s[i].direction				= lights.shadowData[i].camera.GetForward();
-			s[i].position				= lights.shadowData[i].camera.GetPosition();
-			s[i].range					= lights.shadowData[i].range;
+			srv[i+3]					= lights.shadowData[i]->shadowMap;
+			s[i].attenuation			= lights.shadowData[i]->attenuation;
+			s[i].color					= lights.shadowData[i]->color;
+			s[i].spot					= lights.shadowData[i]->spot;
+			s[i].direction				= lights.shadowData[i]->camera.GetForward();
+			s[i].position				= lights.shadowData[i]->camera.GetPosition();
+			s[i].range					= lights.shadowData[i]->range;
 			s[i].shadowIndex			= i;
 
 			/**
 			 * This is for rendering linear values:
 			 * Check this: http://www.mvps.org/directx/articles/linear_z/linearz.htm
 			 */
-			SimpleMath::Matrix projection = XMLoadFloat4x4(& lights.shadowData[i].camera.GetProjectionMatrix() );
+			SimpleMath::Matrix projection = XMLoadFloat4x4(& lights.shadowData[i]->camera.GetProjectionMatrix() );
 			float Q = projection._33;
 			float N = -projection._43 / projection._33;
 			float F = -N * Q / (1 - Q);
 			projection._33 /= F;
 			projection._43 /= F;
-			s[i].viewProjection = (SimpleMath::Matrix( XMLoadFloat4x4(&lights.shadowData[i].camera.GetViewMatrix())) * projection).Transpose();
+			s[i].viewProjection = (SimpleMath::Matrix( XMLoadFloat4x4(&lights.shadowData[i]->camera.GetViewMatrix())) * projection).Transpose();
 		}
 		this->deviceContext->Unmap(this->shadowBuffer, 0);
 	}

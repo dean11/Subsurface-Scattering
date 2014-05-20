@@ -30,11 +30,11 @@ public:
 	void DrawModel(ID3D11DeviceContext* dc, bool useTextures = true);
 
 	Mesh& GetMesh();
-	DirectX::XMFLOAT4X4 GetWorld();
-	DirectX::XMFLOAT4X4 GetWorld() const;
+	DirectX::XMMATRIX GetWorld();
+	DirectX::XMMATRIX GetWorld() const;
 
-	DirectX::XMFLOAT4X4 GetWorldInversTranspose();
-	DirectX::XMFLOAT4X4 GetWorldInversTranspose() const;
+	DirectX::XMMATRIX GetWorldInversTranspose();
+	DirectX::XMMATRIX GetWorldInversTranspose() const;
 
 	void SetWorld(DirectX::XMFLOAT4X4 world);
 	void SetPosition(float x, float y, float z);

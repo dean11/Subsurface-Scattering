@@ -17,25 +17,25 @@ Camera::Camera()
 
 	this->lookAt = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
 }
-Camera::Camera(const Camera& other)
-{
-	this->positionX = other.positionX;
-	this->positionY = other.positionY;
-	this->positionZ = other.positionZ;
-
-	this->rotationX = other.rotationX;
-	this->rotationY = other.rotationY;
-	this->rotationZ = other.rotationZ;
-
-	this->projNear = other.projNear;
-	this->projFar = other.projFar;
-
-	this->lookAt = other.lookAt;
-
-	this->viewMatrix = other.viewMatrix;
-	this->projectionMatrix = other.projectionMatrix;
-	this->orthogonalMatrix = other.orthogonalMatrix;
-}
+//Camera::Camera(const Camera& other)
+//{
+//	this->positionX = other.positionX;
+//	this->positionY = other.positionY;
+//	this->positionZ = other.positionZ;
+//
+//	this->rotationX = other.rotationX;
+//	this->rotationY = other.rotationY;
+//	this->rotationZ = other.rotationZ;
+//
+//	this->projNear = other.projNear;
+//	this->projFar = other.projFar;
+//
+//	this->lookAt = other.lookAt;
+//
+//	this->viewMatrix = other.viewMatrix;
+//	this->projectionMatrix = other.projectionMatrix;
+//	this->orthogonalMatrix = other.orthogonalMatrix;
+//}
 Camera::~Camera()
 {
 }
