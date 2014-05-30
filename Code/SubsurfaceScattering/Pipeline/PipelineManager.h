@@ -27,7 +27,7 @@ namespace Pipeline
 		void Release();
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height);
 
-		void ApplyGeometryPass();
+		void ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection, BasicLightData::ShadowMapLight*const* shadowData, int shadowCount);
 		void ApplyLightPass(const LightPass::LightData& data);
 		void ApplyFinalPass();
 		void ApplyPostEffectPass(const LightPass::LightData& data );
@@ -35,8 +35,7 @@ namespace Pipeline
 
 		void Present();
 
-		void SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose);
-		void SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection);
+		void SetMeshBuffer(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose, DirectX::XMFLOAT4 const* layers, int layerCount);
 
 	private:
 		PipelineManager();
@@ -45,6 +44,7 @@ namespace Pipeline
 		bool PipelineManager::CreateRTV();
 		void CreateViewport(int width, int height);
 		bool CreateConstantBuffers();
+		bool CreateTranslucentBuffer(int width);
 
 		D3D11_VIEWPORT viewPort;
 
@@ -53,14 +53,12 @@ namespace Pipeline
 		IDXGISwapChain* d3dSwapchain;
 		ID3D11RenderTargetView* renderTarget;
 
+		ID3D11Buffer *objectTranslucentBuffer;
 		ID3D11Buffer *objectMatrixBuffer;
 		ID3D11Buffer *sceneMatrixBuffer;
 		ID3D11Buffer *depthPointLightBuffer;
 
-		//FinalPass finalPass;
-		//
-		//LightPass lightPass;
-		//SSSPass sssPass;
+		ID3D11ShaderResourceView *objectTranslucentSrv;
 
 		GeometryPass geometryPass;
 		PostEffectPass postPass;

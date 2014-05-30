@@ -1,7 +1,6 @@
 #ifndef BATCHELOR_MESHMANAGER_H
 #define BATCHELOR_MESHMANAGER_H
 
-#include <DirectXMath.h>
 #include <d3d11_2.h>
 #include <D3DTK\DDSTextureLoader.h>
 #include "..\Utilities\Util.h"
@@ -15,9 +14,11 @@ public:
 	{
 		unsigned int vertexCount;
 		unsigned int vertexStride;
+		unsigned int materialLayerCount;
 		ID3D11Buffer* vertexBuffer;
 		ID3D11ShaderResourceView* diffuse;
 		ID3D11ShaderResourceView* thickness;
+		const SimpleMath::Vector4* materialLayers;
 	};
 	
 public:
@@ -25,7 +26,7 @@ public:
 	virtual~Model();
 
 	virtual void Release();
-	virtual bool CreateModel(const char path[], ID3D11Device* device);
+	virtual bool CreateModel(const char path[], ID3D11Device* device, const SimpleMath::Vector4 materialLayer[], int layerCount);
 
 	void DrawModel(ID3D11DeviceContext* dc, bool useTextures = true);
 
@@ -47,10 +48,14 @@ public:
 	void Rotate(const SimpleMath::Vector3& angle);
 	void SetScale(float x, float y, float z);
 	void SetScale(float s);
+	void ToggleVisibility(){this->isVisible = !this->isVisible;}
+	void SetVisibility(bool vis) {this->isVisible = vis;}
+	bool GetVisibility(){return this->isVisible;}
 
 protected:
 	Mesh mesh;
 	DirectX::SimpleMath::Matrix world;
+	bool isVisible;
 };
 
 #endif // !BATCHELOR_MESHMANAGER_H

@@ -1,5 +1,4 @@
-
-
+#include "Constants.hlsli"
 
 struct vertexIn
 {
@@ -22,52 +21,44 @@ struct pixIn
 
 struct geomPixOut
 {
-	float4 normal		: SV_TARGET0;	//xyz = normal, w = depth
-	float4 diff			: SV_TARGET1;	//xyz = diffuse, w = ?
-	float4 position		: SV_TARGET2;	//xyz = pos, w = ?
-	float4 thickness	: SV_TARGET3;	//xyz = pos, w = ?
+	float4 normal		: SV_TARGET0;	// xyz = normal,	w = ?
+	float4 diff			: SV_TARGET1;	// xyz = diffuse,	w = ?
+	float4 position		: SV_TARGET2;	// xyz = pos,		w = ?
+	float4 translucency	: SV_TARGET3;	// xyz = trans,		w = ?
 };
-
-struct PointLight
+struct TranslucentData
 {
-	float4 diffuse;
-	float4 positionRange;
-	float4 attenuation;
+	float4x4 viewProjection;
+	float range;
+	
+	float pad[3];
 };
 
 cbuffer perObject	:register(b0)
 {
 	float4x4 world;
 	float4x4 worlInvTrans;
+	int nrOfMaterialLayers;
+	
+	float perObjectPad[3];
 };
 
 cbuffer cMatrixBuffer :register(b1)
 {
 	float4x4 view;
 	float4x4 projection;
+	int nrOfShadowLights;
+	int sssEnabled;
+	float cMatrixBuffer_pad[2];
 };
 
 
 Texture2D Diffuse : register(t0);
 Texture2D Thickness : register(t1);
 TextureCube CubeMap : register(t2);
-
+Texture2D								ShadowMaps[MAX_SHADOWMAPS]		: register(t4);
+StructuredBuffer<TranslucentData>		translucentData					: register(t12);
+StructuredBuffer<float4>				MaterialLayers					: register(t20);
 
 SamplerState LinearSampler : register(s0);
 
-void BasicDirectionalLight(float3 pixColour, float3 normal, out float4 diffuse)
-{
-	float3 lightDir = -float3(0.0f, -1.0f, 1.0f);
-	float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f);
-	float diffFac = dot(lightDir, normal);
-
-	diffuse = float4(pixColour, 1.0f) * ambient;
-
-	[flatten]
-	if (diffFac > 0.0f)
-	{
-		diffuse += float4((diffFac * pixColour), 1.0f);
-	}
-
-
-}

@@ -20,6 +20,7 @@ public:
 	};
 
 public:
+	void WaitForDataAndUpdate ();
 	Renderer();
 	virtual~Renderer();
 
@@ -43,16 +44,13 @@ private:
 	Util::DynamicArray<BasicLightData::PointLight> pointLights;
 	Util::DynamicArray<BasicLightData::Directional> directionalLight;
 	Util::DynamicArray<BasicLightData::Spotlight> spotLight;
-	//Util::DynamicArray<ShadowMap> shadowMaps;
 	Util::DynamicArray<BasicLightData::ShadowMapLight> shadowMaps;
 	Model* player;
+
 private:
-	void RenderGeometry();
 	void RenderShadowMaps();
-	void RenderLights();
-	void RenderSSS();
-	void RenderFinal(float dt);
-	void Renderer::RenderPostPass(float dt);
+	void RenderGeometry();
+	void RenderPostPass(float dt);
 
 	void PrintStats(float dt);
 

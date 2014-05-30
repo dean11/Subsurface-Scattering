@@ -29,11 +29,18 @@ struct ObjectMatrixData
 {
 	DirectX::XMFLOAT4X4 world;
 	DirectX::XMFLOAT4X4 worldInversTranspose;
+	int nrOfMatLayers;
+
+	float pad[3];
 };
 struct SceneMatrixData
 {
 	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4X4 projection;
+	int nrOfShadowMaps;
+	int sssEnable; //First block has number of layers.
+	
+	float pad[2];
 };
 struct DepthPointLightData
 {
@@ -107,87 +114,38 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 
 	CreateViewport(width, height);
 	this->CreateConstantBuffers();
+	CreateTranslucentBuffer(20);
 
 	return true;
 }
 
 
-void PipelineManager::ApplyGeometryPass()
+void PipelineManager::ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection, BasicLightData::ShadowMapLight*const* shadowData, int shadowCount)
 {
 	if (this->prevPass) this->prevPass->Clear();
 	
-	this->geometryPass.Apply();
+	this->geometryPass.Apply(shadowData, shadowCount);
 	this->deviceContext->RSSetViewports(1, &this->viewPort);
 
+	D3D11_MAPPED_SUBRESOURCE res;
+	if (SUCCEEDED(this->deviceContext->Map(this->sceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
+	{
+		SceneMatrixData* data = (SceneMatrixData*)res.pData;
+		DirectX::XMStoreFloat4x4(&data->projection, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&projection)));
+		DirectX::XMStoreFloat4x4(&data->view, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&view)));
+		data->nrOfShadowMaps = shadowCount;
+		data->sssEnable = Input::IsKeyDown(VK_P) ? 1 : 0;
+		this->deviceContext->Unmap(this->sceneMatrixBuffer, 0);
+	}
+
+	ID3D11Buffer* buff[] =
+	{
+		this->sceneMatrixBuffer,
+	};
+	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
+	this->deviceContext->PSSetConstantBuffers(1, 1, buff);
 	
 	this->prevPass = &this->geometryPass;
-}
-void PipelineManager::ApplyLightPass(const LightPass::LightData& data)
-{
-	////if(Input::IsKeyDown(VK_L))
-	////	this->lightPass.ReloadShader();
-	//
-	//if(this->debugRTV)
-	//{
-	//	shadowMapDebug.resize(0);
-	//	for (size_t i = 0; i < (size_t)data.shadowCount; i++)
-	//		shadowMapDebug.push_back(data.shadowData[i].shadowMap);
-	//}
-	//
-	//if (this->prevPass) this->prevPass->Clear();
-	//
-	//this->lightPass.Apply(	data, 
-	//						this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), 
-	//						this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), 
-	//						this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS));
-	//
-	//this->prevPass = &this->lightPass;
-}
-void PipelineManager::ApplyFinalPass()
-{
-	//if (this->prevPass) this->prevPass->Clear();
-	//
-	//
-	//FinalPass::DispatchTextureData td;
-	//td.DiffuseMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR);
-	//td.LightMap = this->lightPass.GetLightMapSRV();
-	//td.NormalMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL);
-	//td.ShadowMap = 0;
-	//td.ThicknessMap = this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS);
-	//
-	//this->finalPass.Apply(td);
-	//this->finalPass.Clear();
-	//
-	//this->deviceContext->RSSetViewports(1, &this->viewPort);
-	//ID3D11RenderTargetView* rtv[] = { this->renderTarget };
-	//this->deviceContext->OMSetRenderTargets(1, rtv, 0);
-	//
-	//this->spriteBatch->Begin();
-	//{
-	//	if (this->debugRTV)
-	//	{
-	//		int off = 0;
-	//		int size = 100;
-	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_NORMAL), winRectangle((off), 0, size, size));
-	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_POSITION), winRectangle((off += size), 0, size, size));
-	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_COLOR), winRectangle((off += size), 0, size, size));
-	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS), winRectangle((off += size), 0, size, size));
-	//		this->spriteBatch->Draw(this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil), winRectangle((off += size), 0, size, size));
-	//		this->spriteBatch->Draw(this->lightPass.GetLightMapSRV(), winRectangle((off += size), 0, size, size));
-	//		
-	//		off = -size;
-	//		for (size_t i = 0; i < shadowMapDebug.size(); i++)
-	//			this->spriteBatch->Draw(shadowMapDebug[i], winRectangle((off += size), 520, size, size));
-	//	}
-	//
-	//	//Draw some text
-	//	TextRender::Present(this->spriteBatch);
-	//
-	//}this->spriteBatch->End();
-	//
-	//this->d3dSwapchain->Present(0, 0);
-	//
-	//this->prevPass = 0;
 }
 void PipelineManager::ApplyPostEffectPass(const LightPass::LightData& light )
 {
@@ -275,14 +233,31 @@ void PipelineManager::Present()
 	this->d3dSwapchain->Present(0, 0);
 }
 
-void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose)
+
+void PipelineManager::SetMeshBuffer(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose, DirectX::XMFLOAT4 const* layers, int layerCount)
 {
+	D3D11_MAPPED_SUBRESOURCE mappedData;
+	if ( (layerCount > 0) && SUCCEEDED(this->deviceContext->Map(this->objectTranslucentBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
+	{
+		DirectX::XMFLOAT4* s = (DirectX::XMFLOAT4*)mappedData.pData;
+		for (int i = 0; i < layerCount; i++)
+		{
+			s[i] = layers[i];
+		}
+		this->deviceContext->Unmap(this->objectTranslucentBuffer, 0);
+	}
+	this->deviceContext->PSSetShaderResources(20, 1, &this->objectTranslucentSrv);
+
+
+	SimpleMath::Matrix w = DirectX::XMLoadFloat4x4(& world );
+	SimpleMath::Matrix wit = DirectX::XMLoadFloat4x4( &worldInversTranspose );
 	D3D11_MAPPED_SUBRESOURCE res;
 	if (SUCCEEDED(this->deviceContext->Map(this->objectMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
 	{
 		ObjectMatrixData* data = (ObjectMatrixData*)res.pData;
-		DirectX::XMStoreFloat4x4(&data->world, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&world)));
-		DirectX::XMStoreFloat4x4(&data->worldInversTranspose, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&worldInversTranspose)));
+		data->world = w.Transpose();
+		data->worldInversTranspose = wit.Transpose();
+		data->nrOfMatLayers = layerCount;
 		this->deviceContext->Unmap(this->objectMatrixBuffer, 0);
 	}
 
@@ -291,24 +266,9 @@ void PipelineManager::SetObjectMatrixBuffers(const DirectX::XMFLOAT4X4& world, c
 		this->objectMatrixBuffer,
 	};
 	this->deviceContext->VSSetConstantBuffers(0, 1, buff);
+	this->deviceContext->PSSetConstantBuffers(0, 1, buff);
 }
-void PipelineManager::SetSceneMatrixBuffers(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection)
-{
-	D3D11_MAPPED_SUBRESOURCE res;
-	if (SUCCEEDED(this->deviceContext->Map(this->sceneMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res)))
-	{
-		SceneMatrixData* data = (SceneMatrixData*)res.pData;
-		DirectX::XMStoreFloat4x4(&data->projection, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&projection)));
-		DirectX::XMStoreFloat4x4(&data->view, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&view)));
-		this->deviceContext->Unmap(this->sceneMatrixBuffer, 0);
-	}
 
-	ID3D11Buffer* buff[] =
-	{
-		this->sceneMatrixBuffer,
-	};
-	this->deviceContext->VSSetConstantBuffers(1, 1, buff);
-}
 
 PipelineManager::PipelineManager()
 {
@@ -434,5 +394,28 @@ bool PipelineManager::CreateConstantBuffers()
 
 	return true;
 }
+bool PipelineManager::CreateTranslucentBuffer(int width)
+{
+	D3D11_BUFFER_DESC shadowDesc;
+	shadowDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	
+	shadowDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	shadowDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	shadowDesc.StructureByteStride =  (sizeof(float) * 4);
+	shadowDesc.ByteWidth = shadowDesc.StructureByteStride * width;
+	shadowDesc.Usage = D3D11_USAGE_DYNAMIC;
 
+	if (FAILED(this->device->CreateBuffer(&shadowDesc, 0, &this->objectTranslucentBuffer))) 
+		return false;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shadowSrvDesc;
+	shadowSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	shadowSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	shadowSrvDesc.Buffer.ElementOffset = 0;
+	shadowSrvDesc.Buffer.ElementWidth = width;
+	if (FAILED(this->device->CreateShaderResourceView(this->objectTranslucentBuffer, &shadowSrvDesc, &this->objectTranslucentSrv)))
+		return false;	
+
+	return true;
+}
 

@@ -3,6 +3,6 @@ illum 4
 Kd 0.00 0.00 0.00
 Ka 0.00 0.00 0.00
 Tf 1.00 1.00 1.00
-map_Kd bthcolor.dds
-map_Td bththickness.dds
+map_Kd green.dds
+map_Td white.dds
 Ni 1.00

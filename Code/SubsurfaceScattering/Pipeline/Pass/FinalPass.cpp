@@ -5,6 +5,7 @@
 #include "..\InputLayoutState.h"
 #include "..\Vertex.h"
 #include "..\..\Utilities\Util.h"
+#include "..\..\Input.h"
 
 #include <d3d11_2.h>
 #include <d3dcompiler.h>

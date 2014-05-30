@@ -12,6 +12,7 @@
 #include "Input.h"
 #include <D3DTK\SpriteFont.h>
 
+const float fps = 1.0f/60.0f;
 
 App* app = 0;
 int oldX = 0;
@@ -22,6 +23,7 @@ App::App()
 	:	isInitiated(false)
 	,	isRunning (false)
 	,	pause(false)
+	//,	winDimension(1920, 1080)
 	,	winDimension(1280, 720)
 {
 	app = this;
@@ -30,17 +32,17 @@ App::~App()
 {}
 bool App::Initiate()
 {
+	WindowShell::CreateConsoleWindow();
+
 	WindowShell::WINDOW_INIT_DESC wdesc;
 	wdesc.windowName = L"I draw";
-	wdesc.windowSize.x = this->winDimension.x;
-	wdesc.windowSize.y = this->winDimension.y;
+	wdesc.windowSize.x = 1280;
+	wdesc.windowSize.y = 720;
 	wdesc.windowProcCallback = App::WindowCallback;
 	
 	
 	if(!WindowShell::CreateWin(wdesc))
 		return false;
-
-	WindowShell::CreateConsoleWindow();
 
 	this->camera.SetPosition(0.0f, 0.0f, -5.0f);
 	this->camera.SetProjectionMatrix(((DirectX::XM_PI / 180.0f) * 45.0f), ((float)this->winDimension.x / (float)this->winDimension.x), 0.1f, 10000.0f);
@@ -72,20 +74,30 @@ void App::Run()
 		}
 		else
 		{
-			this->camera.Render();
-		
-			if (Input::IsKeyDown(VK_W))		this->camera.RelativeForward(0.5f);
-			if (Input::IsKeyDown(VK_S))		this->camera.RelativeForward(-0.5f);
-			if (Input::IsKeyDown(VK_A))		this->camera.RelativeRight(-0.5f);
-			if (Input::IsKeyDown(VK_D))		this->camera.RelativeRight(0.5f);
-			if (Input::IsKeyDown(VK_CONTROL))	app->camera.RelativeUp(-0.5f);
-			if (Input::IsKeyDown(VK_SPACE))		app->camera.RelativeUp(0.5f);
-			
-
 			float dt = (float)clock.getElapsedSeconds();
-			clock.reset();
 
-			this->renderer->Frame(dt);
+			if(dt >= fps)
+			{
+				clock.reset();
+
+				this->camera.Render();
+		
+				if (Input::IsKeyDown(VK_W))			this->camera.RelativeForward(20.0f);
+				if (Input::IsKeyDown(VK_S))			this->camera.RelativeForward(-20.0f);
+				if (Input::IsKeyDown(VK_A))			this->camera.RelativeRight(-20.0f);
+				if (Input::IsKeyDown(VK_D))			this->camera.RelativeRight(20.0f);
+				if (Input::IsKeyDown(VK_CONTROL))	this->camera.RelativeUp(-10.0f);
+				if (Input::IsKeyDown(VK_SPACE))		this->camera.RelativeUp(10.0f);
+			
+				static int i = 0;
+
+				//if(i++ > 19)
+				//	break;
+
+				this->renderer->Frame(dt);
+
+				
+			}
 		}
 	}
 }

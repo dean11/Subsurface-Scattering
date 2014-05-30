@@ -4,11 +4,22 @@
 #include "..\RenderState\RasterizerState.h"
 #include "..\RenderState\SamplerState.h"
 #include "..\RenderState\BlendState.h"
+#include "..\..\Input.h"
+#include "..\..\Utilities\BasicLightData.h"
 
 
 using namespace Pipeline;
 
 #include <d3dcompiler.h>
+
+
+struct TranslucentDataProxy
+{
+	SimpleMath::Matrix viewProjection;
+	float range;
+
+	float pad[3];
+};
 
 void GeometryPass::Release()
 {
@@ -61,6 +72,31 @@ bool GeometryPass::Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceCon
 	if (!ShaderStates::BlendStates::GetDisabledBlend(this->device)) return false;
 	if (!ShaderStates::BlendStates::GetAlphaBlend(this->device)) return false;
 
+#pragma region ShadowStuff
+
+	D3D11_BUFFER_DESC shadowDesc;
+	shadowDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.ByteWidth = (sizeof(TranslucentDataProxy) * 10);
+	shadowDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	shadowDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	shadowDesc.StructureByteStride = sizeof(TranslucentDataProxy);
+	shadowDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	if (FAILED(this->device->CreateBuffer(&shadowDesc, 0, &this->shadowBuffer))) 
+		return false;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shadowSrvDesc;
+	shadowSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	shadowSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	shadowSrvDesc.Buffer.ElementOffset = 0;
+	shadowSrvDesc.Buffer.ElementWidth = 10;
+	if (FAILED(this->device->CreateShaderResourceView(this->shadowBuffer, &shadowSrvDesc, &this->shadowSRV)))
+		return false;	
+
+	return true;
+
+#pragma endregion
+
 	return true;
 }
 ID3D11ShaderResourceView* GeometryPass::GetShaderResource(GBuffer_RTV_Layout srv)
@@ -82,9 +118,21 @@ ID3D11RenderTargetView* GeometryPass::GetRenderTarget(GBuffer_RTV_Layout rtv)
 {
 	return this->GBufferRTVs[rtv];
 }
-void GeometryPass::Apply()
+void GeometryPass::Apply(BasicLightData::ShadowMapLight*const* shadowData, int shadowCount)
 {
-	float c[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	if(Input::IsKeyDown(VK_F8)) //Recompile shaders
+	{
+		if (!Shader::CompileShaderToCSO("..\\Code\\SubsurfaceScattering\\Shaders\\ShaderData.header.hlsl", "Shaders\\ShaderData.header.cso", "fx_5_0", 0, 0, ShaderType_None, this->device, this->deviceContext))
+				printf("Failed to reload posteffect shader \"ShaderData.header.hlsl\"\n");
+
+		if (!this->vertex.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\geometry.vertex.hlsl", "vs_5_0", 0, 0, ShaderType_VS, this->device, this->deviceContext))
+			printf("Failed to reload geometry vertex shader \"geometry.vertex.hlsl\"\n");
+
+		if (!this->pixel.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\geometry.pixel.hlsl", "ps_5_0", 0, 0, ShaderType_PS, this->device, this->deviceContext))
+			printf("Failed to reload geometry pixel shader \"geometry.pixel.hlsl\"\n");
+	}
+
+	float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	for (size_t i = 0; i < GBuffer_RTV_Layout_COUNT; i++)
 		this->deviceContext->ClearRenderTargetView(this->GBufferRTVs[i], c);
 
@@ -100,6 +148,29 @@ void GeometryPass::Apply()
 	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, rtv, this->depthStencil);
 
 	ID3D11SamplerState* smp[] = { ShaderStates::SamplerState::GetLinear() };
+	ID3D11ShaderResourceView* srv[20] = { 0 };
+ 
+	D3D11_MAPPED_SUBRESOURCE mappedData;
+	if ( (shadowCount != 0) && SUCCEEDED(this->deviceContext->Map(this->shadowBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData)))
+	{
+		TranslucentDataProxy* s = (TranslucentDataProxy*)mappedData.pData;
+		for (int i = 0; i < shadowCount; i++)
+		{
+			SimpleMath::Matrix v = XMLoadFloat4x4(& shadowData[i]->camera.GetViewMatrix() );
+			SimpleMath::Matrix p = XMLoadFloat4x4(& shadowData[i]->camera.GetProjectionMatrix() );
+			SimpleMath::Matrix scale = SimpleMath::Matrix::CreateScale(0.5f, -0.5f, 1.0f);
+			SimpleMath::Matrix translation = SimpleMath::Matrix::CreateTranslation(0.5f, 0.5f, 0.0f);
+	
+			srv[i]					= shadowData[i]->shadowMap;
+			s[i].range				= shadowData[i]->range;
+			s[i].viewProjection		= (v * p * scale * translation).Transpose();
+		}
+		this->deviceContext->Unmap(this->shadowBuffer, 0);
+	}
+	
+	this->deviceContext->PSSetShaderResources(4, shadowCount, srv);
+	this->deviceContext->PSSetShaderResources(12, 1, &this->shadowSRV);
+
 	this->deviceContext->PSSetSamplers(0, 1, smp);
 	this->deviceContext->RSSetState(ShaderStates::RasterizerState::GetBackCullNoMS());
 	this->deviceContext->OMSetDepthStencilState(ShaderStates::DepthStencilState::GetEnabledDepth(), 0);

@@ -1,9 +1,9 @@
 import os
 
-filename = "wall.obj.old"
+filename = "cube.obj.old"
 
 f = open(filename, 'r')
-fOut = open("wall.obj", 'w')
+fOut = open("cube.obj", 'w')
 
 
 while True:

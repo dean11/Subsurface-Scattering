@@ -1,10 +1,12 @@
 #include "Model.h"
 #include "..\Importing\ObjGeometryImporter.h"
 #include "..\Pipeline\PipelineManager.h"
+#include "..\Pipeline\Material.h"
 
 Model::Model()
 {
 	memset(&this->mesh, 0, sizeof(Model::Mesh));
+	this->isVisible = true;
 }
 Model::~Model()
 {
@@ -17,7 +19,7 @@ void Model::Release()
 	Util::SAFE_RELEASE(this->mesh.thickness);
 	Util::SAFE_RELEASE(this->mesh.vertexBuffer);
 }
-bool Model::CreateModel(const char path[], ID3D11Device* device)
+bool Model::CreateModel(const char path[], ID3D11Device* device, const SimpleMath::Vector4 materialLayer[], int layerCount)
 {
 	ObjGeometryImporter importer;
 	std::vector<ObjGeometryImporter::Material> m;
@@ -42,22 +44,27 @@ bool Model::CreateModel(const char path[], ID3D11Device* device)
 		return false;
 	
 	std::wstring mPath = L"Models\\" + Util::StringToWstring(m[0].map_Kd, std::wstring());
-	if (FAILED(DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
+	if (FAILED(hr = DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
 		this->mesh.diffuse = NULL;	//No texture found for the model
 	
 	if (m.size() && m[0].map_Td.size())
 	{
 		std::wstring thick = L"Models\\" + Util::StringToWstring(m[0].map_Td, std::wstring());
-		if (FAILED(DirectX::CreateDDSTextureFromFile(device, thick.c_str(), nullptr, &this->mesh.thickness)))
+		if (FAILED(hr = DirectX::CreateDDSTextureFromFile(device, thick.c_str(), nullptr, &this->mesh.thickness)))
 			this->mesh.thickness = NULL;	//No texture found for the model
 	}
 	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
 	
+	this->mesh.materialLayerCount = layerCount;
+	this->mesh.materialLayers = materialLayer;
+
 	return true;
 }
 
 void Model::DrawModel(ID3D11DeviceContext* dc, bool useTexture)
 {
+	if(!this->isVisible) return;
+
 	UINT off = 0;
 	if(useTexture)
 	{
@@ -67,7 +74,7 @@ void Model::DrawModel(ID3D11DeviceContext* dc, bool useTexture)
 
 	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
 
-	Pipeline::PipelineManager::Instance().SetObjectMatrixBuffers(this->world, this->world.Invert().Transpose());
+	Pipeline::PipelineManager::Instance().SetMeshBuffer(this->world, this->world.Invert().Transpose(), this->mesh.materialLayers, this->mesh.materialLayerCount);
 
 	dc->Draw(this->mesh.vertexCount, 0);
 }

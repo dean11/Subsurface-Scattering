@@ -1,48 +1,7 @@
-#define SSS_ENABLE
 
-//Standarnd Lights
-struct DirLight
-{
-	float3 color;
-	float3 direction;
-	float intensity;
+#include "Constants.hlsli"
 
-	float pad[1 + 4 + 4];
-};
-struct SpotLight
-{
-	float3 pos;
-	float range;
-	float3 dir;
-	float coneAngle;
-	float3 att;
-	float3 color;
-	int shadowMap;
 
-	float pad[1];
-};
-struct PointLight
-{
-	float4 positionRange;
-	float3 diffuse;
-	int shadowMap;
-
-	float pad[4 + 4];
-};
-
-//ShadowMap lights
-struct ShadowMapLightData
-{
-	float4x4 viewProjection;
-	float3 position;
-	float range;
-	float3 direction;
-	float spot;
-	float3 att;
-	float3 color;
-
-	float pad[2];
-};
 
 //Some light constant buffers
 cbuffer cBuffer :register(b0)
@@ -64,7 +23,7 @@ Texture2D								DiffuseMap			: register(t0);
 Texture2D								NormalMap			: register(t1);
 Texture2D								PositionMap			: register(t2);
 Texture2D								ThicknessMap		: register(t3);
-Texture2D								ShadowMaps[5]		: register(t4);
+Texture2D								ShadowMaps[MAX_SHADOWMAPS]		: register(t4);
 
 //Light buffers
 StructuredBuffer<PointLight>			pointLights			: register(t9);
@@ -141,7 +100,7 @@ float ShadowPCF2(float3 worldPosition, int i, int samples, float4x4 vp, in const
 {
     float4 shadowPosition = mul(float4(worldPosition, 1.0), vp);
     shadowPosition.xy /= shadowPosition.w;
-    shadowPosition.z -= 0.00001f;
+    shadowPosition.z -= 0.5f;
     
     float w = shadowMapSize.x;
 	float h = shadowMapSize.y;
@@ -167,7 +126,7 @@ float ShadowPCF(in float3 posW, in int i, const float4x4 lightViewProj, in const
 	
 	float4 shadowPosH = mul(float4(posW, 1.0f), lightViewProj);
 	shadowPosH.xy /= shadowPosH.w;			// Project the texture coords and scale/offset to [0, 1].
-	shadowPosH.z -= 0.0001f;				// pixel depth for shadowing is linear.
+	shadowPosH.z -= 0.001f;				// pixel depth for shadowing is linear.
 	
 	// Texel size.
 	float dx = 2.0f / shadowMapSize.x;
@@ -191,24 +150,10 @@ float ShadowPCF(in float3 posW, in int i, const float4x4 lightViewProj, in const
 }
 
 
-float3 T(float s) 
+float3 T(float s, float4 trans) 
 {
-	// Source: http://www.iryoku.com/translucency/
-	// Precalculated transmittance profile
-
-	return	float3(0.455, 0.455, 0.455)		*	exp(s  / 0.0064) +
-			float3(0.336, 0.336, 0.336)		*	exp(s  / 0.0484) +
-			float3(0.198, 0.198, 0.198)		*	exp(s  / 0.187)  +
-			float3(0.107, 0.107, 0.107)		*	exp(s  / 0.567)  +
-			float3(0.358, 0.358, 0.358)		*	exp(s  / 0.99)   +
-			float3(0.078, 0.078, 0.078)		*	exp(s  / 0.41);
-
-	return	float3(0.233, 0.455, 0.649) * exp(-s * s / 0.0064) +
-			float3(0.1,   0.336, 0.344) * exp(-s * s / 0.0484) +
-			float3(0.118, 0.198, 0.0)   * exp(-s * s / 0.187)  +
-			float3(0.113, 0.007, 0.007) * exp(-s * s / 0.567)  +
-			float3(0.358, 0.004, 0.0)   * exp(-s * s / 1.99)   +
-			float3(0.078, 0.0,   0.0)   * exp(-s * s / 7.41);
+	//  http://www.iryoku.com/translucency/
+	return	((trans) * exp(-s * s / (trans.w * 255))).xyz;
 }
 
 //SSS
@@ -225,13 +170,13 @@ half3 SSSTranslucency(	uint i,
 	float4 pos = mul(float4(sposW, 1.0f), L.viewProjection);
 	pos.xy /= pos.w;
 
-	//Get data from shadowmap
-	//float d1 = ShadowMaps[i][(pos.xy / pos.w) * (shadowMapSize)].x; // 'd1' has a range of 0..1
-	float d1 = L.range * ShadowMaps[i].SampleLevel(LinearSampler, pos.xy, 0).r; // 'd1' has a range of 0..1
-	float d = (1 - translucency.x) * abs(d1 - pos.z);
+	// Get data from shadowmap
+	//float d1 = L.range * ShadowMaps[i].SampleLevel(LinearSampler, pos.xy, 0).r; // 'd1' has a range of 0..1
+	float d1 = L.range * ShadowMaps[i][pos.xy * shadowMapSize].r; // 'd1' has a range of 0..1
+	float d = abs(d1 - pos.z);
 	float dd = -d * d;
-	float3 profile = (T(dd));
-
+	//float3 profile = saturate(T(dd, translucency));
+	float3 profile = saturate(translucency.xyz * (translucency.w / d));
 	/** 
 	* Using the profile, we finally approximate the transmitted lighting from
 	* the back of the object:

@@ -139,6 +139,14 @@ bool PostEffectPass::ReloadPostEffectShaders()
 }
 void PostEffectPass::Apply(const PostPassData& data)
 {
+	if(Input::IsKeyDown(VK_F8))
+	{
+		if (!Shader::CompileShaderToCSO("..\\Code\\SubsurfaceScattering\\Shaders\\PostPass.header.hlsli", "Shaders\\PostPass.header.cso", "fx_5_0", 0, 0, ShaderType_CS, device, deviceContext))
+		printf("Failed to reload posteffect shader \"PostPass.header.hlsli\"\n");
+		if (!this->postShader.CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\PostPass.compute.hlsl", "cs_5_0", 0, 0, ShaderType_CS, device, deviceContext))
+			printf("Failed to reload posteffect shader \"PostPass.compute.hlsl\"\n");
+	}
+
 	ID3D11ShaderResourceView* srv[SrvRegister_COUNT] = {0};
 	srv[SrvRegister_Diffuse]				= data.diffuseMap;
 	srv[SrvRegister_Normal]					= data.normalMap;
@@ -169,8 +177,6 @@ void PostEffectPass::Apply(const PostPassData& data)
 	benchmarkClock.reset();
 
 	this->deviceContext->Dispatch((unsigned int)((this->width + 31) / 32), (unsigned int)((this->height + 31) / 32), 1);
-
-
 
 	this->isCleared = false;
 }

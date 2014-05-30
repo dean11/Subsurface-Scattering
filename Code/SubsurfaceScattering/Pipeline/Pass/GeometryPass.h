@@ -7,6 +7,7 @@
 #include "..\Shader.h"
 #include "..\RenderSurface.h"
 #include "ShaderPass.h"
+#include "..\..\Utilities\BasicLightData.h"
 
 namespace Pipeline
 {
@@ -34,7 +35,7 @@ namespace Pipeline
 		void Release() override;
 		void Clear() override;
 
-		void Apply();
+		void Apply(BasicLightData::ShadowMapLight*const* shadowData, int shadowCount);
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height, bool foreShaderCompile);
 		ID3D11ShaderResourceView* GetShaderResource(GBuffer_RTV_Layout srv);
 		
@@ -50,6 +51,9 @@ namespace Pipeline
 		RenderSurface depthStencil;
 		ID3D11Device* device;
 		ID3D11DeviceContext* deviceContext;
+
+		ID3D11Buffer*	shadowBuffer;
+		ID3D11ShaderResourceView* shadowSRV;
 	};
 
 }

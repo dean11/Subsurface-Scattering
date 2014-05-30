@@ -6,6 +6,9 @@
 
 //GEOMETRY VERTEX SHADER
 
+// Write to a texture in vertex shader? 
+//RWTexture2D<float4> BackBuffer								: register(u0);
+
 pixIn main(vertexIn vIn)
 {
 	pixIn d = (pixIn)0;
@@ -14,8 +17,10 @@ pixIn main(vertexIn vIn)
 	
 	d.posW = mul(float4(vIn.posW, 1.0f), world).xyz;
 	
-	d.normal = mul(float4(vIn.normal, 0.0f), worlInvTrans);
+	//d.normal = mul(float4(vIn.normal, 1.0f), worlInvTrans);
+	d.normal = vIn.normal;
 
+	//BackBuffer[d.posH.xy] = (float4)1.0f;
 	d.uv = vIn.uv;
 
 	return d;

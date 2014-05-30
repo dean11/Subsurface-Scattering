@@ -5,6 +5,7 @@
 #include "RenderState\SamplerState.h"
 #include "PipelineManager.h"
 #include "..\Utilities\Util.h"
+#include "..\Input.h"
 #include "..\Scene\Model.h"
 
 struct ShadowSceneData
@@ -147,6 +148,14 @@ bool CreateSharedData(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 	}
 	void ShadowMap::Begin(const SimpleMath::Matrix& view, const SimpleMath::Matrix& p)
 	{
+		if(Input::IsKeyDown(VK_F8))
+		{
+			if (!Shader::CompileShaderToCSO("..\\Code\\SubsurfaceScattering\\Shaders\\DepthShader.header.hlsli", "Shaders\\DepthShader.header.cso", "fx_5_0", 0, 0, ShaderType_None, ShadowMap_device, ShadowMap_dc))
+				printf("Failed to reload posteffect shader \"PostPass.header.hlsli\"\n");
+			if (!ShadowMap_depthShader->CreateShader("..\\Code\\SubsurfaceScattering\\Shaders\\DepthShader.vertex.hlsl", "vs_5_0", 0, 0, ShaderType_VS, ShadowMap_device, ShadowMap_dc))
+				printf("Failed to reload shadowmap shader \"DepthShader.vertex.hlsl\"\n");
+		}
+
 		ShadowMap_dc->ClearDepthStencilView(this->depth, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); 
 
 		ShadowMap_depthShader->Apply();
@@ -164,6 +173,11 @@ bool CreateSharedData(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 		/**
 		 *	This is for rendering linear values:
 		 *	Check this: http://www.mvps.org/directx/articles/linear_z/linearz.htm
+		 *	w = X scaling factor
+		 *	h = Y scaling factor
+		 *	N = near Z
+		 *	F = far Z
+		 *	Q = F / (F-N)
 		 */
 		SimpleMath::Matrix projection = p;
 		float Q = projection._33;
