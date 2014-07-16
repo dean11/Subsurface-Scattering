@@ -77,6 +77,7 @@ void PipelineManager::Release()
 	//this->finalPass.Release();
 	//this->lightPass.Release();
 	//this->sssPass.Release();
+	this->blurPass.Release();
 	this->postPass.Release();
 
 	Util::SAFE_RELEASE(this->d3dSwapchain);
@@ -84,6 +85,7 @@ void PipelineManager::Release()
 	Util::SAFE_RELEASE(this->objectMatrixBuffer);
 	Util::SAFE_RELEASE(this->sceneMatrixBuffer);
 	Util::SAFE_RELEASE(this->depthPointLightBuffer);
+	Util::SAFE_RELEASE(this->backBufferSRV);
 
 	TextRender::Release();
 
@@ -110,6 +112,7 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 	//if(!this->lightPass.Initiate(device, deviceContext, width, height, false)) return false;
 	//if(!this->finalPass.Initiate(device, deviceContext, width, height, false, this->d3dSwapchain)) return false;
 	//if(!this->sssPass.Initiate(device, deviceContext, width, height)) return false;
+	if(!this->blurPass.Create(device, deviceContext, width, height)) return false;
 	if(!this->postPass.Initiate(device, deviceContext, this->d3dSwapchain)) return false;
 
 	CreateViewport(width, height);
@@ -146,6 +149,16 @@ void PipelineManager::ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const D
 	this->deviceContext->PSSetConstantBuffers(1, 1, buff);
 	
 	this->prevPass = &this->geometryPass;
+}
+void PipelineManager::ApplyFrontSSS()
+{
+	if (this->prevPass) this->prevPass->Clear();
+
+	this->blurPass.Apply(	this->backBufferSRV,
+							this->postPass.GetUAVBackBuffer(), 
+							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_THICKNESS),
+							this->geometryPass.GetShaderResource(Pipeline::GBuffer_RTV_Layout_DepthStencil));
+	this->prevPass = &this->blurPass;
 }
 void PipelineManager::ApplyPostEffectPass(const LightPass::LightData& light )
 {
@@ -287,7 +300,7 @@ bool PipelineManager::CreateSwapChain(int width, int height)
 	desc.OutputWindow = WindowShell::GetHWND();
 	desc.BufferCount = 1;
 	desc.Windowed = true;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS | DXGI_USAGE_SHADER_INPUT;
 	desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	desc.Flags = 0;
 
@@ -351,6 +364,13 @@ bool PipelineManager::CreateRTV()
 	}
 	
 	if (FAILED(this->device->CreateRenderTargetView(backBuffer, 0, &this->renderTarget)))
+	{
+		printf("Failed to create RTV for BackBuffer");
+		backBuffer->Release();
+		return false;
+	}
+
+	if( FAILED(this->device->CreateShaderResourceView(backBuffer, 0, &this->backBufferSRV) ) )
 	{
 		printf("Failed to create RTV for BackBuffer");
 		backBuffer->Release();

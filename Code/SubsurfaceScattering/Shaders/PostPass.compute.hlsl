@@ -49,14 +49,14 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
 			float spot = pow(max((dot(-lightVec, L.direction)), 0), L.spot);
 			float att = spot / dot(L.att, float3(1.0f, d, d*d));
 			f1 = (albedo * L.color * att * spot );
-			float shadow = ShadowPCF2(posW, i, 3, L.viewProjection, shadowMapSize, L.range);
-			D = f1  * diffuse;// * shadow;
+			// float shadow = ShadowPCF2(posW, i, 3, L.viewProjection, shadowMapSize, L.range);
+			D = f1  * diffuse;// *shadow;
 			
 			#ifdef SSS_ENABLE
 				if(sssEnabled == 0)
 				{
 					D += f1 * (translucency * saturate(dot(lightVec, -normal)));
-		// SSSTranslucency(uint i,float2 shadowMapSize,float4 translucency,float3 normalW,float3 lightVecW,float3 sposW,float4x4 lightViewProjection,ShadowMapLightData L)
+					// SSSTranslucency(uint i,float2 shadowMapSize,float4 translucency,float3 normalW,float3 lightVecW,float3 sposW,float4x4 lightViewProjection,ShadowMapLightData L)
 					//D += f1 * SSSTranslucency(i, shadowMapSize, translucency, normal, lightVec, shrinkedVertPos, L.viewProjection, L);
 				}
 			#endif
@@ -66,4 +66,5 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
 	}
 	
 	BackBuffer[DTid.xy] = float4(finalColor, 1.0f);
+	//BackBuffer[DTid.xy] = translucency;
 }

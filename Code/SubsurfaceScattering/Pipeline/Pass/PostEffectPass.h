@@ -71,6 +71,7 @@ public:
 	void Apply(const PostPassData& data);
 
 	bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, IDXGISwapChain* swapChain);
+	ID3D11UnorderedAccessView* GetUAVBackBuffer() { return this->backBufferUAV; }
 
 private:
 	void UpdateConstantBuffer(const PostPassData& data);

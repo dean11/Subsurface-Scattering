@@ -27,9 +27,11 @@ float3 Transmittance(float3 posW, float3 normal, float2 uv)
 		[loop]
 		for (int i = 0; i < nrOfMaterialLayers; i++)
 		{
-			t += (MaterialLayers[i].xyz * (var.xyz)) * exp(-dd * dd / (MaterialLayers[i].w * (var.w * 255)));
+			//t += (MaterialLayers[i].xyz * (var.xyz)) * exp(-dd * dd / (MaterialLayers[i].w * (var.w * 255)));
+			t += MaterialLayers[i].xyz * exp(-dd * dd / MaterialLayers[i].w);
 		}
 	}
+
 	return	t;
 }
 
@@ -42,7 +44,7 @@ geomPixOut main(pixIn inData)
 	data.diff = Diffuse.Sample(LinearSampler, inData.uv);
 	
 	if(sssEnabled == 0)		data.translucency = float4(Transmittance(inData.posW, inData.normal, inData.uv), 1.0f);
-	else					data.translucency = (float4)0;
+	else					data.translucency = float4(0, 0, 0, 1);
 	//data.translucency = Thickness.Sample(LinearSampler, inData.uv);
 	//data.translucency = float4(1, 1, 1, 1);
 	data.position = float4(inData.posW, 1.0f);

@@ -16,3 +16,5 @@ cbuffer cMatrixBuffer :register(b1)
 	float4x4 lightView;
 	float4x4 lightProjection;
 };
+
+RWTexture2DArray<float4> DepthMap:register(u0);

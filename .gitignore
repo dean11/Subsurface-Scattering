@@ -26,6 +26,5 @@
 *.out
 *.app
 
-Bin/
 OBJ/
 External/

@@ -24,6 +24,8 @@
 #define		VK_PLUS		107
 #define		VK_Y		0x59
 #define		VK_H		0x48
+#define		VK_B		0x42
+
 
 
 class Input

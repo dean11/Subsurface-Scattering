@@ -11,6 +11,7 @@ std::string totalStatsString = "Total stats: ";
 std::string ShadowStatsString = "Shadow pass: ";
 std::string MainStatsString = "Main pass: ";
 std::string PostStatsString = "Post pass: ";
+std::string BlurStatsString = "Blur pass: ";
 bool moveObjectToggle = false;
 ID3D11Counter* d3dcounter = 0;
 
@@ -20,6 +21,7 @@ enum GTS
 	GTS_ShadowObjects,
 	GTS_MainObjects,
 	GTS_PostPass,
+	GTS_Blur,
 	GTS_EndFrame,
 
 	GTS_Max
@@ -172,31 +174,41 @@ void Renderer::Frame(float delta)
 		RenderPostPass(delta);
 		this->deviceContext->End(m_apQueryTs[GTS_PostPass][m_iFrameQuery]);
 
+		RenderFrontSubsurfaceScattering();
+		this->deviceContext->End(m_apQueryTs[GTS_Blur][m_iFrameQuery]);
+
 	} WaitForDataAndUpdate();
 
 	float dTDrawTotal = 0.0f;
-	for (GTS gts = GTS_BeginFrame; gts < GTS_EndFrame; gts = GTS(gts + 1))
+	//for (GTS gts = GTS_BeginFrame; gts < GTS_EndFrame; gts = GTS(gts + 1))
+	for (GTS gts = GTS_BeginFrame; gts < GTS_Max; gts = GTS(gts + 1))
 		dTDrawTotal += m_adTAvg[gts];
 
 	char a[50];
 	totalStatsString.resize(0);
-	ShadowStatsString.resize(0);
-	MainStatsString.resize(0);
-	PostStatsString.resize(0);
 	totalStatsString.append("Total pass: ");
-	ShadowStatsString.append("Shadow pass: ");
-	MainStatsString.append("Main pass: ");
-	PostStatsString.append("Post pass: ");
-	
 	sprintf_s(a, "%f", 1000.0f * dTDrawTotal);
 	totalStatsString.append(a);
+
+	ShadowStatsString.resize(0);
+	ShadowStatsString.append("Shadow pass: ");
 	sprintf_s(a, "%f", 1000.0f * m_adT[GTS_ShadowObjects]);
 	ShadowStatsString.append(a);
+
+	MainStatsString.resize(0);
+	MainStatsString.append("Main pass: ");
 	sprintf_s(a, "%f", 1000.0f * m_adT[GTS_MainObjects]);
 	MainStatsString.append(a);
+
+	BlurStatsString.resize(0);
+	BlurStatsString.append("Blur pass: ");
+	sprintf_s(a, "%f", 1000.0f * m_adT[GTS_Blur]);
+	BlurStatsString.append(a);
+
+	PostStatsString.resize(0);
+	PostStatsString.append("Post pass: ");
 	sprintf_s(a, "%f", 1000.0f * m_adT[GTS_PostPass]);
 	PostStatsString.append(a);
-	float a6 = 1000.0f * (dTDrawTotal + m_adT[GTS_EndFrame]);
 
 	this->deviceContext->End(m_apQueryTs[GTS_EndFrame][m_iFrameQuery]);
 	this->deviceContext->End(m_apQueryTsDisjoint[m_iFrameQuery]);
@@ -315,28 +327,28 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 
 #pragma region Wall benchmark
 
-	//Model *wall1 = new Model();
+		//Model *wall1 = new Model();
 	//Model *wall2 = new Model();
 	//Model *wall3 = new Model();
 	//Model *wall4 = new Model();
 	//Model *wall5 = new Model();
 	//Model *wallBun = new Model();
 	//
-	//if (!wall1->CreateModel("Models\\wallSmall1.obj", device)) return false;
+	//if (!wall1->CreateModel("Models\\wallSmall1.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
 	//if (!wall2->CreateModel("Models\\wallSmall1.obj", device)) return false;
 	//if (!wall3->CreateModel("Models\\wallSmall1.obj", device)) return false;
 	//if (!wall4->CreateModel("Models\\wallSmall1.obj", device)) return false;
 	//if (!wall5->CreateModel("Models\\wallSmall1.obj", device)) return false;
 	//if (!wallBun->CreateModel("Models\\bunny.obj", device, MaterialLayers::SomeCustomMaterial, Util::NumElementsOf(MaterialLayers::SomeCustomMaterial))) return false;
 	//
-	//wall1->SetPosition(-300, -100, +10);
+		//wall1->SetPosition(-300, -130, -30);
 	//wall2->SetPosition(-150, -100, +10);
 	//wall3->SetPosition(+000, -100, +10);
 	//wall4->SetPosition(+150, -100, +10);
 	//wall5->SetPosition(+300, -100, +10);
 	//wallBun->SetPosition(300, -65, -40);
 	//
-	//wall1->SetScale(5.0f, 5.0f, 2.0f);
+		//wall1->SetScale(5.0f, 5.0f, 2.0f);
 	//wall2->SetScale(5.0f, 5.0f, 4.0f);
 	//wall3->SetScale(5.0f, 5.0f, 6.0f);
 	//wall4->SetScale(5.0f, 5.0f, 8.0f);
@@ -345,14 +357,14 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	//
 	////wallBun->Rotate(SimpleMath::Vector3(0, 90, 0));
 	//
-	//this->models.push_back(wall1);
+//this->models.push_back(wall1);
 	//this->models.push_back(wall2);
 	//this->models.push_back(wall3);
 	//this->models.push_back(wall4);
 	//this->models.push_back(wall5);
 	//this->models.push_back(wallBun);
 	//
-	//this->player = this->models[this->models.size()-1];
+//this->player = this->models[this->models.size()-1];
 
 #pragma endregion
 
@@ -363,68 +375,69 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	int i = 0;
 	float spacing = 1.0f;
 	Model *dragon0 = new Model();
-	Model *dragon1 = new Model();
-	Model *dragon2 = new Model();
-	
-	Model *dragon3 = new Model();
-	Model *dragon4 = new Model();
-	Model *dragon5 = new Model();
-	
-	Model *dragon6 = new Model();
-	Model *dragon7 = new Model();
-	Model *dragon8 = new Model();
-	Model *dragon9 = new Model();
-	Model *dragon10 = new Model();
-	Model *dragon11 = new Model();
-	
-	if (!dragon0->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	if (!dragon1->CreateModel("Models\\cube.obj", device, MaterialLayers::PigLayers, Util::NumElementsOf(MaterialLayers::PigLayers))) return false;
-	if (!dragon2->CreateModel("Models\\cube.obj", device, MaterialLayers::SingleBlueLayer, Util::NumElementsOf(MaterialLayers::SingleBlueLayer))) return false;
-
-	if (!dragon3->CreateModel("Models\\cube.obj", device, MaterialLayers::Material10Layer, Util::NumElementsOf(MaterialLayers::Material10Layer))) return false;
-	if (!dragon4->CreateModel("Models\\cube.obj", device, MaterialLayers::Material8Layer, Util::NumElementsOf(MaterialLayers::Material8Layer))) return false;
-	if (!dragon5->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	
-	if (!dragon6->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	if (!dragon7->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	if (!dragon8->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	if (!dragon9->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	if (!dragon10->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	if (!dragon11->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	
+	//Model *dragon1 = new Model();
+	//Model *dragon2 = new Model();
+	//
+	//Model *dragon3 = new Model();
+	//Model *dragon4 = new Model();
+	//Model *dragon5 = new Model();
+	//
+	//Model *dragon6 = new Model();
+	//Model *dragon7 = new Model();
+	//Model *dragon8 = new Model();
+	//Model *dragon9 = new Model();
+	//Model *dragon10 = new Model();
+	//Model *dragon11 = new Model();
+	//
+	if (!dragon0->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!dragon0->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!dragon1->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::PigLayers, Util::NumElementsOf(MaterialLayers::PigLayers))) return false;
+	//if (!dragon2->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::SingleBlueLayer, Util::NumElementsOf(MaterialLayers::SingleBlueLayer))) return false;
+	//
+	//if (!dragon3->CreateModel("Models\\dragon.obj", device, MaterialLayers::Material10Layer, Util::NumElementsOf(MaterialLayers::Material10Layer))) return false;
+	//if (!dragon4->CreateModel("Models\\dragon.obj", device, MaterialLayers::Material8Layer, Util::NumElementsOf(MaterialLayers::Material8Layer))) return false;
+	//if (!dragon5->CreateModel("Models\\dragon.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//
+	//if (!dragon6->CreateModel("Models\\dragon.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!dragon7->CreateModel("Models\\dragon.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!dragon8->CreateModel("Models\\dragon.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!dragon9->CreateModel("Models\\dragon.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!dragon10->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!dragon11->CreateModel("Models\\cube.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//
 	dragon0->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon1->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon2->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon1->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon2->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
 
-	dragon3->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon4->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon5->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon3->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon4->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon5->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
 	
-	dragon6->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon7->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon8->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon9->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon10->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
-	dragon11->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon6->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon7->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon8->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon9->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon10->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
+	//dragon11->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
 
 	dragon0->SetScale(5.0f);
-	dragon1->SetScale(5.0f);
-	dragon2->SetScale(5.0f);
-
-	dragon3->SetScale(5.0f);
-	dragon4->SetScale(5.0f);
-	dragon5->SetScale(5.0f);
-	
-	dragon6->SetScale(5.0f);
-	dragon7->SetScale(5.0f);
-	dragon8->SetScale(5.0f);
-	dragon9->SetScale(5.0f);
-	dragon10->SetScale(5.0f);
-	dragon11->SetScale(5.0f);
+	//dragon1->SetScale(5.0f);
+	//dragon2->SetScale(5.0f);
+	//
+	//dragon3->SetScale(5.0f);
+	//dragon4->SetScale(5.0f);
+	//dragon5->SetScale(5.0f);
+	//
+	//dragon6->SetScale(5.0f);
+	//dragon7->SetScale(5.0f);
+	//dragon8->SetScale(5.0f);
+	//dragon9->SetScale(5.0f);
+	//dragon10->SetScale(5.0f);
+	//dragon11->SetScale(5.0f);
 	
 	this->models.push_back(dragon0);
-	this->models.push_back(dragon1);
-	this->models.push_back(dragon2);
+	//this->models.push_back(dragon1);
+	//this->models.push_back(dragon2);
 
 	//this->models.push_back(dragon3);
 	//this->models.push_back(dragon4);
@@ -586,11 +599,11 @@ bool Renderer::CreateLights()
 		const int height = 1024;
 
 		std::vector<pr> s;
-		s.push_back (pr(XMFLOAT3(-300.0f, -35.0f, -120.0f) ,XMFLOAT3(45.0f, 0.0f, 0.0f)));
-		s.push_back (pr(XMFLOAT3(-150.0f, -35.0f, -120.0f) ,XMFLOAT3(45.0f, 0.0f, 0.0f)));
-		s.push_back (pr(XMFLOAT3(+000.0f, -35.0f, -120.0f) ,XMFLOAT3(45.0f, 0.0f, 0.0f)));
-		s.push_back (pr(XMFLOAT3(+150.0f, -35.0f, -120.0f) ,XMFLOAT3(45.0f, 0.0f, 0.0f)));
-		s.push_back (pr(XMFLOAT3(+300.0f, -35.0f, -120.0f) ,XMFLOAT3(45.0f, 0.0f, 0.0f)));
+		s.push_back (pr(XMFLOAT3(-300.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		s.push_back (pr(XMFLOAT3(-150.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		s.push_back (pr(XMFLOAT3(+000.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		s.push_back (pr(XMFLOAT3(+150.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		s.push_back (pr(XMFLOAT3(+300.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
 
 		//s.push_back (pr(XMFLOAT3(-80.0f, -20.0f, -80.0f) ,XMFLOAT3(+45.0f, +45.0f, +0.0f)));
 		//s.push_back (pr(XMFLOAT3(-40.0f, -20.0f, -80.0f) ,XMFLOAT3(+45.0f, +22.0f, +0.0f)));
@@ -710,6 +723,10 @@ void Renderer::RenderGeometry()
 		}
 	}
 }
+void Renderer::RenderFrontSubsurfaceScattering()
+{
+	Pipeline::PipelineManager::Instance().ApplyFrontSSS();
+}
 void Renderer::RenderPostPass(float dt)
 {
 	Pipeline::LightPass::LightData lData;
@@ -756,7 +773,8 @@ void Renderer::PrintStats(float dt)
 		TextRender::Write(Util::StringToWstring(totalStatsString, std::wstring()).c_str(), 10, 210);
 		TextRender::Write(Util::StringToWstring(ShadowStatsString, std::wstring()).c_str(), 10, 230);
 		TextRender::Write(Util::StringToWstring(MainStatsString, std::wstring()).c_str(), 10, 250);
-		TextRender::Write(Util::StringToWstring(PostStatsString, std::wstring()).c_str(), 10, 270);
+		TextRender::Write(Util::StringToWstring(BlurStatsString, std::wstring()).c_str(), 20, 270);
+		TextRender::Write(Util::StringToWstring(PostStatsString, std::wstring()).c_str(), 10, 290);
 	}
 }
 

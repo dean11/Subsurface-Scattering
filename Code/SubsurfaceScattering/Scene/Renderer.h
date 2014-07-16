@@ -50,6 +50,7 @@ private:
 private:
 	void RenderShadowMaps();
 	void RenderGeometry();
+	void RenderFrontSubsurfaceScattering();
 	void RenderPostPass(float dt);
 
 	void PrintStats(float dt);
