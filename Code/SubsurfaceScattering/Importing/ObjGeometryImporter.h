@@ -82,16 +82,17 @@ private:
 	void processMaterial();
 	bool processMtlFile(std::string& currentDir, std::vector<Material>& newMat);
 
-	std::string read(std::stringstream&);
-	std::string readLine(std::stringstream&);
+	std::string read(std::string&, int& carret);
+	std::string readLine(std::string&, int& carret);
 
 	void Tidy();
 
 private:
-	std::stringstream	inStream;
+	std::string			inStream;
 	std::string			strInData;
-	VertexData			vertecies;
-	std::vector<Face>	faces;
+	VertexData				vertecies;
+	std::vector<Face>		faces;
+	int						carret;
 };
 
 #endif

@@ -4,15 +4,13 @@
 #include <sstream>
 #include <ctime>
 #include <string>
+#include "..\Utilities\Util.h"
 
 using namespace std;
+int temCarret = 0;
 
-
-static std::vector<std::string>& stringSplit(std::string& p_sstring, char p_cDel, bool ignoreEmpty = true)
+static void stringSplit(std::string& p_sstring, char p_cDel, std::vector<std::string>& outData, bool ignoreEmpty = true)
 {
-	static std::vector<std::string> parts;
-	parts.clear();
-
 	int start = 0;
 	int endIndex = (int)p_sstring.length() - 1;
 	int charCount = 0;
@@ -27,19 +25,21 @@ static std::vector<std::string>& stringSplit(std::string& p_sstring, char p_cDel
 		}
 		if (temp != "" || !ignoreEmpty)
 		{
-			parts.push_back(temp);
+			outData.push_back(temp);
 			temp = "";
 		}
 		i = k + 1;
 	}
-
-	return parts;
 }
+
 ObjGeometryImporter::obj_float3 AlphaToFloat3(std::string val)
 {
+	static std::vector<std::string> part;
+	part.clear();
+
 	ObjGeometryImporter::obj_float3 v(0.0f, 0.0f, 0.0f);
 
-	std::vector<std::string> part = stringSplit(val, ' ');
+	stringSplit(val, ' ', part);
 	for (size_t i = 0; i<part.size(); i++)
 	{
 		switch (i)
@@ -59,7 +59,9 @@ ObjGeometryImporter::obj_float3 AlphaToFloat3(std::string val)
 }
 
 ObjGeometryImporter::ObjGeometryImporter()
-{ }
+{ 
+this->carret = 0;
+}
 ObjGeometryImporter::~ObjGeometryImporter() 
 {
 }	
@@ -81,20 +83,18 @@ void ObjGeometryImporter::Tidy()
 	this->inStream.clear();
 
 }
-
-bool ReadSomeData(std::stringstream& data, std::string fname)
+bool ReadSomeData(std::string& data, std::string fname)
 {
 	bool result = true;
 	size_t bytesTotal = 0;
 	size_t bytesRead = 0;
 	FILE *stream;
-	std::string outData;
 
 	wchar_t buff[255] = {0};
 	_wgetcwd(buff, 255);
 	errno_t err = 0;
 	
-	if( (err = fopen_s( &stream, fname.c_str(), "rb" )) == 0 )
+	if ((err = fopen_s(&stream, fname.c_str(), "r+t")) == 0)
 	{
 		//Get size of the file
 		fseek(stream, 0L, SEEK_END);
@@ -111,22 +111,19 @@ bool ReadSomeData(std::stringstream& data, std::string fname)
 		//Read the bytes to the end
 		bytesRead = fread_s( buff, bytesTotal, sizeof(char), bytesTotal ,stream );
 		fclose( stream );
-
+		data = buff;
+		
 		//Did we read enough bytes (Get the bytes if we read with ANSI since the hidden characters is ignored)
-		if(bytesRead != bytesTotal)	return false;
+		//if(bytesRead != bytesTotal)	return false;
 
-		buff[bytesRead + 1];
-
-		outData.clear();
-		outData.resize(bytesRead);
-		memcpy(&outData[0], &buff[0], bytesRead);
+		data.resize(bytesRead);
+		memcpy(&data[0], &buff[0], bytesRead);
 	
 		delete [] buff;
 	}
 	else
 		return false;
 
-	data << outData;
 	return true;
 }
 bool  ObjGeometryImporter::LoadGeometry(std::string filename, std::vector<float>& out_floatData, unsigned int& nrOfVertecies, unsigned int& vertexStride, std::vector<Material>& out_material)
@@ -135,16 +132,16 @@ bool  ObjGeometryImporter::LoadGeometry(std::string filename, std::vector<float>
 	
 	int count = 0;
 
-	while (!this->inStream.eof())
+	while (this->carret < this->inStream.size())
 	{
-		read(this->inStream);
+		this->strInData = read(this->inStream, this->carret);
 
-		if (this->strInData == "#" || this->strInData == "s")	{ readLine			(this->inStream); 	}
-		else if (this->strInData == "v"	)						{ processPosition	();	}
-		else if (this->strInData == "vt"	)					{ processTexCoord	();	}
-		else if (this->strInData == "vn"	)					{ processNormal		();	}
-		else if (this->strInData == "f"	)						{ processFace		();	}
-		else if (this->strInData == "mtllib")					{ if (!processMtlFile(filename, out_material)) { Tidy(); return false; } }
+			 if (this->strInData == "#" || this->strInData == "s")	{ readLine			(this->inStream, this->carret); 	}
+		else if (this->strInData == "v"	)							{ processPosition	();	}
+		else if (this->strInData == "vt"	)						{ processTexCoord	();	}
+		else if (this->strInData == "vn"	)						{ processNormal		();	}
+		else if (this->strInData == "f"	)							{ processFace		();	}
+		else if (this->strInData == "mtllib")						{ if (!processMtlFile(filename, out_material)) { Tidy(); return false; } }
 		count ++;
 	}
 	nrOfVertecies = 0;
@@ -177,11 +174,12 @@ bool  ObjGeometryImporter::LoadGeometry(std::string filename, std::vector<float>
 
 void ObjGeometryImporter::processPosition()
 {
-	read(this->inStream);
+	this->strInData = read(this->inStream, this->carret);
+
 	float x = (float)atof(this->strInData.c_str());
-	read(this->inStream);
+	this->strInData = read(this->inStream, this->carret);
 	float y = (float)atof(this->strInData.c_str());
-	read(this->inStream);
+	this->strInData = read(this->inStream, this->carret);
 	float z = (float)atof(this->strInData.c_str());
 
 
@@ -189,20 +187,20 @@ void ObjGeometryImporter::processPosition()
 }
 void ObjGeometryImporter::processNormal()			   
 {
-	read(this->inStream);
+	this->strInData = read(this->inStream, this->carret);
 	float x = (float)atof(this->strInData.c_str());
-	read(this->inStream);
-	float y = (float)atof(strInData.c_str());
-	read(this->inStream);
-	float z = (float)atof(strInData.c_str());
+	this->strInData = read(this->inStream, this->carret);
+	float y = (float)atof(this->strInData.c_str());
+	this->strInData = read(this->inStream, this->carret);
+	float z = (float)atof(this->strInData.c_str());
 
 	this->vertecies.vn.push_back(obj_float3(x, y, (-1 * z)));
 }
 void ObjGeometryImporter::processTexCoord()
 {
-	read(this->inStream);
+	this->strInData = read(this->inStream, this->carret);
 	float x = (float)atof(this->strInData.c_str());
-	read(this->inStream);
+	this->strInData = read(this->inStream, this->carret);
 	float y = 1.0f - (float)atof(this->strInData.c_str());
 	
 	this->vertecies.vt.push_back(obj_float2(x, y));
@@ -210,9 +208,11 @@ void ObjGeometryImporter::processTexCoord()
 }
 void ObjGeometryImporter::processFace()			   
 {
-	readLine(this->inStream);
-	this->strInData.erase(this->strInData.length() - 1, this->strInData.length() - 1);
-	std::vector<std::string> facePart = stringSplit(this->strInData, ' ');
+	static std::vector<std::string> facePart;
+	facePart.clear();
+	this->strInData = readLine(this->inStream, this->carret);
+	//this->strInData.erase(this->strInData.length() - 1, this->strInData.length() - 1);
+	stringSplit(this->strInData, ' ', facePart);
 	
 	Face f;
 	Face::VertIndex v;
@@ -220,7 +220,8 @@ void ObjGeometryImporter::processFace()
 
 	for (int i = 0; i < (int)facePart.size(); i++)
 	{
-		values = stringSplit(facePart[i], '/');
+		values.clear();
+		stringSplit(facePart[i], '/', values);
 	
 		if((int)facePart.size() > 0)
 		{
@@ -252,8 +253,8 @@ bool ObjGeometryImporter::processMtlFile(std::string& currentDir, std::vector<Ma
 	int p = currentDir.rfind('\\');
 	p = p ? p : currentDir.rfind('/');
 	
-	readLine(this->inStream);
-	this->strInData.erase(this->strInData.length() - 1, this->strInData.length() - 1);
+	this->strInData = readLine(this->inStream, this->carret);
+	//this->strInData.erase(this->strInData.length() - 1, this->strInData.length() - 1);
 	std::string dir = currentDir.substr(0, p+1);
 	std::string mtlFilePath = dir;
 
@@ -263,20 +264,22 @@ bool ObjGeometryImporter::processMtlFile(std::string& currentDir, std::vector<Ma
 	int namelessCount = 0;
 
 	
-	std::stringstream mtl;
+	std::string mtl;
+	int tempCarret = 0;
+	
 	if(ReadSomeData(mtl, mtlFilePath))
 	{
 		Material newMat;
 
-		while (!mtl.eof())
+		while (tempCarret < mtl.size())
 		{
-			read(mtl);
-			if(mtl.eof())
+			this->strInData = read(mtl, tempCarret);
+			if (tempCarret >= mtl.size())
 				break;
 	
 			if(this->strInData == "newmtl") 
 			{
-				if (readLine(mtl) != "")
+				if ((this->strInData = readLine(mtl, tempCarret)) != "")
 				{
 					newMat.Name = this->strInData;
 					material.push_back(newMat);
@@ -289,21 +292,21 @@ bool ObjGeometryImporter::processMtlFile(std::string& currentDir, std::vector<Ma
 					pos = (int)material.size() - 1;
 				}
 			}
-			else if (this->strInData == "#")				{ readLine(mtl); }
-			else if (this->strInData == "Ka")			{ material[pos].Ka			= AlphaToFloat3(readLine(mtl)); }
-			else if (this->strInData == "Kd")			{ material[pos].Kd			= AlphaToFloat3(readLine(mtl)); }
-			else if (this->strInData == "Ks")			{ material[pos].Ks			= AlphaToFloat3(readLine(mtl)); }
-			else if (this->strInData == "Tf")			{ material[pos].Tf			= AlphaToFloat3(readLine(mtl)); }
-			else if (this->strInData == "illum")		{ material[pos].Illum		= atoi (readLine(mtl).c_str()); }
-			else if (this->strInData == "Ni")			{ material[pos].Ni			= (float)atof(read(mtl).c_str()); }
-			else if (this->strInData == "Ns")			{ material[pos].Ns			= (float)atof(read(mtl).c_str()); }
-			else if (this->strInData == "map_Ka")		{ material[pos].map_Ka		= readLine(mtl); }
-			else if (this->strInData == "map_Td")		{ material[pos].map_Td		= readLine(mtl); }
-			else if (this->strInData == "map_Kd")		{ material[pos].map_Kd		= readLine(mtl); }
-			else if (this->strInData == "map_Ks")		{ material[pos].map_Ks		= readLine(mtl); }
-			else if (this->strInData == "disp")			{ material[pos].disp		= readLine(mtl); }
-			else if (this->strInData == "bump")			{ material[pos].bump		= readLine(mtl); }
-			else if (this->strInData == "occlusion")	{ material[pos].occlusion	= readLine(mtl); }
+			else if (this->strInData == "#")			{ readLine(mtl, tempCarret); }
+			else if (this->strInData == "Ka")			{ material[pos].Ka			= AlphaToFloat3(readLine(mtl, tempCarret)); }
+			else if (this->strInData == "Kd")			{ material[pos].Kd			= AlphaToFloat3(readLine(mtl, tempCarret)); }
+			else if (this->strInData == "Ks")			{ material[pos].Ks			= AlphaToFloat3(readLine(mtl, tempCarret)); }
+			else if (this->strInData == "Tf")			{ material[pos].Tf			= AlphaToFloat3(readLine(mtl, tempCarret)); }
+			else if (this->strInData == "illum")		{ material[pos].Illum		= atoi(readLine(mtl, tempCarret).c_str()); }
+			else if (this->strInData == "Ni")			{ material[pos].Ni			= (float)atof(read(mtl, tempCarret).c_str()); }
+			else if (this->strInData == "Ns")			{ material[pos].Ns			= (float)atof(read(mtl, tempCarret).c_str()); }
+			else if (this->strInData == "map_Ka")		{ material[pos].map_Ka		= readLine(mtl, tempCarret); }
+			else if (this->strInData == "map_Td")		{ material[pos].map_Td		= readLine(mtl, tempCarret); }
+			else if (this->strInData == "map_Kd")		{ material[pos].map_Kd		= readLine(mtl, tempCarret); }
+			else if (this->strInData == "map_Ks")		{ material[pos].map_Ks		= readLine(mtl, tempCarret); }
+			else if (this->strInData == "disp")			{ material[pos].disp		= readLine(mtl, tempCarret); }
+			else if (this->strInData == "bump")			{ material[pos].bump		= readLine(mtl, tempCarret); }
+			else if (this->strInData == "occlusion")	{ material[pos].occlusion	= readLine(mtl, tempCarret); }
 			
 		}
 		mtl.clear();
@@ -315,33 +318,61 @@ bool ObjGeometryImporter::processMtlFile(std::string& currentDir, std::vector<Ma
 	
 	return true;
 }
-std::string ObjGeometryImporter::read(std::stringstream& inStream)
+std::string ObjGeometryImporter::read(std::string& inStream, int& crt)
 {
-	inStream >> this->strInData;
-	return this->strInData;
-}
-std::string ObjGeometryImporter::readLine(std::stringstream& inStream)		   
-{
-	char line[255];
-	inStream.getline(line, 255, '\n');
-	
-	this->strInData = line;
-	
-	//Remove junk, aka spacing
-	int left = 0;
-	int right = (int)this->strInData.length()-1;
-	while(left < right && this->strInData[left] == ' ')
-		left++;
-	while(right > left && this->strInData[right] == ' ') // !(isalpha(this->strInData[right]) || isdigit(this->strInData[right]))) 
-		right--;
-		
-	
-	if(left > 0 && left < (int)this->strInData.length() - 1)
-		this->strInData.erase(0, left);
-	if(right > 0 && right < (int)this->strInData.length())
-		this->strInData.erase(right, this->strInData.length() - 1);
+	std::string str;
+	char tmp = '\0';
 
-	return this->strInData;
+	if (crt >= inStream.size())
+		return str;
+
+	do
+	{
+		str.append(&inStream[crt++], 1 );
+
+	} while (crt < inStream.size() && inStream[crt] != ' ' && inStream[crt] != '\n');
+
+	while (inStream[crt] == ' ' || inStream[crt] == '\n')
+	{
+		crt++;
+	}
+
+	return str;
+}
+std::string ObjGeometryImporter::readLine(std::string& inStream, int& carret)
+{
+	std::string out = "";
+	while (carret < inStream.size() && inStream[carret] != '\n')
+	{
+		out += inStream[carret++];
+	}
+
+	//Set at right index
+	while (inStream[carret] == '\n' || inStream[carret] == ' ')
+		carret++;
+
+	return out;
+
+	//char line[255];
+	//inStream.getline(line, 255, '\n');
+	//
+	//this->strInData = line;
+	//
+	////Remove junk, aka spacing
+	//int left = 0;
+	//int right = (int)this->strInData.length()-1;
+	//while(left < right && this->strInData[left] == ' ')
+	//	left++;
+	//while(right > left && this->strInData[right] == ' ') // !(isalpha(this->strInData[right]) || isdigit(this->strInData[right]))) 
+	//	right--;
+	//	
+	//
+	//if(left > 0 && left < (int)this->strInData.length() - 1)
+	//	this->strInData.erase(0, left);
+	//if(right > 0 && right < (int)this->strInData.length())
+	//	this->strInData.erase(right, this->strInData.length() - 1);
+	//
+	//return this->strInData;
 }
 
 

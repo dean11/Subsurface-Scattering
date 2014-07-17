@@ -43,6 +43,8 @@ bool Model::CreateModel(const char path[], ID3D11Device* device, const SimpleMat
 	if (FAILED(hr = device->CreateBuffer(&desc, &data, &this->mesh.vertexBuffer)))
 		return false;
 	
+	wchar_t buff[255] = {0};
+	_wgetcwd(buff, 255);
 	std::wstring mPath = L"Models\\" + Util::StringToWstring(m[0].map_Kd, std::wstring());
 	if (FAILED(hr = DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
 		this->mesh.diffuse = NULL;	//No texture found for the model
