@@ -541,7 +541,7 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	*/
 	//this->sphereMap.CreateSkyBox(device, dc);
 
-	(this->ground = new Plane())->CreatePlane(device, DirectX::XMFLOAT3(0.0, -130.0f, 0.0f), L"Models\\gray.dds", 1000.0f, 1000.0f, 1.0f);
+	(this->ground = new Plane())->CreatePlane(device, DirectX::XMFLOAT3(0.0, -130.0f, 0.0f), L"Models\\sssStrength.dds", 1000.0f, 1000.0f, 1.0f);
 	this->models.push_back(this->ground);
 
 	if(!CreateLights())
