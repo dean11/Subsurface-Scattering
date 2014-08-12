@@ -17,8 +17,7 @@ struct TranslucentDataProxy
 {
 	SimpleMath::Matrix viewProjection;
 	float range;
-
-	float pad[3];
+	SimpleMath::Vector3 position;
 };
 
 void GeometryPass::Release()
@@ -147,7 +146,7 @@ void GeometryPass::Apply(BasicLightData::ShadowMapLight*const* shadowData, int s
 
 	this->deviceContext->OMSetRenderTargets(GBuffer_RTV_Layout_COUNT, rtv, this->depthStencil);
 
-	ID3D11SamplerState* smp[] = { ShaderStates::SamplerState::GetLinear() };
+	ID3D11SamplerState* smp[] = { ShaderStates::SamplerState::GetLinear(), ShaderStates::SamplerState::GetPoint(), ShaderStates::SamplerState::GetShadow() };
 	ID3D11ShaderResourceView* srv[20] = { 0 };
  
 	D3D11_MAPPED_SUBRESOURCE mappedData;
@@ -164,6 +163,7 @@ void GeometryPass::Apply(BasicLightData::ShadowMapLight*const* shadowData, int s
 			srv[i]					= shadowData[i]->shadowMap;
 			s[i].range				= shadowData[i]->range;
 			s[i].viewProjection		= (v * p * scale * translation).Transpose();
+			s[i].position			= SimpleMath::Vector3(XMLoadFloat3(&shadowData[i]->camera.GetPosition()));
 		}
 		this->deviceContext->Unmap(this->shadowBuffer, 0);
 	}

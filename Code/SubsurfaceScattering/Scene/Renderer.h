@@ -8,7 +8,7 @@
 #include "Plane.h"
 #include "..\Utilities\DynamicArray.h"
 #include "..\Utilities\clock.h"
-
+#include <vector>
 
 class Renderer
 {
@@ -46,6 +46,8 @@ private:
 	Util::DynamicArray<BasicLightData::Spotlight> spotLight;
 	Util::DynamicArray<BasicLightData::ShadowMapLight> shadowMaps;
 	Model* player;
+	std::vector<SimpleMath::Vector4> sssLayers;
+	float sssStrength;
 
 private:
 	void RenderShadowMaps();
@@ -57,6 +59,7 @@ private:
 
 	bool CreateLights();
 	bool CreateDeviceAndContext();
+	bool LoadLayersFromFile(std::string file);
 
 };
 

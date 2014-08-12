@@ -22,6 +22,10 @@ namespace MaterialLayers
 		DirectX::SimpleMath::Vector4( 0.078f, 0.000f, 0.113f, 7.4100f),
 	};
 
+	static const DirectX::SimpleMath::Vector4 Vegetation[] =
+	{
+		DirectX::SimpleMath::Vector4(0.5f, 085.0f, 07.0f, 7.4f),
+	};
 	static const DirectX::SimpleMath::Vector4 SingleRedLayer[] = 
 	{
 		DirectX::SimpleMath::Vector4( 0.78f, 0.0f, 0.0f, 7.4100f),
@@ -58,6 +62,17 @@ namespace MaterialLayers
 		DirectX::SimpleMath::Vector4( 0.078f, 0.00f, 0.030f, 1.7100f),
 		DirectX::SimpleMath::Vector4( 0.078f, 0.030f, 0.030f, 2.7100f),
 		DirectX::SimpleMath::Vector4( 0.078f, 0.358f, 0.0f, 3.1100f),
+	};
+
+	static const DirectX::SimpleMath::Vector4* LayerArray[] =
+	{
+		{ SingleRedLayer },
+		{ SingleGreenLayer },
+		{ SingleBlueLayer },
+		{ PigLayers },
+		{ Material8Layer },
+		{ SkinLayers },
+		{ Material10Layer },
 	};
 }
 

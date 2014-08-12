@@ -16,7 +16,6 @@ Model::~Model()
 void Model::Release()
 {
 	Util::SAFE_RELEASE(this->mesh.diffuse);
-	Util::SAFE_RELEASE(this->mesh.thickness);
 	Util::SAFE_RELEASE(this->mesh.vertexBuffer);
 }
 bool Model::CreateModel(const char path[], ID3D11Device* device, const SimpleMath::Vector4 materialLayer[], int layerCount)
@@ -49,17 +48,11 @@ bool Model::CreateModel(const char path[], ID3D11Device* device, const SimpleMat
 	if (FAILED(hr = DirectX::CreateDDSTextureFromFile(device, mPath.c_str(), nullptr, &this->mesh.diffuse)))
 		this->mesh.diffuse = NULL;	//No texture found for the model
 	
-	if (m.size() && m[0].map_Td.size())
-	{
-		std::wstring thick = L"Models\\" + Util::StringToWstring(m[0].map_Td, std::wstring());
-		if (FAILED(hr = DirectX::CreateDDSTextureFromFile(device, thick.c_str(), nullptr, &this->mesh.thickness)))
-			this->mesh.thickness = NULL;	//No texture found for the model
-	}
 	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
 	
 	this->mesh.materialLayerCount = layerCount;
-	this->mesh.materialLayers = materialLayer;
-
+	this->mesh.materialLayers.Resize(layerCount);
+	memcpy(&this->mesh.materialLayers[0], materialLayer, sizeof(materialLayer[0]) * layerCount);
 	return true;
 }
 
@@ -70,13 +63,13 @@ void Model::DrawModel(ID3D11DeviceContext* dc, bool useTexture)
 	UINT off = 0;
 	if(useTexture)
 	{
-		ID3D11ShaderResourceView* srv[] = { this->mesh.diffuse, this->mesh.thickness };
+		ID3D11ShaderResourceView* srv[] = { this->mesh.diffuse, 0 };
 		dc->PSSetShaderResources(0, Util::NumElementsOf(srv), srv);
 	}
 
 	dc->IASetVertexBuffers(0, 1, &this->mesh.vertexBuffer, &this->mesh.vertexStride, &off);
 
-	Pipeline::PipelineManager::Instance().SetMeshBuffer(this->world, this->world.Invert().Transpose(), this->mesh.materialLayers, this->mesh.materialLayerCount);
+	Pipeline::PipelineManager::Instance().SetMeshBuffer(this->world, this->world.Invert().Transpose(), this->mesh.materialLayers.Size() ? &this->mesh.materialLayers[0] : 0, this->mesh.materialLayerCount);
 
 	dc->Draw(this->mesh.vertexCount, 0);
 }
@@ -159,3 +152,18 @@ SimpleMath::Vector3 Model::GetPosition()
 	return SimpleMath::Vector3(this->world._41, this->world._42 ,this->world._43);// = z;
 }
 
+void Model::SetMaterial(const SimpleMath::Vector4 materialLayer[], int layerCount)
+{
+	if (layerCount == 0) return;
+	this->mesh.materialLayerCount = layerCount;
+	this->mesh.materialLayers.Clear();
+	this->mesh.materialLayers.Resize(layerCount);
+	try
+	{
+		memcpy(&this->mesh.materialLayers[0], materialLayer, sizeof(SimpleMath::Vector4) * layerCount);
+	}
+	catch (std::exception e)
+	{
+		MessageBox(0, L"TEST", L"", 0);
+	}
+}

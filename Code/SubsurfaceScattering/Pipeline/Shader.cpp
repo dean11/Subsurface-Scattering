@@ -60,12 +60,10 @@ bool Shader::CreateShader(const char filename[], char* target, UINT flag, const 
 	ID3DBlob* s = 0, *err = 0;
 	HRESULT hr = S_OK;
 
-	
-
 	if(!this->device)			this->device = device;
 	if(!this->deviceContext)	this->deviceContext = deviceContext;
 	
-	if(FAILED ( hr = D3DCompileFromFile(Util::StringToWstring(filename, std::wstring()).c_str(), 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
+	if(FAILED ( hr = D3DCompileFromFile(Util::StringToWstring(filename, std::wstring()).c_str(), macro, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", target, flag, 0, &s, &err)))
 	{
 		if(err) 
 		{
@@ -81,24 +79,26 @@ bool Shader::CreateShader(const char filename[], char* target, UINT flag, const 
 		return false;
 	}
 	
-	if(this->shaderData.data)
-		this->Release();
+	this->Release();
+	void* raw = s->GetBufferPointer();
+	char* rawc = (char*)s->GetBufferPointer();
+	size_t size = s->GetBufferSize();
 
 	switch (type)
 	{
 	case Pipeline::ShaderType_VS:
-		hr = this->device->CreateVertexShader(s->GetBufferPointer(), s->GetBufferSize(), 0, &this->shaderData.vertexShader);
+		hr = this->device->CreateVertexShader(raw, size, 0, &this->shaderData.vertexShader);
 		break;
 	case Pipeline::ShaderType_PS:
-		hr = this->device->CreatePixelShader(s->GetBufferPointer(), s->GetBufferSize(), 0, &this->shaderData.pixelShader);
+		hr = this->device->CreatePixelShader(raw, size, 0, &this->shaderData.pixelShader);
 		break;
 	case Pipeline::ShaderType_CS:
-		hr = this->device->CreateComputeShader(s->GetBufferPointer(), s->GetBufferSize(), 0, &this->shaderData.computeShader);
+		hr = this->device->CreateComputeShader(raw, size, 0, &this->shaderData.computeShader);
 		break;
 	case Pipeline::ShaderType_HS:
 		break;
 	case Pipeline::ShaderType_GS:
-		hr = this->device->CreateGeometryShader(s->GetBufferPointer(), s->GetBufferSize(), 0, &this->shaderData.geometryShader);
+		hr = this->device->CreateGeometryShader(raw, size, 0, &this->shaderData.geometryShader);
 		break;
 	case Pipeline::ShaderType_DS:
 		break;
@@ -147,6 +147,9 @@ bool Shader::LoadCompiledShader(const char filename[], ShaderType type, ID3D11De
 		fstr.read(&this->byteCode[0], size);
 		fstr.close();
 
+		//ShaderData is a union so it does not matter wich variable we release..
+		Util::SAFE_RELEASE(this->shaderData.computeShader);
+
 		switch (this->type)
 		{
 		case Pipeline::ShaderType_VS:
@@ -181,7 +184,8 @@ bool Shader::LoadCompiledShader(const char filename[], ShaderType type, ID3D11De
 	{
 		return false;
 	}
-	return true;
+
+	return hr == S_OK ? true : false;
 }
 Shader::ShaderData Shader::GetShader()
 {
@@ -189,27 +193,8 @@ Shader::ShaderData Shader::GetShader()
 }
 void Shader::Release()
 {
-	switch (type)
-	{
-	case Pipeline::ShaderType_VS:
-		if (this->shaderData.data) this->shaderData.vertexShader->Release(); this->shaderData.data = 0;
-		break;
-	case Pipeline::ShaderType_PS:
-		if (this->shaderData.data) this->shaderData.pixelShader->Release(); this->shaderData.data = 0;
-		break;
-	case Pipeline::ShaderType_CS:
-		if (this->shaderData.data) this->shaderData.computeShader->Release(); this->shaderData.data = 0;
-		break;
-	case Pipeline::ShaderType_HS:
-		if (this->shaderData.data) this->shaderData.hullShader->Release();	this->shaderData.data = 0;
-		break;
-	case Pipeline::ShaderType_GS:
-		if (this->shaderData.data) this->shaderData.geometryShader->Release();	this->shaderData.data = 0;
-		break;
-	case Pipeline::ShaderType_DS:
-		if (this->shaderData.data) this->shaderData.domainShader->Release();	this->shaderData.data = 0;
-		break;
-	}
+	//ShaderData is a union.
+	Util::SAFE_RELEASE(this->shaderData.computeShader);
 }
 void Shader::Apply()
 {

@@ -38,9 +38,9 @@ struct SceneMatrixData
 	DirectX::XMFLOAT4X4 view;
 	DirectX::XMFLOAT4X4 projection;
 	int nrOfShadowMaps;
-	int sssEnable; //First block has number of layers.
-	
-	float pad[2];
+	int sssEnable;
+	float sssStrength;
+	float pad[1];
 };
 struct DepthPointLightData
 {
@@ -123,7 +123,7 @@ bool PipelineManager::Initiate(ID3D11Device* device, ID3D11DeviceContext* device
 }
 
 
-void PipelineManager::ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection, BasicLightData::ShadowMapLight*const* shadowData, int shadowCount)
+void PipelineManager::ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection, BasicLightData::ShadowMapLight*const* shadowData, int shadowCount, float sssStrength)
 {
 	if (this->prevPass) this->prevPass->Clear();
 	
@@ -137,6 +137,7 @@ void PipelineManager::ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const D
 		DirectX::XMStoreFloat4x4(&data->projection, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&projection)));
 		DirectX::XMStoreFloat4x4(&data->view, DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(&view)));
 		data->nrOfShadowMaps = shadowCount;
+		data->sssStrength = sssStrength;
 		data->sssEnable = Input::IsKeyDown(VK_P) ? 1 : 0;
 		this->deviceContext->Unmap(this->sceneMatrixBuffer, 0);
 	}
@@ -163,9 +164,6 @@ void PipelineManager::ApplyFrontSSS()
 void PipelineManager::ApplyPostEffectPass(const LightPass::LightData& light )
 {
 	if (this->prevPass) this->prevPass->Clear();
-
-	if(Input::IsKeyDown(VK_L))
-		this->postPass.ReloadPostEffectShaders();
 
 	if(this->debugRTV)
 	{
@@ -246,7 +244,10 @@ void PipelineManager::Present()
 	this->d3dSwapchain->Present(0, 0);
 }
 
-
+void PipelineManager::SetGlobalSSSEffect(float strength)
+{
+	this->blurPass.SetSSSStrength(strength);
+}
 void PipelineManager::SetMeshBuffer(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose, DirectX::XMFLOAT4 const* layers, int layerCount)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedData;

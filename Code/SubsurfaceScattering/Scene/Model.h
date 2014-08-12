@@ -5,6 +5,7 @@
 #include <D3DTK\DDSTextureLoader.h>
 #include "..\Utilities\Util.h"
 #include <D3DTK\SimpleMath.h>
+#include "..\Utilities\DynamicArray.h"
 
 using namespace DirectX;
 class Model
@@ -17,8 +18,7 @@ public:
 		unsigned int materialLayerCount;
 		ID3D11Buffer* vertexBuffer;
 		ID3D11ShaderResourceView* diffuse;
-		ID3D11ShaderResourceView* thickness;
-		const SimpleMath::Vector4* materialLayers;
+		Util::DynamicArray<SimpleMath::Vector4> materialLayers;
 	};
 	
 public:
@@ -51,6 +51,8 @@ public:
 	void ToggleVisibility(){this->isVisible = !this->isVisible;}
 	void SetVisibility(bool vis) {this->isVisible = vis;}
 	bool GetVisibility(){return this->isVisible;}
+
+	void SetMaterial(const SimpleMath::Vector4 materialLayer[], int layerCount);
 
 protected:
 	Mesh mesh;

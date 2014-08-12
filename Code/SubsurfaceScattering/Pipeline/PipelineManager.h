@@ -28,12 +28,12 @@ namespace Pipeline
 		void Release();
 		bool Initiate(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int width, int height);
 
-		void ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection, BasicLightData::ShadowMapLight*const* shadowData, int shadowCount);
+		void ApplyGeometryPass(const DirectX::XMFLOAT4X4& view, const DirectX::XMFLOAT4X4& projection, BasicLightData::ShadowMapLight*const* shadowData, int shadowCount, float sssStrength);
 		void ApplyPostEffectPass(const LightPass::LightData& data );
 		void ApplyFrontSSS();
 		void ApplyUIPass(ID3D11ShaderResourceView*const* srv = 0, int total = 0);
 		void Present();
-
+		void SetGlobalSSSEffect(float strength);
 		void SetMeshBuffer(const DirectX::XMFLOAT4X4& world, const DirectX::XMFLOAT4X4& worldInversTranspose, DirectX::XMFLOAT4 const* layers, int layerCount);
 
 	private:

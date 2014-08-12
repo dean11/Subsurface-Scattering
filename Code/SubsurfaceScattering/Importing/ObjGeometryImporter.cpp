@@ -375,7 +375,6 @@ std::string ObjGeometryImporter::readLine(std::string& inStream, int& carret)
 	//return this->strInData;
 }
 
-
 /*
 #include "ObjGeometryImporter.h"
 

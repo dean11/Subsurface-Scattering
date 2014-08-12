@@ -7,7 +7,7 @@ using namespace DirectX;
 
 
 
-bool Plane::CreatePlane(ID3D11Device* device, DirectX::XMFLOAT3 position, const wchar_t texture[], float width, float depth, float scale)
+bool Plane::CreatePlane(ID3D11Device* device, DirectX::XMFLOAT3 position, const wchar_t texture[], const SimpleMath::Vector4 materialLayer[], int layerCount, float width, float depth, float scale)
 {
 	float hw = width * 0.5f;
 	float hd = depth * 0.5f;
@@ -49,6 +49,7 @@ bool Plane::CreatePlane(ID3D11Device* device, DirectX::XMFLOAT3 position, const 
 	this->mesh.vertexStride = sizeof(VertexPNT);
 	this->mesh.diffuse = 0;
 	this->mesh.vertexBuffer = 0;
+	this->SetMaterial(materialLayer, layerCount);
 
 	D3D11_BUFFER_DESC desc;
 	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;

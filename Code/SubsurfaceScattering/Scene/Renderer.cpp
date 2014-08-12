@@ -3,6 +3,7 @@
 #include "..\Input.h"
 #include "..\Utilities\TextRender.h"
 #include "..\Pipeline\Material.h"
+#include <fstream>
 
 float speed = 45.0f;
 static float time = 0.0f;
@@ -14,6 +15,7 @@ std::string PostStatsString = "Post pass: ";
 std::string BlurStatsString = "Blur pass: ";
 bool moveObjectToggle = false;
 ID3D11Counter* d3dcounter = 0;
+int currentMat = 0;
 
 enum GTS
 {
@@ -26,7 +28,7 @@ enum GTS
 
 	GTS_Max
 };
-ID3D11Query * m_apQueryTsDisjoint[2];		// "Timestamp disjoint" query; records whether timestamps are valid
+ID3D11Query * m_apQueryTsDisjoint[2];			// "Timestamp disjoint" query; records whether timestamps are valid
 ID3D11Query * m_apQueryTs[GTS_Max][2];
 int m_iFrameQuery = 0;
 int m_iFrameCollect = -1;
@@ -37,6 +39,12 @@ float m_adTTotalAvg[GTS_Max] = {0};				// Total timings thus far within this ave
 int m_frameCountAvg = 0;						// Frames rendered in current averaging period
 float m_tBeginAvg = 0;							// Time at which current averaging period started
 #define FPS60	1.0f/60.0f
+
+void CreateTransMap(ShadowMap &shadowMap, float x, float y, ID3D11Device* dev, ID3D11DeviceContext* dc)
+{
+	shadowMap.Release();
+	shadowMap.Create(dev, dc, x, y);
+}
 void Renderer::WaitForDataAndUpdate ()
 {
 	if (m_iFrameCollect < 0)
@@ -94,10 +102,11 @@ void Renderer::WaitForDataAndUpdate ()
 
 Renderer::Renderer()
 {
+	this->sssStrength = 1.0f;
 }
 Renderer::~Renderer()
 {
-	
+
 }
 
 void Renderer::Release()
@@ -128,17 +137,30 @@ void Renderer::Frame(float delta)
 
 	this->deviceContext->Begin(m_apQueryTsDisjoint[m_iFrameQuery]);
 	this->deviceContext->End(m_apQueryTs[GTS_BeginFrame][m_iFrameQuery]);
-	{ 
+	{
+		int i = sizeof(MaterialLayers::LayerArray[0]) / sizeof(*MaterialLayers::LayerArray[0]);
+		if (Input::IsKeyDown(VK_UP))			this->player->Forward(+speed);
+		if (Input::IsKeyDown(VK_DOWN))		this->player->Forward(-speed);
+		if (Input::IsKeyDown(VK_RIGHT))		this->player->Right(+speed);
+		if (Input::IsKeyDown(VK_LEFT))		this->player->Right(-speed);
 
-		if(Input::IsKeyDown(VK_UP))			this->player->Forward(+speed);
-		if(Input::IsKeyDown(VK_DOWN))		this->player->Forward(-speed);
-		if(Input::IsKeyDown(VK_RIGHT))		this->player->Right(+speed);
-		if(Input::IsKeyDown(VK_LEFT))		this->player->Right(-speed);
-		if(Input::IsKeyDown(VK_ADD))		speed += 0.8f;
-		if(Input::IsKeyDown(VK_SUBTRACT))	speed -= 0.8f;
+		if (Input::IsKeyDown(VK_ADD))		this->player->SetMaterial(MaterialLayers::LayerArray[(currentMat = currentMat % Util::NumElementsOf(MaterialLayers::LayerArray) + 1)], i);
+		//if(Input::IsKeyDown(VK_SUBTRACT))	;
+
+		if (Input::IsKeyDown(VK_SHIFT) && Input::IsKeyDown(VK_PLUS)) { this->sssStrength += 0.2f; PipelineManager::Instance().SetGlobalSSSEffect(this->sssStrength); }
+		if (Input::IsKeyDown(VK_SHIFT) && Input::IsKeyDown(VK_MINUS)) { this->sssStrength -= 0.2f; PipelineManager::Instance().SetGlobalSSSEffect(this->sssStrength); }
 
 		if(Input::IsKeyDown(VK_R))			this->ground->ToggleVisibility();
-
+		if (Input::IsKeyDown(VK_L))
+		{
+			if (LoadLayersFromFile("layers.txt"))
+			{
+				this->player->SetMaterial(&this->sssLayers[0], this->sssLayers.size());
+				Input::SetKeyState(VK_L, false);
+				Sleep(1000);
+			}
+		}
+		
 		if(Input::IsKeyDown(VK_Y))			this->shadowMaps[2].camera.RelativeForward(+2.0f);
 		if(Input::IsKeyDown(VK_H))			this->shadowMaps[2].camera.RelativeForward(-2.0f);
 
@@ -153,17 +175,22 @@ void Renderer::Frame(float delta)
 		if(Input::IsKeyDown(VK_8) && this->shadowMaps.Size() > 8) this->shadowMaps[8].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
 		if(Input::IsKeyDown(VK_9) && this->shadowMaps.Size() > 9) this->shadowMaps[9].isOn = Input::IsKeyDown(VK_MENU) ? true : false;
 
-		if( Input::IsKeyDown(49 /*1*/) ) { this->player = this->models.size() > 0 ? this->models[0] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(50 /*2*/) ) { this->player = this->models.size() > 1 ? this->models[1] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(51 /*3*/) ) { this->player = this->models.size() > 2 ? this->models[2] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(52 /*4*/) ) { this->player = this->models.size() > 3 ? this->models[3] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(53 /*5*/) ) { this->player = this->models.size() > 4 ? this->models[4] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(54 /*6*/) ) { this->player = this->models.size() > 5 ? this->models[5] : this->player; speed = 2.0f; }
+		if( Input::IsKeyDown(49 /*1*/) ) { this->player = this->models.size() > 0 ? this->models[0] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(50 /*2*/) ) { this->player = this->models.size() > 1 ? this->models[1] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(51 /*3*/) ) { this->player = this->models.size() > 2 ? this->models[2] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(52 /*4*/) ) { this->player = this->models.size() > 3 ? this->models[3] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(53 /*5*/) ) { this->player = this->models.size() > 4 ? this->models[4] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(54 /*6*/) ) { this->player = this->models.size() > 5 ? this->models[5] : this->player; speed = 0.75f; }
 
-		if( Input::IsKeyDown(55 /*7*/) ) { this->player = this->models.size() > 6 ? this->models[6] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(56 /*8*/) ) { this->player = this->models.size() > 7 ? this->models[7] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(57 /*9*/) ) { this->player = this->models.size() > 8 ? this->models[8] : this->player; speed = 2.0f; }
-		if( Input::IsKeyDown(48 /*0*/) ) { this->player = this->models.size() > 9 ? this->models[9] : this->player; speed = 2.0f; }
+		if( Input::IsKeyDown(55 /*7*/) ) { this->player = this->models.size() > 6 ? this->models[6] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(56 /*8*/) ) { this->player = this->models.size() > 7 ? this->models[7] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(57 /*9*/) ) { this->player = this->models.size() > 8 ? this->models[8] : this->player; speed = 0.75f; }
+		if( Input::IsKeyDown(48 /*0*/) ) { this->player = this->models.size() > 9 ? this->models[9] : this->player; speed = 0.75f; }
+
+		if (Input::IsKeyDown(VK_CONTROL) && Input::IsKeyDown(49 /*1*/)) { this->models.size() ? CreateTransMap(this->shadowMaps[0].shadowMap, 1024, 1024, this->device, this->deviceContext) : 0; }
+		if (Input::IsKeyDown(VK_CONTROL) && Input::IsKeyDown(50 /*2*/)) { this->models.size() ? CreateTransMap(this->shadowMaps[0].shadowMap, 1920, 1080, this->device, this->deviceContext) : 0; }
+		if (Input::IsKeyDown(VK_CONTROL) && Input::IsKeyDown(51 /*3*/)) { this->models.size() ? CreateTransMap(this->shadowMaps[0].shadowMap, 4500, 4500, this->device, this->deviceContext) : 0; }
+		if (Input::IsKeyDown(VK_CONTROL) && Input::IsKeyDown(52 /*4*/)) { this->models.size() ? CreateTransMap(this->shadowMaps[0].shadowMap, 6000, 6000, this->device, this->deviceContext) : 0; }
 
 		RenderShadowMaps();
 		this->deviceContext->End(m_apQueryTs[GTS_ShadowObjects][m_iFrameQuery]);
@@ -183,7 +210,7 @@ void Renderer::Frame(float delta)
 	//for (GTS gts = GTS_BeginFrame; gts < GTS_EndFrame; gts = GTS(gts + 1))
 	for (GTS gts = GTS_BeginFrame; gts < GTS_Max; gts = GTS(gts + 1))
 		dTDrawTotal += m_adTAvg[gts];
-
+	
 	char a[50];
 	totalStatsString.resize(0);
 	totalStatsString.append("Total pass: ");
@@ -327,28 +354,28 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 
 #pragma region Wall benchmark
 
-		//Model *wall1 = new Model();
+	//Model *wall1 = new Model();
 	//Model *wall2 = new Model();
 	//Model *wall3 = new Model();
 	//Model *wall4 = new Model();
 	//Model *wall5 = new Model();
 	//Model *wallBun = new Model();
 	//
-	//if (!wall1->CreateModel("Models\\wallSmall1.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	//if (!wall2->CreateModel("Models\\wallSmall1.obj", device)) return false;
-	//if (!wall3->CreateModel("Models\\wallSmall1.obj", device)) return false;
-	//if (!wall4->CreateModel("Models\\wallSmall1.obj", device)) return false;
-	//if (!wall5->CreateModel("Models\\wallSmall1.obj", device)) return false;
+	//if (!wall1->CreateModel("Models\\wall.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
+	//if (!wall2->CreateModel("Models\\wall.obj", device)) return false;
+	//if (!wall3->CreateModel("Models\\wall.obj", device)) return false;
+	//if (!wall4->CreateModel("Models\\wall.obj", device)) return false;
+	//if (!wall5->CreateModel("Models\\wall.obj", device)) return false;
 	//if (!wallBun->CreateModel("Models\\bunny.obj", device, MaterialLayers::SomeCustomMaterial, Util::NumElementsOf(MaterialLayers::SomeCustomMaterial))) return false;
 	//
-		//wall1->SetPosition(-300, -130, -30);
+	//wall1->SetPosition(-300, -130, -30);
 	//wall2->SetPosition(-150, -100, +10);
 	//wall3->SetPosition(+000, -100, +10);
 	//wall4->SetPosition(+150, -100, +10);
 	//wall5->SetPosition(+300, -100, +10);
 	//wallBun->SetPosition(300, -65, -40);
 	//
-		//wall1->SetScale(5.0f, 5.0f, 2.0f);
+	//wall1->SetScale(5.0f, 5.0f, 2.0f);
 	//wall2->SetScale(5.0f, 5.0f, 4.0f);
 	//wall3->SetScale(5.0f, 5.0f, 6.0f);
 	//wall4->SetScale(5.0f, 5.0f, 8.0f);
@@ -357,14 +384,14 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	//
 	////wallBun->Rotate(SimpleMath::Vector3(0, 90, 0));
 	//
-//this->models.push_back(wall1);
+	//this->models.push_back(wall1);
 	//this->models.push_back(wall2);
 	//this->models.push_back(wall3);
 	//this->models.push_back(wall4);
 	//this->models.push_back(wall5);
 	//this->models.push_back(wallBun);
 	//
-//this->player = this->models[this->models.size()-1];
+	//this->player = this->models[this->models.size()-1];
 
 #pragma endregion
 
@@ -389,8 +416,8 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	//Model *dragon10 = new Model();
 	//Model *dragon11 = new Model();
 	//
+	//if (!dragon0->CreateModel("Models\\wall.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SingleRedLayer))) return false;
 	if (!dragon0->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
-	//if (!dragon0->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::SkinLayers, Util::NumElementsOf(MaterialLayers::SkinLayers))) return false;
 	//if (!dragon1->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::PigLayers, Util::NumElementsOf(MaterialLayers::PigLayers))) return false;
 	//if (!dragon2->CreateModel("Models\\bench\\dragon0.obj", device, MaterialLayers::SingleBlueLayer, Util::NumElementsOf(MaterialLayers::SingleBlueLayer))) return false;
 	//
@@ -420,6 +447,7 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	//dragon10->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
 	//dragon11->SetPosition(-((float)c / 2.0f) + (float)i++ * spacing, -80, 10);
 
+	//dragon0->SetScale(5.0f, 5.0f, 10.0f);
 	dragon0->SetScale(5.0f);
 	//dragon1->SetScale(5.0f);
 	//dragon2->SetScale(5.0f);
@@ -541,7 +569,7 @@ bool Renderer::Initiate(RendererInitDesc& desc)
 	*/
 	//this->sphereMap.CreateSkyBox(device, dc);
 
-	(this->ground = new Plane())->CreatePlane(device, DirectX::XMFLOAT3(0.0, -130.0f, 0.0f), L"Models\\sssStrength.dds", 1000.0f, 1000.0f, 1.0f);
+	(this->ground = new Plane())->CreatePlane(device, DirectX::XMFLOAT3(0.0, -130.0f, 0.0f), L"Models\\sssStrength.dds", 0, 0, 1000.0f, 1000.0f, 1.0f);
 	this->models.push_back(this->ground);
 
 	if(!CreateLights())
@@ -599,11 +627,11 @@ bool Renderer::CreateLights()
 		const int height = 1024;
 
 		std::vector<pr> s;
-		s.push_back (pr(XMFLOAT3(-300.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
-		s.push_back (pr(XMFLOAT3(-150.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(-300.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(-150.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
 		s.push_back (pr(XMFLOAT3(+000.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
-		s.push_back (pr(XMFLOAT3(+150.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
-		s.push_back (pr(XMFLOAT3(+300.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(+150.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
+		//s.push_back (pr(XMFLOAT3(+300.0f, -35.0f, -120.0f) ,XMFLOAT3(0.0f, 0.0f, 0.0f)));
 
 		//s.push_back (pr(XMFLOAT3(-80.0f, -20.0f, -80.0f) ,XMFLOAT3(+45.0f, +45.0f, +0.0f)));
 		//s.push_back (pr(XMFLOAT3(-40.0f, -20.0f, -80.0f) ,XMFLOAT3(+45.0f, +22.0f, +0.0f)));
@@ -715,7 +743,7 @@ void Renderer::RenderGeometry()
 		}
 	}
 
-	Pipeline::PipelineManager::Instance().ApplyGeometryPass(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix(), shadowBuff, k);
+	Pipeline::PipelineManager::Instance().ApplyGeometryPass(this->mainCam->GetViewMatrix(), this->mainCam->GetProjectionMatrix(), shadowBuff, k, this->sssStrength);
 	{
 		for (size_t i = 0; i < this->models.size(); i++)
 		{
@@ -766,8 +794,7 @@ void Renderer::RenderPostPass(float dt)
 }
 
 void Renderer::PrintStats(float dt)
-{
-	
+{	
 	//if (time > timeMax)
 	{
 		TextRender::Write(Util::StringToWstring(totalStatsString, std::wstring()).c_str(), 10, 210);
@@ -779,3 +806,33 @@ void Renderer::PrintStats(float dt)
 }
 
 
+bool Renderer::LoadLayersFromFile(std::string file)
+{
+	static std::ifstream in;
+	
+	if (!in.is_open())
+	{
+		in.open(file, std::ios::in);
+		if (!in.is_open()) return false;
+	}
+
+	this->sssLayers.resize(0);
+	int layers = 0;
+	SimpleMath::Vector4 v;
+
+	in >> layers;
+	this->sssLayers.resize(layers);
+
+	for (int i = 0; i < layers; i++)
+	{
+		in >> v.x;
+		in >> v.y;
+		in >> v.z;
+		in >> v.w;
+		this->sssLayers[i] = v;
+	}
+		
+	in.close();
+
+	return true;
+}

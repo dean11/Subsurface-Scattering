@@ -25,6 +25,7 @@
 #define		VK_Y		0x59
 #define		VK_H		0x48
 #define		VK_B		0x42
+#define		VK_X		0x58
 
 
 

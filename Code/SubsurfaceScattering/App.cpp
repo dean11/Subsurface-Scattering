@@ -82,17 +82,14 @@ void App::Run()
 
 				this->camera.Render();
 		
-				if (Input::IsKeyDown(VK_W))			this->camera.RelativeForward(20.0f);
-				if (Input::IsKeyDown(VK_S))			this->camera.RelativeForward(-20.0f);
-				if (Input::IsKeyDown(VK_A))			this->camera.RelativeRight(-20.0f);
-				if (Input::IsKeyDown(VK_D))			this->camera.RelativeRight(20.0f);
-				if (Input::IsKeyDown(VK_CONTROL))	this->camera.RelativeUp(-10.0f);
-				if (Input::IsKeyDown(VK_SPACE))		this->camera.RelativeUp(10.0f);
+				if (Input::IsKeyDown(VK_W))			this->camera.RelativeForward(12.0f);
+				if (Input::IsKeyDown(VK_S))			this->camera.RelativeForward(-12.0f);
+				if (Input::IsKeyDown(VK_A))			this->camera.RelativeRight(-12.0f);
+				if (Input::IsKeyDown(VK_D))			this->camera.RelativeRight(12.0f);
+				if (Input::IsKeyDown(VK_X))			this->camera.RelativeUp(-7.0f);
+				if (Input::IsKeyDown(VK_SPACE))		this->camera.RelativeUp(7.0f);
 			
 				static int i = 0;
-
-				//if(i++ > 19)
-				//	break;
 
 				this->renderer->Frame(dt);
 

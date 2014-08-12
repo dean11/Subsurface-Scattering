@@ -25,8 +25,16 @@ public:
 	bool Recompile();
 
 	void SetKernel(const DirectX::SimpleMath::Vector4* kernel, int kernelSize);
+	//void SetKernel(const float* kernel, int kernelSize);
+	void SetSSSStrength(float strength);
 
 private:
+	struct BlurData
+	{
+		float sssStrength;
+
+		float pad[3];
+	};
 	enum ShaderTextureRegisterLayout
 	{
 		ShaderTextureRegisterLayout_TranslucentTexture = 0,
@@ -53,7 +61,8 @@ private:
 	ID3D11ShaderResourceView* tempBlurOutputSRV;
 	
 	std::vector<DirectX::SimpleMath::Vector4> kernel;
-	int kernelSize;
+	//std::vector<float> kernel;
+	BlurData blurData;
 
 	Shader horizontalBlur;
 	Shader verticalBlur;
@@ -64,6 +73,11 @@ private:
 	ID3D11ShaderResourceView* kenrnelBufferSRV;
 
 	DirectX::SimpleMath::Vector2 size;
+	bool kernelModified;
+	int computeThreads;
+	int blurRadius;
+
+	bool CompileSSSShaders();
 };
 
 #endif // !GUARD_BLURPASS_H
