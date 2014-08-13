@@ -37,6 +37,8 @@ public:
 	DirectX::XMMATRIX GetWorldInversTranspose();
 	DirectX::XMMATRIX GetWorldInversTranspose() const;
 
+	SimpleMath::Vector3 GetRotation() const;
+
 	void SetWorld(DirectX::XMFLOAT4X4 world);
 	void SetPosition(float x, float y, float z);
 	void SetPosition(DirectX::XMFLOAT3& v);
@@ -58,6 +60,9 @@ protected:
 	Mesh mesh;
 	DirectX::SimpleMath::Matrix world;
 	bool isVisible;
+	DirectX::SimpleMath::Vector3 rotation;
+	DirectX::SimpleMath::Vector3 position;
+	DirectX::SimpleMath::Vector3 scale;
 };
 
 #endif // !BATCHELOR_MESHMANAGER_H

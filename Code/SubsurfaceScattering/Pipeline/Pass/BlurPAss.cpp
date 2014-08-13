@@ -57,9 +57,25 @@ BlurPass::BlurPass()
 	//	0.05f,	
 	//	0.05f,	
 	//};
+	//SimpleMath::Vector4 tmp[] =
+	//{
+	//	SimpleMath::Vector4(0.56047900f, 0.669086000f, 0.7847280000f, 0.000f),			//Middle sample
+	//
+	//	SimpleMath::Vector4(0.00471691f, 0.000184771f, 5.07566e-005f, -2.00f),
+	//	SimpleMath::Vector4(0.01928310f, 0.002820180f, 0.0008421400f, -1.28f),
+	//	SimpleMath::Vector4(0.03639000f, 0.013099900f, 0.0064368500f, -0.72f),
+	//	SimpleMath::Vector4(0.08219040f, 0.035860800f, 0.0209261000f, -0.32f),
+	//	SimpleMath::Vector4(0.07718020f, 0.113491000f, 0.0793803000f, -0.08f),
+	//
+	//	SimpleMath::Vector4(0.07718020f, 0.113491000f, 0.0793803000f, 0.080f),
+	//	SimpleMath::Vector4(0.08219040f, 0.035860800f, 0.0209261000f, 0.320f),
+	//	SimpleMath::Vector4(0.03639000f, 0.013099900f, 0.0064368500f, 0.720f),
+	//	SimpleMath::Vector4(0.01928310f, 0.002820180f, 0.0008421400f, 1.280f),
+	//	SimpleMath::Vector4(0.00471691f, 0.000184771f, 5.07565e-005f, 2.000f),
+	//};
 	SimpleMath::Vector4 tmp[] = 
 	{
-		SimpleMath::Vector4(0.56047900f, 0.669086000f, 0.7847280000f, 0.000f),			//Middle sample
+		SimpleMath::Vector4(0.86047900f, 0.669086000f, 0.7847280000f, 0.000f),			//Middle sample
 	
 		SimpleMath::Vector4(0.00471691f	, 0.000184771f	, 5.07566e-005f	, -2.00f),
 		SimpleMath::Vector4(0.01928310f	, 0.002820180f	, 0.0008421400f	, -1.28f),
@@ -73,6 +89,34 @@ BlurPass::BlurPass()
 		SimpleMath::Vector4(0.01928310f	, 0.002820180f	, 0.0008421400f	, 1.280f),
 		SimpleMath::Vector4(0.00471691f	, 0.000184771f	, 5.07565e-005f	, 2.000f),
 	};
+	//SimpleMath::Vector4 tmp[] =
+	//{
+	//	SimpleMath::Vector4(0.530605, 0.613514, 0.739601, 0),
+	//	SimpleMath::Vector4(0.000973794, 1.11862e-005, 9.43437e-007, -3),
+	//	SimpleMath::Vector4(0.00333804, 7.85443e-005, 1.2945e-005, -2.52083),
+	//	SimpleMath::Vector4(0.00500364, 0.00020094, 5.28848e-005, -2.08333),
+	//	SimpleMath::Vector4(0.00700976, 0.00049366, 0.000151938, -1.6875),
+	//	SimpleMath::Vector4(0.0094389, 0.00139119, 0.000416598, -1.33333),
+	//	SimpleMath::Vector4(0.0128496, 0.00356329, 0.00132016, -1.02083),
+	//	SimpleMath::Vector4(0.017924, 0.00711691, 0.00347194, -0.75),
+	//	SimpleMath::Vector4(0.0263642, 0.0119715, 0.00684598, -0.520833),
+	//	SimpleMath::Vector4(0.0410172, 0.0199899, 0.0118481, -0.333333),
+	//	SimpleMath::Vector4(0.0493588, 0.0367726, 0.0219485, -0.1875),
+	//	SimpleMath::Vector4(0.0402784, 0.0657244, 0.04631, -0.0833333),
+	//	SimpleMath::Vector4(0.0211412, 0.0459286, 0.0378196, -0.0208333),
+	//	SimpleMath::Vector4(0.0211412, 0.0459286, 0.0378196, 0.0208333),
+	//	SimpleMath::Vector4(0.0402784, 0.0657244, 0.04631, 0.0833333),
+	//	SimpleMath::Vector4(0.0493588, 0.0367726, 0.0219485, 0.1875),
+	//	SimpleMath::Vector4(0.0410172, 0.0199899, 0.0118481, 0.333333),
+	//	SimpleMath::Vector4(0.0263642, 0.0119715, 0.00684598, 0.520833),
+	//	SimpleMath::Vector4(0.017924, 0.00711691, 0.00347194, 0.75),
+	//	SimpleMath::Vector4(0.0128496, 0.00356329, 0.00132016, 1.02083),
+	//	SimpleMath::Vector4(0.0094389, 0.00139119, 0.000416598, 1.33333),
+	//	SimpleMath::Vector4(0.00700976, 0.00049366, 0.000151938, 1.6875),
+	//	SimpleMath::Vector4(0.00500364, 0.00020094, 5.28848e-005, 2.08333),
+	//	SimpleMath::Vector4(0.00333804, 7.85443e-005, 1.2945e-005, 2.52083),
+	//	SimpleMath::Vector4(0.000973794, 1.11862e-005, 9.43437e-007, 3),
+	//};
 
 	this->kernelModified = true;
 	this->kernel.resize(Util::NumElementsOf(tmp));

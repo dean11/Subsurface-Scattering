@@ -58,6 +58,13 @@ bool Model::CreateModel(const char path[], ID3D11Device* device, const SimpleMat
 
 void Model::DrawModel(ID3D11DeviceContext* dc, bool useTexture)
 {
+	SimpleMath::Matrix r = SimpleMath::Matrix::CreateFromYawPitchRoll(this->rotation.x, this->rotation.y, this->rotation.z);
+	SimpleMath::Matrix t = SimpleMath::Matrix::CreateTranslation(this->position.x, this->position.y, this->position.z);
+	SimpleMath::Matrix s = SimpleMath::Matrix::CreateScale(this->scale.x, this->scale.y, this->scale.z);
+	SimpleMath::Matrix w = s * r * t;
+	
+	this->world = w;
+
 	if(!this->isVisible) return;
 
 	UINT off = 0;
@@ -93,23 +100,35 @@ DirectX::XMMATRIX Model::GetWorldInversTranspose() const
 {
 	return this->world.Invert().Transpose();
 }
-
+DirectX::SimpleMath::Vector3 Model::GetRotation() const
+{
+}
 void Model::SetWorld(DirectX::XMFLOAT4X4 world)
 {
-	this->world = DirectX::SimpleMath::Matrix(&world._11);
+	
+	this->world = XMLoadFloat4x4(&world);
+	//this->world = DirectX::SimpleMath::Matrix(&world._11);
 
 }
 void Model::SetPosition(float x, float y, float z)
 {
-	this->world._41 = x;
-	this->world._42 = y;
-	this->world._43 = z;
+	this->position.x = x;
+	this->position.y = y;
+	this->position.z = z;
+
+	//this->world._41 = x;
+	//this->world._42 = y;
+	//this->world._43 = z;
 }
 void Model::SetPosition(DirectX::XMFLOAT3& v)
 {
-	this->world._41 = v.x;
-	this->world._42 = v.y;
-	this->world._43 = v.z;
+	this->position.x = v.x;
+	this->position.y = v.y;
+	this->position.z = v.z;
+
+	//this->world._41 = v.x;
+	//this->world._42 = v.y;
+	//this->world._43 = v.z;
 }
 void Model::Forward(float val)
 {
@@ -131,25 +150,35 @@ void Model::Right(float val)
 }
 void Model::Rotate(const SimpleMath::Vector3& angle)
 {
-	SimpleMath::Matrix m;
-	this->world *= m.CreateFromYawPitchRoll(angle.x, angle.y, angle.z);
+	this->rotation += angle;
+	//SimpleMath::Matrix m;
+	//this->world *= m.CreateFromYawPitchRoll(angle.x, angle.y, angle.z);
 	//this->world *= m;
 }
 void Model::SetScale(float x, float y, float z)
 {
-	this->world._11 = x;	
-	this->world._22 = y;	
-	this->world._33 = z;	
+	this->scale.x = x;
+	this->scale.y = y;
+	this->scale.z = z;
+
+	//this->world._11 = x;	
+	//this->world._22 = y;	
+	//this->world._33 = z;	
 }
 void Model::SetScale(float s)
 {
-	this->world._11 = s;	
-	this->world._22 = s;	
-	this->world._33 = s;	
+	this->scale.x = s;
+	this->scale.y = s;
+	this->scale.z = s;
+
+	//this->world._11 = s;	
+	//this->world._22 = s;	
+	//this->world._33 = s;	
 }
 SimpleMath::Vector3 Model::GetPosition()
 {
-	return SimpleMath::Vector3(this->world._41, this->world._42 ,this->world._43);// = z;
+	return this->position;
+	//return SimpleMath::Vector3(this->world._41, this->world._42, this->world._43);// = z;
 }
 
 void Model::SetMaterial(const SimpleMath::Vector4 materialLayer[], int layerCount)

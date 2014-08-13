@@ -32,13 +32,16 @@ RWTexture2D<float4> BlurDest :register(u0);
 SamplerState PointSampler :register(s0);
 SamplerState LinearSampler :register(s1);
 
+void CachFetch(float2 dir, in uint2 DTid, in uint2 GTid)
+{
 
+}
 float4 BlurPixel(in float2 dir, in uint2 DTid, in uint2 GTid, in int index)
 {
 	// See: http://www.iryoku.com/sssss/
 
 	float4 color = blurCache[dot(GTid, dir) + BLUR_RADIUS];
-	float depth = DepthMap[DTid.xy].r;
+	float depth = depthCache[dot(GTid, dir) + BLUR_RADIUS].r;
 	float4 layer = LayerTex[DTid.xy];
 	float4 blurColor = float4(color.rgb * Kernel[0].rgb, color.a);
 
@@ -56,20 +59,21 @@ float4 BlurPixel(in float2 dir, in uint2 DTid, in uint2 GTid, in int index)
 	for (int i = -BLUR_RADIUS + 1; i <= BLUR_RADIUS; ++i)
 	{
 		int k = i + BLUR_RADIUS;
-		//int2 p = (DTid + ((i + BLUR_RADIUS) * dir)) + Kernel[k].w * step;
-		//float3 colorTmp = SourceTexture[p].rgb;
 		int p = dot(GTid, dir) + (i + BLUR_RADIUS) + Kernel[k].w * dot(step, dir);
 		float3 colorTmp = blurCache[p].rgb;
-		float depthTmp = depthCache[p].r;
-		//float depthTmp = DepthMap[(DTid + ((i + BLUR_RADIUS) * dir)) + Kernel[k].w * step].r;
-
+			float depthTmp = depthCache[p].r;
+#define SMOOTH_SURFACE
+#ifdef SMOOTH_SURFACE
 		// If the difference in depth is huge lerp color back to "colorM":
-		float s = min(distanceToProjectionWindow * sssStrength * abs(depth - depthTmp), 1.0);
+		//float s = saturate(0.5f * sssStrength * abs(depth - depthTmp));
+		float s = saturate(300.0f * distanceToProjectionWindow * sssStrength * abs(depth - depthTmp));
 		colorTmp = lerp(colorTmp, color.rgb, s);
-		
+#endif
+
 		// Accumulate:
 		float3 f = float3(ceil(layer.rgb.x), ceil(layer.rgb.y), ceil(layer.rgb.z));
-		blurColor.rgb += (f * Kernel[k].rgb * colorTmp.rgb);
+			blurColor.rgb += (Kernel[k].rgb * colorTmp.rgb);
+		
 	}
 
 	return blurColor;

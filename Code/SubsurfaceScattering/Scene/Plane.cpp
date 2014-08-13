@@ -71,11 +71,10 @@ bool Plane::CreatePlane(ID3D11Device* device, DirectX::XMFLOAT3 position, const 
 		return false;
 
 	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixIdentity());
-
 	DirectX::XMVECTOR nullVec = { 0 };
-	DirectX::XMFLOAT3 scaleVec = DirectX::XMFLOAT3(scale, scale, scale);
-
-	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixAffineTransformation(DirectX::XMLoadFloat3(&scaleVec), nullVec, nullVec, DirectX::XMLoadFloat3(&position)));
+	this->scale = DirectX::SimpleMath::Vector3(scale, scale, scale);
+	this->position = XMLoadFloat3(& position);
+	DirectX::XMStoreFloat4x4(&this->world, DirectX::XMMatrixAffineTransformation(DirectX::XMLoadFloat3(&this->scale), nullVec, nullVec, DirectX::XMLoadFloat3(&this->position)));
 
 	return true;
 }

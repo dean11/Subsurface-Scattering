@@ -135,6 +135,8 @@ void Renderer::Frame(float delta)
 	if(alpha < FPS60) return;
 	alpha = 0.0f;
 
+	//this->player->Rotate(SimpleMath::Vector3(-0.01f, 0.0f, 0.0f));
+
 	this->deviceContext->Begin(m_apQueryTsDisjoint[m_iFrameQuery]);
 	this->deviceContext->End(m_apQueryTs[GTS_BeginFrame][m_iFrameQuery]);
 	{
